@@ -115,11 +115,11 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    'http://13.202.157.7'
+    'http://13.202.30.119'
 ]
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
-    'http://13.202.157.7',
+    'http://13.202.30.119',
 ]
 AUTO_LOGOUT = {
     'IDLE_TIME': 600,
