@@ -141,8 +141,8 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'D:/Python Project/PSN Logs', 'django.log'),  
-            # 'filename': os.path.join(BASE_DIR, '/home/ubuntu/PSNHeadon Logs', 'django.log'),  
+            # 'filename': os.path.join(BASE_DIR, 'D:/Python Project/PSN Logs', 'django.log'),  
+            'filename': os.path.join(BASE_DIR, '/home/ubuntu/PSN Logs', 'django.log'),  
         },
     },
     'loggers': {
