@@ -22,3 +22,20 @@ class notification_log(models.Model):
     def __str__(self):
         return self.employee_id
 
+class user_notification_log(models.Model):
+    id = models.AutoField(primary_key=True)
+    slot_id = models.TextField(null=True,blank=True) 
+    shift_id = models.TextField(null=True,blank=True)
+    type = models.TextField(null=True,blank=True) 
+    noti_send_time = models.DateTimeField(null=True,blank=True)
+    noti_click_time = models.DateTimeField(null=True,blank=True)
+    noti_opened_time = models.DateTimeField(null=True,blank=True)
+    booking_time =models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_noti_created_by',blank=True, null=True,db_column='created_by')
+    class Meta:
+        db_table = 'user_notification_log'
+    def __str__(self):
+        return self.employee_id
+    
+
