@@ -28,9 +28,10 @@ class RateCardMasterForm(forms.ModelForm):
 class SiteCardRelationForm(forms.ModelForm):
     class Meta:
         model = site_card_relation
-        fields = ['site_id', 'relation_name', 'card_id']
+        fields = ['site_id', 'relation_name', 'card_id','designation_id']
         widgets = {
             'relation_name': forms.TextInput(attrs={'class': 'form-control'}),
             'site_id': forms.Select(attrs={'class': 'form-control'}),
             'card_id': forms.Select(attrs={'class': 'form-control'}),
+            'designation_id': forms.Select(attrs={'class': 'form-control'}),
         }

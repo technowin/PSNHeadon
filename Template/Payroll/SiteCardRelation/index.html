@@ -5,6 +5,7 @@
 {% load static %}
 <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
 <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <head>
     <title>Site Card Relations</title>
     <style>
@@ -26,6 +27,7 @@
             <th>Relation Name</th>
             <th>Site ID</th>
             <th>Card ID</th>
+            <th>Designation</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -35,6 +37,7 @@
             <td>{{ relation.relation_name }}</td>
             <td>{{ relation.site_id }}</td>
             <td>{{ relation.card_id }}</td>
+            <td>{{ relation.designation_id }}</td>
             <td>
                 <a href="{% url 'site_card_relation_view' relation.pk %}">View</a> |
                 <a href="{% url 'site_card_relation_edit' relation.pk %}">Edit</a>

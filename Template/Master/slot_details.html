@@ -53,7 +53,7 @@
                             <select name="worsite" id="dropdown" class="form-control" required>
                                 <option value="" Selected disabled>Select</option>
                                 {% for item in site_names %}
-                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.worksite %}selected{% endif %}>
+                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.site_id %}selected{% endif %}>
                                         {{ item.1 }}
                                     </option>
                                 {% endfor %}

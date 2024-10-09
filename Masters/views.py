@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
 from Masters.models import *
+from Masters.models import site_master as sit
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
@@ -932,7 +933,7 @@ def slot_details(request):
                 slot_idd = decrypt_parameter(slot_id)
                 slot_details = get_object_or_404(SlotDetails, slot_id=slot_idd)
 
-            context = {'slot_details':slot_details,'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
+                context = {'slot_details':slot_details,'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
                 
         elif request.method == 'POST': 
             type = request.POST.get('type','')
@@ -942,7 +943,7 @@ def slot_details(request):
             
                 slot = SlotDetails(
                     company_id = request.POST.get('company_id', ''),
-                    worksite=request.POST.get('worsite', ''),
+                    site_id=get_object_or_404(sit, site_id=request.POST.get('worsite', '')),
                     slot_name=request.POST.get('slot_name', ''),
                     slot_description=request.POST.get('Description', ''),
                     created_by= user

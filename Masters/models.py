@@ -213,8 +213,11 @@ class PoolDetails(models.Model):
 class SlotDetails(models.Model):
     slot_id = models.AutoField(primary_key=True)
     company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='slot_relation',blank=True, null=True)
-    worksite = models.TextField(null=True,blank=True)
+    # worksite = models.TextField(null=True,blank=True)
+    site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='SlotDetails_site_id',blank=True, null=True,db_column="site_id")
+    
     slot_name = models.TextField(null=True,blank=True)
+    
     slot_description = models.CharField(max_length=200, null=True, blank=True)
     shift_date = models.DateField(null=True,blank=True)
     start_time = models.TextField(null=True,blank=True)
