@@ -1,0 +1,82 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Edit Rate Card</title>
+    <style>
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .checkbox-container {
+            margin-bottom: 10px;
+        }
+        .amount-field {
+            width: 80px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Rate Card</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label>Card Name:</label>
+            {{ form.card_name }}
+        </div>
+        
+        <div>
+            <h4>Select Salary Elements:</h4>
+            {% for item in form.item_ids.field.queryset %}
+                <div class="checkbox-container row"   >
+                    <div class="col-md-3" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <input type="checkbox" name="item_ids" class=" form-control" value="{{ item.pk }}"  style="font-size: 3px;"
+                        {% if item.pk in selected_item_ids %} checked {% endif %}>
+                        <br>
+
+                        <label>
+                            
+                            {{ item.item_name }}
+                        </label>
+                        
+                    </div>
+                    <div class="col-md-2" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <label>
+                            Four Hour Amount
+                        </label>
+                        <input type="number" name="four_hour_amount_{{ item.pk }}" class="amount-field form-control" 
+                        placeholder="4-Hour Amount" min="0" style="width: 90%;"
+                        value="{% if prefilled_data|get_item:item.pk %}{% with prefilled_data|get_item:item.pk as data %}{{ data.four_hour_amount }}{% endwith %}{% else %}0{% endif %}">
+                    
+                    </div>
+                    <div class="col-md-2" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <label>
+                            Nine Hour Amount
+                        </label>
+                        <input type="number" name="nine_hour_amount_{{ item.pk }}" class="amount-field  form-control" 
+                        placeholder="9-Hour Amount" min="0"  style="width: 90%;"
+                        value="{% if prefilled_data|get_item:item.pk %}{% with prefilled_data|get_item:item.pk as data %}{{ data.nine_hour_amount }}{% endwith %}{% else %}0{% endif %}">
+                    </div>
+                   
+
+                    <!-- Prefill 4-hour and 9-hour amounts -->
+                    
+                    
+                </div>
+            {% endfor %}
+        
+
+
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+    </form>
+</body>
+</html>
+{% endblock %}

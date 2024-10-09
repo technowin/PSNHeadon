@@ -1,12 +1,12 @@
 """
 URL configuration for PSNHeadon project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+The `urlpatterns` list routes URLs to  For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.Account, name='Account')
+    2. Add a URL to urlpatterns:  path('', Account, name='Account')
 Class-based views
     1. Add an import:  from other_app.views import Account
     2. Add a URL to urlpatterns:  path('', Account.as_view(), name='Account')
@@ -21,6 +21,7 @@ from Account.views import *
 from Dashboard.views import *
 # from Masters.models import site_master
 from Masters.views import *
+from Payroll.views import *
 from Reports.views import *
 from Masters.views import site_master as sm
 from Masters.views import company_master as cm
@@ -105,8 +106,26 @@ urlpatterns = [
     path("charts",charts,name='charts'),  
     path("tables",tables,name='tables'),
 
+    #payroll
     
+    path('salary_element_index', index, name='salary_element_index'),
+    path('salary_element_create/', create, name='salary_element_create'),
+    path('salary_element_edit/<int:pk>/', edit, name='salary_element_edit'),
+    path('salary_element_view/<int:pk>/', view, name='salary_element_view'),
+    path('rate_card_index', rate_card_index, name='rate_card_index'),
+    path('rate-card/create/', rate_card_create, name='rate_card_create'),
+    path('rate-card/<int:card_id>/edit/', rate_card_edit, name='rate_card_edit'),
+    path('rate-card/<int:card_id>/view/', rate_card_view, name='rate_card_view'),
+    path('site_card_relation_index', site_card_relation_index, name='site_card_relation_index'),
+    path('site_card_relation/create/', site_card_relation_create, name='site_card_relation_create'),
+    path('site_card_relation/edit/<int:pk>/', site_card_relation_edit, name='site_card_relation_edit'),
+    path('site_card_relation/view/<int:pk>/', site_card_relation_view, name='site_card_relation_view'),
     # path('check_shift/<int:employee_id>/<int:site_id>/', check_shift_for_next_day, name='check_shift_for_next_day'),
-    
+    path('get_rate_cards/<int:site_id>/', get_rate_cards, name='get_rate_cards'),
+    path('employee_rate_card_create', employee_rate_card_create, name='employee_rate_card_create'),
+    path('employee_rate_card_edit/<int:id>/', employee_rate_card_edit, name='employee_rate_card_edit'),
+    path('employee_rate_card_view/<int:id>/', employee_rate_card_view, name='employee_rate_card_view'),
+    path('employee_rate_card_index', employee_rate_card_index, name='employee_rate_card_index'),
+    path('employee_rate_card_create/', employee_rate_card_create, name='employee_rate_card_create'),
 
 ]

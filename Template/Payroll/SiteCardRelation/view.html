@@ -1,0 +1,16 @@
+<!-- templates/Payroll/SiteCardRelation/view.html -->
+{% extends "Shared/Layout.html" %}
+{% block username %}{{ username }}{% endblock %}
+{% block content %}
+{% load static %}
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+
+<h1>View Site Card Relation</h1>
+<p><strong>Relation Name:</strong> {{ site_card_relation.relation_name }}</p>
+<p><strong>Site ID:</strong> {{ site_card_relation.site_id }}</p>
+<p><strong>Card ID:</strong> {{ site_card_relation.card_id }}</p>
+
+<a href="{% url 'site_card_relation_edit' site_card_relation.pk %}" class="btn btn-primary">Edit</a>
+<a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+{% endblock %}

@@ -1,0 +1,16 @@
+<!-- templates/Payroll/SiteCardRelation/edit.html -->
+{% extends "Shared/Layout.html" %}
+{% block username %}{{ username }}{% endblock %}
+{% block content %}
+{% load static %}
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+
+<h1>Edit Site Card Relation</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+</form>
+{% endblock %}

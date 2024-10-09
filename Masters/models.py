@@ -77,7 +77,8 @@ class site_master(models.Model):
     class Meta:
         db_table = 'site_master'
     def __str__(self):
-        return self.site_name
+        company_name = self.company.company_name if self.company else "No Company"
+        return f"{company_name} - {self.site_name}" if self.site_name else company_name
     
 class sc_employee_master(models.Model):
     id = models.AutoField(primary_key=True)

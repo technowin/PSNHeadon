@@ -1,0 +1,65 @@
+<!-- templates/Payroll/SiteCardRelation/index.html -->
+{% extends "Shared/Layout.html" %}
+{% block username %}{{ username }}{% endblock %}
+{% block content %}
+{% load static %}
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+<head>
+    <title>Site Card Relations</title>
+    <style>
+        /* Style for right-aligning the link */
+        .right-align {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<h1>Site Card Relations</h1>
+<div class="right-align">
+    <a href="{% url 'site_card_relation_create' %}" class="btn btn-primary">Create New Site Card Relation</a>
+</div>
+<br>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Relation Name</th>
+            <th>Site ID</th>
+            <th>Card ID</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for relation in site_card_relations %}
+        <tr>
+            <td>{{ relation.relation_name }}</td>
+            <td>{{ relation.site_id }}</td>
+            <td>{{ relation.card_id }}</td>
+            <td>
+                <a href="{% url 'site_card_relation_view' relation.pk %}">View</a> |
+                <a href="{% url 'site_card_relation_edit' relation.pk %}">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+{% load static %}
+    
+    <!-- Show success/error messages -->
+<script src="{% static 'sweetalert2/dist/sweetalert2.min.js' %}"></script>
+{% if messages %}
+{% for message in messages %}
+  <script>
+  Swal.fire({
+    title: "{{ message.tags }}",
+    text: "{{ message }}",
+    icon: "{{ message.tags }}",
+    confirmButtonText: "OK",
+  });
+</script>
+{% endfor %}
+{% endif %} 
+{% endblock %}
