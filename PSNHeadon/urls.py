@@ -71,6 +71,11 @@ urlpatterns = [
     path("upload_excel",upload_excel, name="upload_excel"),
     path("site_master",sm, name="site_master"),
     path("get_access_control",get_access_control, name="get_access_control"),
+    path("slot_details",slot_details, name="slot_details"),
+    path("post_slot_details",post_slot_details, name="post_slot_details"),
+    path("setting_master",setting_master, name="setting_master"),
+    path("edit_slot_details",edit_slot_details, name="edit_slot_details"),
+    path("delete_slot",delete_slot, name="delete_slot"),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

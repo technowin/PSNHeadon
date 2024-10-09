@@ -1,0 +1,452 @@
+{% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+{% block content %}
+{% load static %}
+{% comment %} {% csrf_token %} {% endcomment %}
+
+ <!-- Custom styles for this html-->
+ <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/activebtn.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/shiftcheckbox.css' %}" rel="stylesheet" type="text/css" >
+ 
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+ <!-- Include DataTables CSS -->
+ <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+ <!-- Include DataTables JS -->
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+ 
+    <div class="container mt-5" style="max-width: 1800px;">
+        <div class="card">
+            <div class="card-body">
+                {% if type == 'slot' %}
+                <h2 class="text-center" style="color:#B12121;">
+                    <u>{% if slot_id == '0' %} Create {% else %} Edit {% endif %} Slot Details</u>
+                </h2>
+                <br>
+                    <form method="POST" action="{% url 'slot_details' %}">
+                
+                    {% csrf_token %}
+
+                    <input type="hidden" name="slot_id" value="{{ slot_id }}">
+                    <input type="hidden" name="type" value="{{ type }}">
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-3">
+                            <label for="company" class="form-label">Company<span style="color:red;"> *</span> :</label>
+                            <select name="company_id" id="dropdown" class="form-control" required>
+                                <option value="" Selected disabled>Select</option>
+                                {% for item in company_names %}
+                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.company_id %}selected{% endif %}>
+                                        {{ item.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="worsites" class="form-label">Worksite<span style="color:red;"> *</span> :</label>
+                            <select name="worsite" id="dropdown" class="form-control" required>
+                                <option value="" Selected disabled>Select</option>
+                                {% for item in site_names %}
+                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.worksite %}selected{% endif %}>
+                                        {{ item.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                </br>
+
+
+                    <div class="text-center">
+                        <button type="submit" id="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+{% elif type == 'shift'%}
+<div class="row mb-3">
+    <div class="col-md-10 text-center">
+        <h2 style="color:#B12121;">
+            <u> Create Shift Details</u>
+        </h2>
+    </div>
+    
+    <div class="col-md-2 text-end">
+        <button type="button" class="btn btn-primary" id="createShiftButton">
+            + Create Shift
+        </button>
+    </div>
+</div>
+<div class="row mb-3">
+    <input type="hidden" name='slot_id' value={{slot_id}} id ='slot_id'>
+        <div class="col-md-1">
+            <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
+            <input type="text" value="{{ slot_details.slot_name }}" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
+        </div>
+
+        <div class="col-md-2">
+            <label for="Description" class="form-label">Description<span style="color:red;"> *</span> :</label>
+            <input type="text" value="{{ slot_details.slot_description }}" name="Description" class="form-control" id="Description" placeholder="Enter Description" required>
+        </div>
+        <div class="col-md-2">
+            <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
+            <input type="date" name="shift_date" class="form-control" id="shift_date" placeholder="Select Shift Date" required>
+        </div>
+            
+        <div class="col-md-2">
+            <label for="start_time" class="form-label">Start Time<span style="color:red;"> *</span> :</label>
+            <input type="time" name="start_time" class="form-control" id="start_time" placeholder="Select Start Time" required>
+        </div>
+            
+        <div class="col-md-2">
+            <label for="end_time" class="form-label">End Time<span style="color:red;"> *</span> :</label>
+            <input type="time" name="end_time" class="form-control" id="end_time" placeholder="Select End Time"  required>
+        </div>
+            
+        <div class="col-md-1">
+            <label class="form-label">Night Shift:</label>
+            <input type="checkbox" class="nightShiftCheckbox" name="night_shift_add">
+        </div>
+                
+        <div class="col-md-2">
+            <button type="button" class="btn btn-success btn-sm" id="addShiftField">+</button>
+            <button type="button" class="btn btn-danger btn-sm" id="removeLastShiftField">-</button>
+        </div>
+        </div>
+        <div class="row mb-3"> 
+            <div class="col-md-5">
+            </div>
+            <div class="col-md-6">
+                <div id="shiftTimesContainer"></div><hr/>
+            </div>
+        </div>
+        <div id="shiftContainer"></div>
+    
+    
+    <div class="text-center">
+        <button type="submit" id="submitBtn" class="btn btn-primary">Submit</button>
+    </div>
+    
+{% elif type == 'setting'%}
+<form method="POST" action="setting_master">
+    {% csrf_token %}
+    <input type="hidden" name="slot_setting_id" value="" id="slot_setting_id">
+
+
+    <div class="row mb-3">
+        <!-- Notification Start Time (Date) -->
+        <div class="col-md-3">
+            <label for="notification_start_time" class="form-label">Notification Start Date<span style="color:red;"> *</span> :</label>
+            <input type="date" name="notification_start_time" class="form-control" id="notification_start_time" placeholder="Select Start Date">
+        </div>
+
+        <!-- Notification End Time (Date) -->
+        <div class="col-md-3">
+            <label for="notification_end_time" class="form-label">Notification End Date<span style="color:red;"> *</span> :</label>
+            <input type="date" name="notification_end_time" class="form-control" id="notification_end_time" placeholder="Select End Date">
+        </div>
+
+        <!-- Number of Notifications -->
+        <div class="col-md-3">
+            <label for="number_of_notifications" class="form-label">Number of Notifications<span style="color:red;"> *</span> :</label>
+            <input type="number" name="number_of_notifications" class="form-control" id="number_of_notifications" placeholder="Enter Number of Notifications" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
+        </div>
+        
+        <!-- Interval in Hours -->
+        <div class="col-md-3">
+            <label for="notification_interval_hours" class="form-label">Interval (Hours)<span style="color:red;"> *</span> :</label>
+            <input type="number" name="notification_interval_hours" class="form-control" id="notification_interval_hours" placeholder="Enter Interval in Hours" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
+        </div>
+        
+        
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-center mt-4">
+        <button type="submit" id="submit_notification_form" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+
+{% endif %}
+</div>
+</div>
+
+
+
+{% if messages %}
+  {% for message in messages %}
+    <script>
+    Swal.fire({
+      title: "{{ message.tags }}",
+      text: "{{ message }}",
+      icon: "{{ message.tags }}",
+      confirmButtonText: "OK",
+    });
+  </script>
+  {% endfor %}
+{% endif %}
+    
+
+<script>
+        $(document).ready(function() {
+            let shiftCounter = 0; // Initialize a shift counter
+
+            // Add new shift time row on clicking "+"
+            $('#addShiftField').click(function() {
+                shiftCounter++;
+                let shiftFields = `
+                    <div class="row mb-3 shiftRow" id="shift_${shiftCounter}">
+                        <div class="col-md-4">
+                            <input type="time" class="form-control start_time_add" name="start_time_add">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="time" class="form-control end_time_add" name="end_time_add">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Night Shift:</label>
+                            <input type="checkbox" class="nightShiftCheckboxadd" name="night_shift_add">
+                        </div>
+                    </div>`;
+                
+                $('#shiftTimesContainer').append(shiftFields);
+            });
+            
+            // Remove the last added shift time row when clicking the "-" button
+            $('#removeLastShiftField').click(function() {
+                if (shiftCounter > 0) {
+                    $('#shift_' + shiftCounter).remove(); // Remove the last added shift row
+                    shiftCounter--; // Decrease the counter after removal
+                }
+            });
+            
+        });
+</script>
+
+<script>
+    document.getElementById('createShiftButton').addEventListener('click', function() {
+        const shiftContainer = document.getElementById('shiftContainer');
+
+    const shiftCard = document.createElement('div');
+    shiftCard.classList.add('shiftCard');
+    shiftCard.innerHTML = `
+        <div class="row mb-3">
+         <div class="col-md-1">
+            <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
+            <input type="text" value="{{ slot_details.slot_name }}" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
+        </div>
+
+        <div class="col-md-2">
+            <label for="Description" class="form-label">Description<span style="color:red;"> *</span> :</label>
+            <input type="text" value="{{ slot_details.slot_description }}" name="Description" class="form-control" id="Description" placeholder="Enter Description" required>
+        </div>
+            <div class="col-md-2">
+                <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
+                <input type="date" name="shift_date1" class="form-control" placeholder="Select Shift Date">
+            </div>
+
+            <div class="col-md-2">
+                <label for="start_time" class="form-label">Start Time<span style="color:red;"> *</span> :</label>
+                <input type="time" name="start_time1" class="form-control" placeholder="Select Start Time">
+            </div>
+
+            <div class="col-md-2">
+                <label for="end_time" class="form-label">End Time<span style="color:red;"> *</span> :</label>
+                <input type="time" name="end_time1" class="form-control" placeholder="Select End Time">
+            </div>
+              
+            <div class="col-md-1">
+                <label class="form-label">Night Shift:</label>
+                <input type="checkbox" class="nightShiftCheckboxadd" name="night_shift1">
+            </div>
+            
+            <div class="col-md-2">
+                <button type="button" class="btn btn-success btn-sm addShiftField">+</button>
+                <button type="button" class="btn btn-danger btn-sm removeLastShiftField">-</button>
+                <button type="button" class="btn btn-danger btn-sm removeShiftButton">X</button>
+            </div>
+        </div>
+        <div class="shiftTimesContainer"></div>
+
+    `;
+
+    // Append the new shift card to the container
+    shiftContainer.appendChild(shiftCard);
+
+    // Add event listener for the remove button
+    shiftCard.querySelector('.removeShiftButton').addEventListener('click', function() {
+        shiftContainer.removeChild(shiftCard);
+    });
+
+    // Initialize shift counter for the current shift card
+    let shiftCounter = 0;
+
+    // Add shift time fields when clicking the "+" button
+    shiftCard.querySelector('.addShiftField').addEventListener('click', function() {
+        shiftCounter++;
+        const shiftFields = `
+            <div class="row mb-3" id="shift_${shiftCounter}">
+                <div class="col-md-5"></div>
+                <div class="col-md-2">
+                    <input type="time" class="form-control" name="new_start_time_${shiftCounter}" id="new_start_time_${shiftCounter}">
+                </div>
+                <div class="col-md-2">
+                    <input type="time" class="form-control" name="new_end_time_${shiftCounter}" id="new_end_time_${shiftCounter}">
+                </div>
+                <div class="col-md-1">
+                    <label for="nightShiftCheckbox_${shiftCounter}" class="form-label">Night Shift:</label>
+                    <input type="checkbox" id="nightShiftCheckboxadd" name="night_shift_${shiftCounter}">
+                </div>
+            </div>`;
+        
+        // Append the new shift fields to the shiftTimesContainer
+        shiftCard.querySelector('.shiftTimesContainer').insertAdjacentHTML('beforeend', shiftFields);
+    });
+
+    // Remove the last shift time row when clicking the "-" button
+    shiftCard.querySelector('.removeLastShiftField').addEventListener('click', function() {
+        if (shiftCounter > 0) {
+            shiftCard.querySelector('#shift_' + shiftCounter).remove();
+            shiftCounter--;
+        }
+    });
+});
+</script>
+
+<script>
+
+     $(document).ready(function() {
+        $('#submitBtn').click(function(e) {
+            debugger;
+            e.preventDefault(); // Prevent default form submission
+    
+            var slot_id = $('#slot_id').val();
+            var shift_date = $('#shift_date').val();
+            var start_time = $('#start_time').val(); // Initial single start time input
+            var end_time = $('#end_time').val(); // Initial single end time input
+            var night_shift = $('#nightShiftCheckbox').is(':checked') ? 1 : 0; // Initial night shift checkbox
+    
+            var shifts = []; // Array to hold dynamically added shift data
+    
+            // Gather values from dynamically added start and end time fields
+            $('.shiftRow').each(function() {
+                var start_time_add = $(this).find('.start_time_add').val();
+                var end_time_add = $(this).find('.end_time_add').val();
+                var night_shift_add = $(this).find('.nightShiftCheckboxadd').is(':checked') ? 1 : 0;
+    
+                // Only push to the shifts array if both start and end times are provided
+                if (start_time_add && end_time_add) {
+                    shifts.push({
+                        start_time: start_time_add,
+                        end_time: end_time_add,
+                        night_shift: night_shift_add
+                    });
+                }
+            });
+    
+            // Handling the dynamically added shifts in a second format
+            const shifts2 = [];
+            document.querySelectorAll('.shiftCard').forEach(function(card) {
+                const shiftDate = card.querySelector('input[name="shift_date1"]').value;
+                const startTime = card.querySelector('input[name="start_time1"]').value;
+                const endTime = card.querySelector('input[name="end_time1"]').value;
+                const nightShift = card.querySelector('input[name="night_shift1"]').checked ? 1 : 0;
+                
+                // Collect dynamic shift times
+                const shiftTimes = [];
+                card.querySelectorAll('.shiftTimesContainer .row').forEach(function(shiftRow) {
+                    const newStartTime = shiftRow.querySelector('input[name^="new_start_time"]').value;
+                    const newEndTime = shiftRow.querySelector('input[name^="new_end_time"]').value;
+                    const newNightShift = shiftRow.querySelector('input[name^="night_shift"]').checked ? 1 : 0;
+                    
+                    if (newStartTime && newEndTime) {
+                        shiftTimes.push({ newStartTime, newEndTime, newNightShift });
+                    }
+                });
+    
+                shifts2.push({
+                    shiftDate,
+                    startTime,
+                    endTime,
+                    nightShift,
+                    shiftTimes
+                });
+            });
+    
+            // Log the collected data for debugging
+            console.log("Collected Shift Data (shifts):", shifts); 
+            console.log("Collected Shift Data (shifts2):", shifts2);
+    
+            // Sending the collected data via AJAX
+            $.ajax({
+                url: 'post_slot_details',  
+                type: 'POST', 
+                data: {
+                    shift_date: shift_date,
+                    start_time: start_time,
+                    end_time: end_time,
+                    slot_id: slot_id,
+                    night_shift: night_shift,
+                    shifts: JSON.stringify(shifts),
+                    shifts2: JSON.stringify(shifts2),
+                    csrfmiddlewaretoken: '{{ csrf_token }}' // Django CSRF token
+                },
+                success: function(response_data) {
+                    debugger;
+                    const id = response_data.id;  // Get the id from the response
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Shift Details Submitted',
+                        text: 'Your shift details have been successfully submitted!',
+                        showConfirmButton: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirect to the next page after SweetAlert confirmation
+                            window.location.href = `/slot_details?type=setting&id=${id}`; 
+                            document.getElementById('slot_setting_id').value = id;  // Use the id in the URL
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error sending data:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Submission Failed',
+                        text: 'An error occurred while submitting the shift details. Please try again.'
+                    });
+                }
+            });
+        });
+    });
+    
+
+</script>
+<script>
+
+    // Function to get URL parameters
+function getQueryParams() {
+    const params = {};
+    const queryString = window.location.search.substring(1);
+    const regex = /([^&=]+)=([^&]*)/g;
+    let match;
+    while ((match = regex.exec(queryString))) {
+        params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+    }
+    return params;
+}
+
+// Use the function to get the parameters
+const params = getQueryParams();
+const slotSettingId = params.id; // Get the slot_setting_id from the URL
+document.getElementById('slot_setting_id').value = slotSettingId; // Set it in the input field if needed
+
+
+
+</script>
+
+
+ {% endblock %} 

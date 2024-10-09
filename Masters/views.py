@@ -2,10 +2,11 @@ import json
 import pydoc
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render,redirect
+from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
+from Masters.models import *
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
@@ -64,7 +65,7 @@ def masters(request):
                 header = list(result.fetchall())
             cursor.callproc("stp_get_masters",[entity,type,'data',user])
             for result in cursor.stored_results():
-                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user') and type !='err': 
+                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd') and type !='err': 
                     data = []
                     rows = result.fetchall()
                     for row in rows:
@@ -902,5 +903,326 @@ class confirm_notification(APIView):
             return Response({'error': 'notification_log not found.'}, status=404)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+        
+@login_required
+def slot_details(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    user_id  = request.session.get('user_id', '')
 
-    
+    try:
+        if request.method == 'GET':
+            slot_id = request.GET.get('slot_id', '')
+           
+            type = request.GET.get('type','')
+            cursor.callproc("stp_get_dropdown_values",['company'])
+            for result in cursor.stored_results():
+                company_names = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values",('site',))
+            for result in cursor.stored_results():
+                site_names = list(result.fetchall())
+
+            context = {'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
+
+            if slot_id == "0":
+                context = {'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
+            else:
+                slot_idd = decrypt_parameter(slot_id)
+                slot_details = get_object_or_404(SlotDetails, slot_id=slot_idd)
+
+            context = {'slot_details':slot_details,'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
+                
+        elif request.method == 'POST': 
+            type = request.POST.get('type','')
+            user = CustomUser.objects.get(id=user_id)
+            slot_id = request.POST.get('slot_id', '')
+            if slot_id == '0':
+            
+                slot = SlotDetails(
+                    company_id = request.POST.get('company_id', ''),
+                    worksite=request.POST.get('worsite', ''),
+                    slot_name=request.POST.get('slot_name', ''),
+                    slot_description=request.POST.get('Description', ''),
+                    created_by= user
+                    )
+                slot.save()
+
+                id = encrypt_parameter(str(slot.slot_id))  
+
+                messages.success(request, "Slot successfully Created!")
+
+            else:
+                slot_idd = decrypt_parameter(slot_id)
+                slot = get_object_or_404(SlotDetails, slot_id=slot_idd)
+                slot.company_id = request.POST.get('company_id', slot.company_id)
+                slot.worksite = request.POST.get('worsite', slot.worksite)
+                slot.slot_name = request.POST.get('slot_name', slot.slot_name)
+                slot.slot_description = request.POST.get('Description', slot.slot_description)
+                slot.updated_by = user
+                slot.save()
+
+                messages.success(request, "Slot successfully Updated!")
+
+    except Exception as e:
+        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_id)])  # Logging error with traceback and user ID
+        print(f"error: {e}")
+        return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        if request.method=="GET":
+            return render(request, 'Master/slot_details.html', context)
+        elif request.method=="POST" and slot_id == "0":  
+            new_url = f'/slot_details?type=shift&slot_id={id}'
+            return redirect(new_url) 
+        elif request.method=="POST" and slot_id != "0":  
+            new_url = f'/masters?entity=sd&type=i&'
+            return redirect(new_url) 
+
+@login_required 
+def post_slot_details(request):
+    Db.closeConnection()  # Close any previous connections
+    m = Db.get_connection()
+    cursor = m.cursor()
+    user_id = request.session.get('user_id', '')
+    user_idd = CustomUser.objects.get(id=user_id)  # Fetch the user object based on user_id
+
+    try:
+        if request.method == 'POST':
+            # Fetching slot details from request
+            id = request.POST.get('slot_id', '')
+            slot_id = decrypt_parameter(id)
+            slot_idd = SlotDetails.objects.get(slot_id=slot_id)  # Fetch slot details
+
+            # Fetching shift details from the request
+            shift_date = request.POST.get('shift_date', '')
+            start_time = request.POST.get('start_time', '')
+            end_time = request.POST.get('end_time', '')
+            night_shift = request.POST.get('night_shift', '0')  # Default to '0' if not provided
+
+            # Load additional shift data from JSON input
+            shifts_data = json.loads(request.POST.get('shifts', '[]'))  # Extra shifts
+            shifts_data2 = json.loads(request.POST.get('shifts2', '[]'))  # Multi-date shifts
+
+            # Check if no shift data was received
+            if not shift_date and not shifts_data and not shifts_data2:
+                return JsonResponse({'status': 'error', 'message': 'No shift data received.'})
+
+            # Save the main shift if all necessary data is provided
+            if shift_date and start_time and end_time:
+                initial_shift_detail = ShiftDetails(
+                    shift_date=shift_date,
+                    start_time=start_time,
+                    end_time=end_time,
+                    night_shift=bool(int(night_shift)),  # Convert '0'/'1' to boolean
+                    slot_id=slot_idd,  # Reference to SlotDetails
+                    created_by=user_idd  # User reference
+                )
+                initial_shift_detail.save()
+
+            # Save additional shift data from 'shifts_data'
+            for shift in shifts_data:
+                if shift.get('start_time') and shift.get('end_time'):
+                    shift_detail_add = ShiftDetails(
+                        shift_date=shift_date,  # Assuming the same date for dynamic shifts
+                        start_time=shift.get('start_time'),
+                        end_time=shift.get('end_time'),
+                        night_shift=bool(int(shift.get('night_shift', '0'))),  # Safely convert night_shift
+                        slot_id=slot_idd,  # Reference to SlotDetails
+                        created_by=user_idd  # User reference
+                    )
+                    shift_detail_add.save()
+
+            # Save shift data from 'shifts_data2' (with multiple shift dates and times)
+            for shift2 in shifts_data2:
+                if shift2.get('shiftDate') and shift2.get('startTime') and shift2.get('endTime'):
+                    shift_detail_add = ShiftDetails(
+                        shift_date=shift2.get('shiftDate'),
+                        start_time=shift2.get('startTime'),
+                        end_time=shift2.get('endTime'),
+                        night_shift=bool(int(shift2.get('nightShift', '0'))),  # Safely convert night_shift
+                        slot_id=slot_idd,  # Reference to SlotDetails
+                        created_by=user_idd  # User reference
+                    )
+                    shift_detail_add.save()
+
+                # Save additional shift times (newStartTime and newEndTime)
+                for additional_shift in shift2.get('shiftTimes', []):
+                    if additional_shift.get('newStartTime') and additional_shift.get('newEndTime'):
+                        shift_detail_additional = ShiftDetails(
+                            shift_date=shift2.get('shiftDate'),  # Use the same shift date
+                            start_time=additional_shift.get('newStartTime'),
+                            end_time=additional_shift.get('newEndTime'),
+                            night_shift=bool(int(additional_shift.get('newNightShift', '0'))),  # Safely convert night_shift
+                            slot_id=slot_idd,  # Reference to SlotDetails
+                            created_by=user_idd  # User reference
+                        )
+                        shift_detail_additional.save()
+
+            response_data = {
+                'id': id
+            }
+            
+    except Exception as e:
+        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_id)])  # Logging error with traceback and user ID
+        print(f"error: {e}")
+        return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        return JsonResponse(response_data)
+
+@login_required 
+def setting_master(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    user_id  = request.session.get('user_id', '')
+    user = CustomUser.objects.get(id=user_id)
+    try:
+        if request.method == 'POST':
+            id = request.POST.get('slot_setting_id', '')
+            slot_id = decrypt_parameter(id)
+            slot_idd = SlotDetails.objects.get(slot_id=slot_id)
+            notification_start_time = request.POST.get('notification_start_time', '')
+            notification_end_time = request.POST.get('notification_end_time', '')
+            number_of_notifications = request.POST.get('number_of_notifications', '')
+            interval = request.POST.get('notification_interval_hours','')
+
+        notification = SettingMaster(
+            noti_start_time=notification_start_time,
+            noti_end_time=notification_end_time,
+            no_of_notification=number_of_notifications,
+            interval = interval,
+            slot_id= slot_idd,
+            created_by=user
+        )
+        notification.save()
+
+        messages.success(request, "Shift Settings successfully Saved!")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), user])
+        print(f"error: {e}")
+        response = {'result': 'fail', 'message': 'Something went wrong!'}
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        new_url = f'/masters?entity=sd&type=i'
+        return redirect(new_url) 
+
+@login_required  
+def edit_slot_details(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    user_id  = request.session.get('user_id', '')
+    user_idd = CustomUser.objects.get(id=user_id)
+        
+
+    try:
+        if request.method == 'GET':
+            slot_id = request.GET.get('slot_id')
+            slot_idd = decrypt_parameter(slot_id)
+            shift_details = ShiftDetails.objects.filter(slot_id=slot_idd)
+
+            shifts = []
+            for detail in shift_details:
+                shifts.append({
+                    'shift_id':detail.shift_id,
+                    'shift_date': detail.shift_date,
+                    'start_time': detail.start_time,
+                    'end_time': detail.end_time,
+                    'night_shift': detail.night_shift,
+                })
+            setting_detail = SettingMaster.objects.filter(slot_id=slot_idd).first()
+
+            context = {
+                'shifts': shifts,
+                'setting_detail': setting_detail 
+            }
+        if request.method == 'POST':
+            shift_ids = request.POST.getlist('shift_id')
+            shift_dates = request.POST.getlist('shift_date')
+            start_times = request.POST.getlist('start_time')
+            end_times = request.POST.getlist('end_time')
+
+            # Get checkboxes as they will only be submitted if checked
+            night_shifts = request.POST.getlist('night_shift_add')
+
+            for i, shift_id in enumerate(shift_ids):
+                shift = get_object_or_404(ShiftDetails, shift_id=shift_id)
+                shift.shift_date = shift_dates[i]
+                shift.start_time = start_times[i]
+                shift.end_time = end_times[i]
+
+                # Check if this specific shift is in the checked night shifts list
+                shift.night_shift = 1 if str(shift_id) in night_shifts else 0
+
+                shift.save()
+
+
+            # Update Notification settings
+            notification_id = request.POST.get('setting_id')
+            notification = get_object_or_404(SettingMaster, id=notification_id)
+            notification.noti_start_time = request.POST.get('notification_start_time')
+            notification.noti_end_time = request.POST.get('notification_end_time')
+            notification.no_of_notification = request.POST.get('number_of_notifications')
+            notification.interval = request.POST.get('notification_interval_hours')
+            notification.save()
+
+            messages.success(request, "Shift details and notification settings updated successfully.")
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), user])
+        print(f"error: {e}")
+        response = {'result': 'fail', 'message': 'Something went wrong!'}
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        if request.method=="GET":
+            return render(request, 'Master/edit_slot_details.html', context)
+        if request.method=="POST":
+            new_url = f'/masters?entity=sd&type=i'
+            return redirect(new_url) 
+        
+
+def delete_slot(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+
+    try:
+        slot_id = request.POST.get('slot_id')
+        slot_idd = decrypt_parameter(slot_id)
+
+        slots_to_delete = SlotDetails.objects.filter(slot_id=slot_idd)
+
+        if slots_to_delete.exists():
+            slots_to_delete.delete()
+            return JsonResponse({'success': True, 'message': 'Slot successfully deleted!'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No slots found with the specified slot_id.'})
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
+
+        return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
+
+
