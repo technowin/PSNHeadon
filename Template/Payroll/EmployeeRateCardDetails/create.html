@@ -1,0 +1,89 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+{% load static %}
+{% csrf_token %}
+<h1>Create Employee Rate Card Details</h1>
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css" >
+<link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<!-- Include DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+<!-- Include DataTables JS -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<form method="POST">
+    {% csrf_token %}
+    
+    <label for="site_id">Site:</label>
+    <select id="site_id" name="site_id" class="form-control" required>
+        <option value="">Select Site</option>
+        {% for site in sites %}
+        <option value="{{ site.site_id }}">{{ site.site_id__site_name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="card_id">Rate Card:</label>
+    <select id="card_id" name="card_id" class="form-control" required>
+        <option value="">Select Card</option>
+        <!-- This will be populated dynamically -->
+    </select>
+
+    <h2>Select Employees</h2>
+    <table class="table table-striped" id="dt">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select_all"></th>
+                <th>Employee ID</th>
+                <th>Employee Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td><input type="checkbox" name="selected_employees" value="{{ employee.employee_id }}"></td>
+                <td>{{ employee.employee_id }}</td>
+                <td>{{ employee.employee_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<script>
+document.getElementById('site_id').addEventListener('change', function() {
+    var siteId = this.value;
+    // Fetch rate cards dynamically via AJAX
+    fetch(`/get_rate_cards/${siteId}/`)
+    .then(response => response.json())
+    .then(data => {
+        var cardSelect = document.getElementById('card_id');
+        cardSelect.innerHTML = '<option value="">Select Card</option>';  // Clear options
+        data.cards.forEach(function(card) {
+            debugger;
+            var option = document.createElement('option');
+            option.value = card.card_id;
+            option.text = card.card_name;
+            cardSelect.appendChild(option);
+        });
+    });
+});
+
+// Select all checkbox functionality
+document.getElementById('select_all').addEventListener('click', function() {
+    var checkboxes = document.querySelectorAll('input[name="selected_employees"]');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = this.checked;
+    }, this);
+});
+</script>
+
+{% endblock %}

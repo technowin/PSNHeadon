@@ -1,0 +1,71 @@
+{% extends "Shared/Layout.html" %}
+{% block username %}{{ username }}{% endblock %}
+{% block content %}
+{% load static %}
+{% csrf_token %}
+
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create Rate Card</title>
+    <style>
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .checkbox-container {
+            margin-bottom: 10px;
+        }
+        .amount-field {
+            width: 80px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Rate Card</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label>Card Name:</label>
+            {{ form.card_name }}
+        </div>
+        <div>
+            <h4>Select Salary Elements:</h4>
+            {% for item in form.item_ids.field.queryset %}
+                <div class="checkbox-container row">
+
+                    <div class="col-md-3" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <input type="checkbox" name="item_ids" class=" form-control"  value="{{ item.pk }}"  style="font-size: 3px;">
+                        <br>
+                        <label>
+                            {{ item.item_name }}
+                        </label>
+                    </div>
+                    <div class="col-md-2" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <label>
+                            Four Hour Amount
+                        </label>
+                        <input type="number" name="four_hour_amount_{{ item.pk }}" style="width: 90%;" class="amount-field  form-control" placeholder="4-Hour Amount" min="0">
+                    </div>
+                    <div class="col-md-2" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
+                        <label>
+                            Nine Hour Amount
+                        </label>
+                        <input type="number" name="nine_hour_amount_{{ item.pk }}" style="width: 90%;" class="amount-field  form-control" placeholder="9-Hour Amount" min="0">
+                    </div>
+                    
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+        <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+    </form>
+</body>
+</html>
+{% endblock %}

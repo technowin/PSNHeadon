@@ -1,0 +1,46 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>View Rate Card</title>
+    <style>
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table, .table th, .table td {
+            border: 1px solid black;
+        }
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>View Rate Card - {{ rate_card.card_name }}</h1>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Salary Element</th>
+                <th>4-Hour Amount</th>
+                <th>9-Hour Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for element in salary_elements %}
+                <tr>
+                    <td>{{ element.item_name }}</td>
+                    <td>{{ element.four_hour_amount }}</td>
+                    <td>{{ element.nine_hour_amount }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+</body>
+</html>
+{% endblock %}
