@@ -84,8 +84,24 @@ class sc_employee_master(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id =models.TextField(null=True,blank=True)
     employee_name =models.TextField(null=True,blank=True)
+    gender = models.BooleanField(null=True,blank=True,default=True)
+    handicapped = models.BooleanField(null=True,blank=True,default=True)
+    state = models.IntegerField(null=True, blank=False)
+    city = models.TextField(null=True,blank=True)
+    address = models.TextField(null=True,blank=True)
+    pincode  = models.TextField(null=True,blank=True)
     mobile_no =models.TextField(null=True,blank=True)
-    worksite =models.TextField(null=True,blank=True)
+    email = models.TextField(null=True,blank=True)
+    uan_no = models.TextField(null=True,blank=True)
+    pf_no = models.TextField(null=True,blank=True)
+    esic =  models.TextField(null=True,blank=True)
+    bank_name = models.TextField(null=True,blank=True)
+    branch_name = models.TextField(null=True,blank=True)
+    isfc_code =  models.TextField(null=True,blank=True)
+    account_no =  models.TextField(null=True,blank=True)
+    account_holder_name =  models.TextField(null=True,blank=True)
+    worksite = models.TextField(null=True,blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='employee_relation',blank=True, null=True)
     employment_status = models.ForeignKey(parameter_master, on_delete=models.CASCADE,related_name='parameter_data',blank=True, null=True)
     is_active =models.BooleanField(null=True,blank=True,default=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
@@ -179,3 +195,80 @@ class Log(models.Model):
     log_text = models.TextField(null=True,blank=True)
     class Meta:
         db_table = 'logs'
+
+class PoolDetails(models.Model):
+    pool_id = models.AutoField(primary_key=True)
+    pool_name = models.CharField(max_length=100, null=True, blank=True)
+    pool_description =  models.CharField(max_length=200, null=True, blank=True)
+    pool_status = models.BooleanField(null=True,blank=True,default=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pool_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pool_updated',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'pool_details'
+    def __str__(self):
+        return self.name
+    
+class SlotDetails(models.Model):
+    slot_id = models.AutoField(primary_key=True)
+    company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='slot_relation',blank=True, null=True)
+    worksite = models.TextField(null=True,blank=True)
+    slot_name = models.BooleanField(null=True,blank=True,default=True)
+    slot_description = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_updated',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'slot_details'
+    def __str__(self):
+        return self.name
+
+class ShiftDetails(models.Model):
+    shift_id = models.AutoField(primary_key=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='shift_relation',blank=True, null=True ,db_column='slot_id')
+    shift_date = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    start_time = models.TextField(null=True,blank=True)
+    end_time = models.TextField(null=True,blank=True)
+    night_shift = models.BooleanField(null=True,blank=True,default=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='shift_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='shift_updated',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'shift_details'
+    def __str__(self):
+        return self.name
+
+
+class SettingMaster(models.Model):
+    id= models.AutoField(primary_key=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='setting_relation',blank=True, null=True,db_column='slot_id')
+    noti_start_time = models.TextField(null=True,blank=True)
+    noti_end_time = models.TextField(null=True,blank=True)
+    no_of_notification = models.IntegerField(null=True, blank=False)
+    interval = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='setting_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='setting_updated',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'setting_master'
+    def __str__(self):
+        return self.name
+    
+class UserShiftDetails(models.Model):
+    id = models.AutoField(primary_key=True) 
+    employee_id = models.TextField(null=True,blank=True)
+    slot_id = models.TextField(null=True,blank=True) 
+    shift_id = models.TextField(null=True,blank=True)
+    confirmation = models.BooleanField(null=True,blank=True,default=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
+    class Meta:
+        db_table = 'user_shift_details'
+    def __str__(self):
+        return self.name
+       
+
