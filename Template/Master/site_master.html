@@ -82,28 +82,51 @@
                             <label for="site_address" class="form-label">Site Address<span style="color:red;"> *</span> :</label>
                             <input type="text" value="{{ site_address }}" name="siteAddress" class="form-control" id="site_address" placeholder="Enter Address">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
+                   
                         <div class="col-md-3">
-                            <label for="contactPersonName" class="form-label">Contact Person Name<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ contact_person_name }}" name="contactPersonName" class="form-control" id="contactPersonName" placeholder="Enter Contact Person Name">
+                            <label for="state_id" class="form-label">States<span style="color:red;"> *</span> :</label>
+                            <select name="state_id" id="dropdown" class="form-control" required>
+                                {% if id == '0' %}
+                                    <option value="" selected disabled>Select</option>
+                                    {% for item in state_name %}
+                                        <option value="{{ item.0 }}">{{ item.1 }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>Select</option>
+                                    {% for item in state_name %}
+                                        <option value="{{ item.0 }}" {% if item.0 == state_id_value %}selected{% endif %}>{{ item.1 }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
                         </div>
+                        
+                </div> 
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="city" class="form-label">City<span style="color:red;"> *</span> :</label>
+                        <input type="text" value="{{ city }}" name="city" class="form-control" id="city" placeholder="Enter Your City">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pincode" class="form-label">Pincode<span style="color:red;"> *</span> :</label>
+                        <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="pincode" placeholder="Enter Pincode">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="contactPersonName" class="form-label">Contact Person Name<span style="color:red;"> *</span> :</label>
+                        <input type="text" value="{{ contact_person_name }}" name="contactPersonName" class="form-control" id="contactPersonName" placeholder="Enter Contact Person Name">
+                    </div>
                         <div class="col-md-3">
                             <label for="contactPersonEmail" class="form-label">Contact Person Email<span style="color:red;"> *</span> :</label>
                             <input type="email" value="{{ contact_person_email }}" name="contactPersonEmail" class="form-control" id="contactPersonEmail" placeholder="Enter Email">
                         </div>
-                        <div class="col-md-3">
-                            <label for="pincode" class="form-label">Pincode<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="pincode" placeholder="Enter Pincode">
-                        </div>
+                    </div>
+                    <div class="row mb-3">
                         <div class="col-md-3">
                             <label for="Number" class="form-label">Contact Person Mobile<span style="color:red;"> *</span></label>
-                            <input type="number" value="{{ contact_person_mobile_no }}" name="Number" class="form-control" id="Number" placeholder="Enter Mobile Number">
+                            <input type="text" value="{{ contact_person_mobile_no }}" name="Number" class="form-control" id="Number" placeholder="Enter Mobile Number">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
+                    
+                    
+                    {% comment %} <div class="row mb-3"> {% endcomment %}
                         <!--
                         <div class="col-md-3">
                             <label for="FieldDays" class="form-label">Days of Field<span style="color:red;"> *</span> :</label>
@@ -131,14 +154,14 @@
                             </div>
                         {% endif %}
                     </div>
-
+                </div>
                     <div class="text-center">
                         <button type="submit" id="submitBtn" class="btn btn-primary">Submit</button>
                     </div>
                 </form>
             </div>
         </div>
-    </div>
+   
 </body>
 
 <script>
