@@ -35,3 +35,12 @@ class SiteCardRelationForm(forms.ModelForm):
             'card_id': forms.Select(attrs={'class': 'form-control'}),
             'designation_id': forms.Select(attrs={'class': 'form-control'}),
         }
+        
+class SlotAttendanceForm(forms.ModelForm):
+    class Meta:
+        model = slot_attendance_details
+        fields = ['company_id', 'site_id', 'slot_id', 'attendance_date', 'attendance_in', 'attendance_out']
+
+class ExcelUploadForm(forms.Form):
+    excel_file = forms.FileField()        
+        

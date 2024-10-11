@@ -132,5 +132,11 @@ urlpatterns = [
     path('employee_rate_card_view/<int:id>/', employee_rate_card_view, name='employee_rate_card_view'),
     path('employee_rate_card_index', employee_rate_card_index, name='employee_rate_card_index'),
     path('employee_rate_card_create/', employee_rate_card_create, name='employee_rate_card_create'),
+    
+    
+    path('attendance_index', attendance_index, name='attendance_index'),
+    path('attendance/create', upload_attendance, name='create_attendance'),
+    path('get_sites', get_sites, name='get_sites'),
+    path('get_slots', get_slots, name='get_slots'),
 
 ]

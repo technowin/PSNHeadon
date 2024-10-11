@@ -7,6 +7,9 @@ from Masters.models import sc_employee_master
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
+
+import pandas as pd
+
 # Index (list all salary elements)
 @login_required
 def index(request):
@@ -333,6 +336,51 @@ def employee_rate_card_view(request, id):
 
 
 
+
+@login_required
+def attendance_index(request):
+    attendance_records = slot_attendance_details.objects.all()
+    return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records})
+
+@login_required
+def upload_attendance(request):
+    if request.method == 'POST':
+        excel_form = ExcelUploadForm(request.POST, request.FILES)
+        if excel_form.is_valid():
+            excel_file = request.FILES['excel_file']
+            data = pd.read_excel(excel_file)
+            
+            for index, row in data.iterrows():
+                attendance = slot_attendance_details(
+                    company_id=request.POST['company_id'],
+                    site_id=request.POST['site_id'],
+                    slot_id=request.POST['slot_id'],
+                    attendance_date=row['attendance_date'],
+                    employee_id=row['employee_id'],
+                    attendance_in=row['attendance_in'],
+                    attendance_out=row['attendance_out'],
+                )
+                attendance.save()
+            messages.success(request, 'Attendance records uploaded successfully.')
+            return redirect('attendance_index')
+
+    else:
+        excel_form = ExcelUploadForm()
+
+    return render(request, 'Payroll/Attendance/create.html', {
+        'excel_form': excel_form,
+        'companies': company_master.objects.all()
+    })
+@login_required
+def get_sites(request):
+    company_id = request.GET.get('company_id')
+    sites = site_master.objects.filter(company_id=company_id).values('site_id', 'site_name')
+    return JsonResponse(list(sites), safe=False)
+@login_required
+def get_slots(request):
+    site_id = request.GET.get('site_id')
+    slots = SlotDetails.objects.filter(site_id=site_id).values('slot_id', 'slot_name')
+    return JsonResponse(list(slots), safe=False)
 
 
 

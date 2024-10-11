@@ -1,0 +1,96 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+{% load static %}
+{% csrf_token %}
+<h1>Create Employee Rate Card Details</h1>
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css" >
+<link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<!-- Include DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+<!-- Include DataTables JS -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Attendance</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>Upload Attendance</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ excel_form.as_p }}
+        <label for="company_id">Company:</label>
+        <select id="company_id" name="company_id">
+            <option value="">Select Company</option>
+            {% for company in companies %}
+            <option value="{{ company.id }}">{{ company.company_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="site_id">Site:</label>
+        <select id="site_id" name="site_id">
+            <option value="">Select Site</option>
+        </select>
+
+        <label for="slot_id">Slot:</label>
+        <select id="slot_id" name="slot_id">
+            <option value="">Select Slot</option>
+        </select>
+
+        <button type="submit">Upload</button>
+    </form>
+
+    <script>
+        $(document).ready(function() {
+            $('#company_id').change(function() {
+                var company_id = $(this).val();
+                $.ajax({
+                    url: '{% url "get_sites" %}',
+                    data: {
+                        'company_id': company_id
+                    },
+                    success: function(data) {
+                        $('#site_id').empty();
+                        $('#site_id').append('<option value="">Select Site</option>');
+                        $.each(data, function(index, site) {
+                            $('#site_id').append('<option value="' + site.site_id + '">' + site.site_name + '</option>');
+                        });
+                    }
+                });
+            });
+
+            $('#site_id').change(function() {
+                var site_id = $(this).val();
+                $.ajax({
+                    url: '{% url "get_slots" %}',
+                    data: {
+                        'site_id': site_id
+                    },
+                    success: function(data) {
+                        $('#slot_id').empty();
+                        $('#slot_id').append('<option value="">Select Slot</option>');
+                        $.each(data, function(index, slot) {
+                            $('#slot_id').append('<option value="' + slot.slot_id + '">' + slot.slot_name + '</option>');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+{% endblock %}

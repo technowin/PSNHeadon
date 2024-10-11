@@ -1,0 +1,49 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+<h1>View Employee Rate Card Details</h1>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Site Name</th>
+        <td>{{ rate_card_detail.card_id.site_id.site_name }}</td>
+    </tr>
+    <tr>
+        <th>Rate Card</th>
+        <td>{{ rate_card_detail.card_id.card_name }} - {{ rate_card_detail.card_id.pay_type }} - {{ rate_card_detail.card_id.classification }}</td>
+    </tr>
+    <tr>
+        <th>Employee ID</th>
+        <td>{{ rate_card_detail.employee_id }}</td>
+    </tr>
+    <tr>
+        <th>Item Name</th>
+        <td>{{ rate_card_detail.item_name }}</td>
+    </tr>
+    <tr>
+        <th>Pay Type</th>
+        <td>{{ rate_card_detail.pay_type }}</td>
+    </tr>
+    <tr>
+        <th>Classification</th>
+        <td>{{ rate_card_detail.classification }}</td>
+    </tr>
+    <tr>
+        <th>Four Hour Amount</th>
+        <td>{{ rate_card_detail.four_hour_amount }}</td>
+    </tr>
+    <tr>
+        <th>Nine Hour Amount</th>
+        <td>{{ rate_card_detail.nine_hour_amount }}</td>
+    </tr>
+    <tr>
+        <th>Created By</th>
+        <td>{{ rate_card_detail.created_by }}</td>
+    </tr>
+    <tr>
+        <th>Created At</th>
+        <td>{{ rate_card_detail.created_at }}</td>
+    </tr>
+</table>
+
+<a href="{% url 'employee_rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+{% endblock %}

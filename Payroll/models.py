@@ -1,8 +1,7 @@
 from django.db import models
 
 from Account.models import CustomUser
-from Masters.models import company_master, site_master
-from Masters.views import slot_details
+from Masters.models import SlotDetails, company_master, site_master
 
 # Create your models here.
 class salary_element_master(models.Model):
@@ -100,9 +99,10 @@ class slot_attendance_details(models.Model):
     id = models.AutoField(primary_key=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='attendance_company_id',blank=True, null=True,db_column='company_id')
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='attendance_site_id',blank=True, null=True,db_column='site_id')
-    slot_id = models.ForeignKey(slot_details, on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
     attendance_date = models.DateTimeField(null=True,blank=True)
     attendance_in = models.TextField(null=True,blank=True)
+    employee_id = models.TextField(max_length=250,null=True,blank=True)
     attendance_out = models.TextField(null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_attendance_created_by',blank=True, null=True,db_column='created_by')
