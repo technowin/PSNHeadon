@@ -77,6 +77,10 @@ def masters(request):
             cursor.callproc("stp_get_dropdown_values",['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['site'])
+            for result in cursor.stored_results():
+                site_name = list(result.fetchall())
+            
             if entity == 'r' and type == 'i':
                 cursor.callproc("stp_get_assigned_company",[user])
                 for result in cursor.stored_results():
@@ -170,7 +174,7 @@ def masters(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'data':data,'pre_url':pre_url})
+            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'site_name':site_name,'data':data,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters?entity={entity}&type={type}'
             return redirect(new_url) 
@@ -351,10 +355,13 @@ def site_master(request):
             cursor.callproc("stp_get_company_names")
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('states',))
+            for result in cursor.stored_results():
+                state_name = list(result.fetchall())
             site_id = request.GET.get('site_id', '')
             if site_id == "0":
                 if request.method == "GET":
-                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id}
+                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id,'state_name':state_name}
 
             else:
                 site_id1 = request.GET.get('site_id', '')
@@ -365,19 +372,23 @@ def site_master(request):
                     context = {
                         'roster_types':roster_types,
                         'company_names':company_names,
+                        'state_name':state_name,
                         'site_id' : data[0],
                         'site_name': data[1],
                         'site_address': data[2],
                         'pincode': data[3],
-                        'contact_person_name': data[4],
-                        'contact_person_email': data[5], 
-                        'contact_person_mobile_no': data[6],
-                        'is_active':data[7],
-                        'no_of_days': data[8],               
-                        'notification_time': data[9],
-                        'reminder_time': data[10],
-                        'company_name' :data[11],
-                        'roster_type': data[13]
+                        'city':data[4],
+                        'contact_person_name': data[5],
+                        'contact_person_email': data[6], 
+                        'contact_person_mobile_no': data[7],
+                        'is_active':data[8],
+                        'no_of_days': data[9],               
+                        'notification_time': data[10],
+                        'reminder_time': data[11],
+                        'company_name' :data[12],
+                        'state_names' :data[13],
+                        'roster_type': data[14]
+                        
                     }
 
         if request.method == "POST":
@@ -388,6 +399,7 @@ def site_master(request):
                 siteName = request.POST.get('siteName', '')
                 siteAddress = request.POST.get('siteAddress', '')
                 pincode = request.POST.get('pincode', '')
+                city = request.POST.get('city', '')
                 contactPersonName = request.POST.get('contactPersonName', '')
                 contactPersonEmail = request.POST.get('contactPersonEmail', '')
                 contactPersonMobileNo = request.POST.get('Number', '')  
@@ -395,13 +407,15 @@ def site_master(request):
                 # noOfDays = request.POST.get('FieldDays', '')  
                 # notificationTime = request.POST.get('notificationTime', '')
                 # ReminderTime = request.POST.get('ReminderTime', '')
-                companyId = request.POST.get('company_id', '')  
+                companyId = request.POST.get('company_id', '') 
+                stateId = request.POST.get('state', '') 
                 # rosterType = request.POST.get('roster_type', '')
                
                 params = [
                     siteName, 
                     siteAddress, 
                     pincode, 
+                    city,
                     contactPersonName, 
                     contactPersonEmail, 
                     contactPersonMobileNo, 
@@ -409,7 +423,8 @@ def site_master(request):
                     # noOfDays, 
                     # notificationTime, 
                     # ReminderTime, 
-                    companyId
+                    companyId,
+                    stateId
                     # rosterType
                 ]
                 
@@ -425,6 +440,7 @@ def site_master(request):
                     siteName = request.POST.get('siteName', '')
                     siteAddress = request.POST.get('siteAddress', '')
                     pincode = request.POST.get('pincode', '')
+                    city = request.POST.get('city', '')
                     contactPersonName = request.POST.get('contactPersonName', '')
                     contactPersonEmail = request.POST.get('contactPersonEmail', '')
                     contactPersonMobileNo = request.POST.get('Number', '')  
@@ -433,10 +449,11 @@ def site_master(request):
                     # notificationTime = request.POST.get('notificationTime', '')
                     # ReminderTime = request.POST.get('ReminderTime', '')
                     CompanyId = request.POST.get('company_id', '')
+                    stateId = request.POST.get('state', '') 
                     # Rostertype = request.POST.get('roster_type', '')
                     
-                    params = [siteId,siteName,siteAddress,pincode,contactPersonName,contactPersonEmail,
-                                        contactPersonMobileNo,isActive,CompanyId]
+                    params = [siteId,siteName,siteAddress,pincode, city ,contactPersonName,contactPersonEmail,
+                                        contactPersonMobileNo,isActive,CompanyId,stateId]
                     cursor.callproc("stp_update_site_master",params) 
                     messages.success(request, "Data updated successfully...!")
 
@@ -554,7 +571,8 @@ def employee_master(request):
     m = Db.get_connection()
     cursor=m.cursor()
     global user
-    user  = request.session.get('user_id', '')
+    # user_id = request.session.get('user_id', '')
+    # user = CustomUser.objects.get(id=user_id)
     try:
         
         if request.method == "GET":
@@ -567,9 +585,18 @@ def employee_master(request):
             cursor.callproc("stp_get_dropdown_values",('site',))
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('company',))
+            for result in cursor.stored_results():
+                company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('states',))
+            for result in cursor.stored_results():
+                state_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('gender',))
+            for result in cursor.stored_results():
+                gender = list(result.fetchall())
             if id == "0":
                 if request.method == "GET":
-                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name}
+                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name,'gender':gender ,'company_names':company_names,'state_name':state_name}
 
             else:
                 id1 = request.GET.get('id', '')
@@ -578,15 +605,35 @@ def employee_master(request):
                 for result in cursor.stored_results():
                     data = result.fetchall()[0]  
                     context = {
+                        'id':id, 
+                        'employee_status':employee_status, 
+                        # 'employee_status_id': '',
                         'site_name':site_name,
+                        'gender':gender ,
+                        'company_names':company_names,
+                        'state_name':state_name,
                         'employee_status':employee_status,
-                        'id':data[0],
-                        'employee_id' : data[1],
-                        'employee_name': data[2],
-                        'mobile_no': data[3],
-                        'site_name_value': data[4],
-                        'employee_status_id': data[5],
-                        'is_active': data[6]
+                        'employee_id' : data[0],
+                        'employee_name': data[1],
+                        'mobile_no': data[2],
+                        'site_name_value':data[5],
+                        'is_active': data[20],
+                        'employee_status_id': str(data[19]),
+                        'account_holder_name':data[10],
+                        'account_no':data[11],
+                        'address':data[8],
+                        'bank_name':data[12],
+                        'branch_name':data[13],
+                        'city':data[7],
+                        'company_names':data[7],
+                        'email':data[3],
+                        'esic':data[17],
+                        'gender_value': data[4],
+                        'handicapped_value': data[4],
+                        'ifsc_code':data[14],
+                        'pf_no':data[15],
+                        'pincode':data[10],
+                        'uan_no':data[16], 
                     }
 
         if request.method == "POST" :
@@ -595,16 +642,49 @@ def employee_master(request):
 
                 employeeId = request.POST.get('employee_id', '')
                 employeeName = request.POST.get('employee_name', '')
-                mobileNo = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
+                mobile_no = request.POST.get('mobile_no', '')
+                email= request.POST.get('email', '')
+                worksite1 = request.POST.get('site_name', '')
+                gender = request.POST.get('gender', '')
+                handicapped = request.POST.get('handicapped', '')
+                address = request.POST.get('address', '')
+                city = request.POST.get('city', '')
+                state1 = request.POST.get('state_id', '')
+                pincode = request.POST.get('pincode', '')
+                company_id1 = request.POST.get('company_id', '')
+                account_holder_name = request.POST.get('account_holder_name', '')
+                account_no = request.POST.get('account_no', '')
+                bank_name = request.POST.get('bank_name', '')
+                branch_name = request.POST.get('branch_name', '')
+                ifsc_code = request.POST.get('ifsc_code', '')
+                pf_no = request.POST.get('pf_no', '')
+                uan_no = request.POST.get('uan_no', '')
+                esic = request.POST.get('esic', '')
                 # employeeStatus = request.POST.get('employee_status_name', '')
                 # activebtn = request.POST.get('status_value', '')
 
                 params = [
                     employeeId, 
                     employeeName, 
-                    mobileNo, 
-                    site_name
+                    mobile_no,
+                    email, 
+                    worksite1,
+                    gender,
+                    handicapped,
+                    address,
+                    city,
+                    state1,
+                    pincode,
+                    company_id1,
+                    account_holder_name,
+                    account_no,
+                    bank_name,
+                    branch_name,
+                    ifsc_code,
+                    pf_no,
+                    uan_no,
+                    esic
+                    
                     # employeeStatus,
                     # activebtn
                 ]
@@ -616,15 +696,31 @@ def employee_master(request):
                     messages.success(request, 'Data successfully entered !')
                 else: messages.error(request, datalist[0][0])
             else:
-                id = request.POST.get('id', '')
+                # id = request.POST.get('id', '')
                 employee_id = request.POST.get('employee_id', '')
                 employee_name = request.POST.get('employee_name', '')
                 mobile_no = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
-                employee_status = request.POST.get('employee_status_name', '')
-                is_active = request.POST.get('status_value', '')  
+                email = request.POST.get('email', '')
+                worksite1 = request.POST.get('site_name', '')
+                gender = request.POST.get('gender', '')
+                handicapped = request.POST.get('handicapped', '')
+                address = request.POST.get('address', '')
+                city = request.POST.get('city', '')
+                state1 = request.POST.get('state_id', '')
+                pincode = request.POST.get('pincode', '')
+                company_id1 = request.POST.get('company_id', '')
+                account_holder_name = request.POST.get('account_holder_name', '')
+                account_no = request.POST.get('account_no', '')
+                bank_name = request.POST.get('bank_name', '')
+                branch_name = request.POST.get('branch_name', '')
+                ifsc_code = request.POST.get('ifsc_code', '')
+                pf_no = request.POST.get('pf_no', '')
+                uan_no = request.POST.get('uan_no', '')
+                esic = request.POST.get('esic', '')
+                # employee_status = request.POST.get('employee_status_name', '')
+                # is_active = request.POST.get('status_value', '')  
                             
-                params = [id,employee_id,employee_name,mobile_no,site_name,employee_status,is_active]    
+                params = [employee_id,employee_name,mobile_no,email,worksite1, gender,handicapped,address,state1,city,pincode,company_id1,account_holder_name,account_no,bank_name,branch_name,ifsc_code,pf_no,uan_no,esic]    
                 cursor.callproc("stp_update_employee_master",params) 
                 messages.success(request, "Data successfully Updated!")
 
@@ -646,7 +742,7 @@ def employee_master(request):
 @login_required  
 def upload_excel(request):
 
-    if request.method == 'POST' and request.FILES.get('excelFile'):
+     if request.method == 'POST' and request.FILES.get('excelFile'):
         excel_file = request.FILES['excelFile']
         file_name = excel_file.name
         df = pd.read_excel(excel_file)
@@ -663,21 +759,26 @@ def upload_excel(request):
             entity = request.POST.get('entity', '')
             type = request.POST.get('type', '')
             company_id = request.POST.get('company_id', None)
+            site_id = request.POST.get('site_id', None)
+            state_id=request.POST.get('state_id', None)
             cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
             for result in cursor.stored_results():
                 columns = [col[0] for col in result.fetchall()]
-            if not all(col in df.columns for col in columns):
-                messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
-                return redirect(f'/masters?entity={entity}&type={type}')
+            # if not all(col in df.columns for col in columns):
+            #     messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
+            #     return redirect(f'/masters?entity={entity}&type={type}')
             upload_for = {'em': 'employee master','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
-            cursor.callproc('stp_insert_checksum', (upload_for,company_id,str(datetime.now().month),str(datetime.now().year),file_name))
+            cursor.callproc('stp_insert_checksum', (upload_for,company_id,site_id,str(datetime.now().month),str(datetime.now().year),file_name))
             for result in cursor.stored_results():
                 c = list(result.fetchall())
             checksum_id = c[0][0]
 
+
+
             if entity == 'em':
                 for index,row in df.iterrows():
                     params = tuple(str(row.get(column, '')) for column in columns)
+                    params += (str(company_id),(site_id),(state_id))
                     cursor.callproc('stp_insert_employee_master', params)
                     for result in cursor.stored_results():
                             r = list(result.fetchall())
@@ -1227,3 +1328,97 @@ def delete_slot(request):
         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
 
 
+@login_required        
+def slot_details(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+        
+        if request.method == "GET":
+            id = request.GET.get('id', '')
+            
+
+            cursor.callproc("stp_get_employee_status")
+            for result in cursor.stored_results():
+                employee_status = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('site',))
+            for result in cursor.stored_results():
+                site_name = list(result.fetchall())
+            if id == "0":
+                if request.method == "GET":
+                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name}
+
+            else:
+                id1 = request.GET.get('id', '')
+                id = decrypt_parameter(id1)
+                cursor.callproc("stp_edit_employee_master", (id,))
+                for result in cursor.stored_results():
+                    data = result.fetchall()[0]  
+                    context = {
+                        'site_name':site_name,
+                        'employee_status':employee_status,
+                        'id':data[0],
+                        'employee_id' : data[1],
+                        'employee_name': data[2],
+                        'mobile_no': data[3],
+                        'site_name_value': data[4],
+                        'employee_status_id': data[5],
+                        'is_active': data[6]
+                    }
+
+        if request.method == "POST" :
+            id = request.POST.get('id', '')
+            if id == '0':
+
+                employeeId = request.POST.get('employee_id', '')
+                employeeName = request.POST.get('employee_name', '')
+                mobileNo = request.POST.get('mobile_no', '')
+                site_name = request.POST.get('site_name', '')
+                # employeeStatus = request.POST.get('employee_status_name', '')
+                # activebtn = request.POST.get('status_value', '')
+
+                params = [
+                    employeeId, 
+                    employeeName, 
+                    mobileNo, 
+                    site_name
+                    # employeeStatus,
+                    # activebtn
+                ]
+                
+                cursor.callproc("stp_insert_employee_master", params)
+                for result in cursor.stored_results():
+                        datalist = list(result.fetchall())
+                if datalist[0][0] == "success":
+                    messages.success(request, 'Data successfully entered !')
+                else: messages.error(request, datalist[0][0])
+            else:
+                id = request.POST.get('id', '')
+                employee_id = request.POST.get('employee_id', '')
+                employee_name = request.POST.get('employee_name', '')
+                mobile_no = request.POST.get('mobile_no', '')
+                site_name = request.POST.get('site_name', '')
+                employee_status = request.POST.get('employee_status_name', '')
+                is_active = request.POST.get('status_value', '')  
+                            
+                params = [id,employee_id,employee_name,mobile_no,site_name,employee_status,is_active]    
+                cursor.callproc("stp_update_employee_master",params) 
+                messages.success(request, "Data successfully Updated!")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        if request.method=="GET":
+            return render(request, "Master/slot_details.html", context)
+        elif request.method=="POST":  
+            return redirect(f'/masters?entity=sd&type=i')

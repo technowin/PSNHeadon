@@ -108,49 +108,108 @@
 <div class="modal fade" id="excel_upload">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" style="color:black">
-            {% if entity == 'sm' %} Site Upload
-            {% elif entity == 'cm' %} Company Upload
-            {% elif entity == 'em' %} Employee Upload
-            {% endif %}
-          </h5>
-          <button type="button" class="close" data-dismiss="modal"> <span>&times;</span></button>
-        </div>
-        <div class="modal-body">
-         
-           <form  class="formupl" id="uploadForm" method="POST" enctype="multipart/form-data" 
-                 action="{% url 'upload_excel' %}">
-                {% csrf_token %}
-                <input type="hidden" name="entity" value="{{ entity }}">
-                <input type="hidden" name="type" value="{{ type }}">
-                {% if entity == 'sm' %}
-                <div class="d-flex justify-content-center align-items-center">
-                  <div class="col-md-6 mb-3">
-                    <label for="company_id" class="form-label">Company</label>
-                    <select id="company_id" name="company_id" class="form-control" required>
-                      <option value="" selected>Select</option>
-                      {% for item in company_names %}
-                      <option value="{{ item.0 }}">{{ item.1 }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-                <hr>
-                {% endif %}
-                <span class="formupl-title">Upload your file</span>
-                <p class="formupl-paragraph">File should be an Excel</p>
-                <label for="excelFile" class="drop-container">
-                  <span class="drop-title">Drop files here</span>
-                  or
-                  <input type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
-                </label>
-           </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary" form="uploadForm">Upload</button>
-        </div>
+      <div class="modal-header">
+        <h5 class="modal-title" style="color:black">
+          {% if entity == 'sm' %} Site Upload
+          {% elif entity == 'cm' %} Company Upload
+          {% elif entity == 'em' %} Employee Upload
+          {% endif %}
+        </h5>
+        <button type="button" class="close" data-dismiss="modal"> <span>&times;</span></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Single Form -->
+        <form class="formupl" id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'upload_excel' %}">
+          {% csrf_token %}
+          <input type="hidden" name="entity" value="{{ entity }}">
+          <input type="hidden" name="type" value="{{ type }}">
+
+          <!-- Conditional Company dropdown for 'Site Upload' -->
+          {% if entity == 'sm' %}
+          <div class="d-flex justify-content-center align-items-center">
+            <div class="col-md-6 mb-3">
+              <label for="company_id" class="form-label">Company</label>
+              <select id="company_id" name="company_id" class="form-control" required>
+                <option value="" selected>Select</option>
+                {% for item in company_names %}
+                <option value="{{ item.0 }}">{{ item.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <hr>
+          {% endif %}
+
+          <!-- Conditional dropdowns for 'Employee Upload' -->
+          {% comment %} {% if entity == 'em' %}
+          <div class="row d-flex justify-content-center align-items-center">
+            <div class="col-md-6 mb-3">
+              <label for="company_id" class="form-label">Company</label>
+              <select id="company_id" name="company_id" class="form-control" required>
+                <option value="" selected>Select</option>
+                {% for item in company_names %}
+                <option value="{{ item.0 }}">{{ item.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+        
+            <div class="col-md-6 mb-3">
+              <label for="site_id" class="form-label">Worksite</label>
+              <select id="site_id" name="site_id" class="form-control" required>
+                <option value="" selected>Select</option>
+                {% for item in site_name %}
+                <option value="{{ item.0 }}">{{ item.1 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <hr>
+        {% endif %} {% endcomment %}
+        
+        {% if entity == 'em' %}
+  <div class="row d-flex justify-content-center align-items-center">
+    <!-- Company Dropdown -->
+    <div class="col-md-6 mb-3">
+      <label for="company_id" class="form-label" style="font-weight: bold;">Company</label>
+      <select id="company_id" name="company_id" class="form-control" required>
+        <option value="" selected>Select</option>
+        {% for item in company_names %}
+        <option value="{{ item.0 }}">{{ item.1 }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Worksite Dropdown -->
+    <div class="col-md-6 mb-3">
+      <label for="site_id" class="form-label" style="font-weight: bold;">Worksite</label>
+      <select id="site_id" name="site_id" class="form-control" required>
+        <option value="" selected>Select</option>
+        {% for item in site_name %}
+        <option value="{{ item.0 }}">{{ item.1 }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <hr>
+{% endif %}
+
+
+          <!-- File Upload Section -->
+          <span class="formupl-title">Upload your file</span>
+          <p class="formupl-paragraph">File should be an Excel</p>
+          <label for="excelFile" class="drop-container">
+            <span class="drop-title">Drop files here</span>
+            or
+            <input type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+          </label>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary" form="uploadForm">Upload</button>
+      </div>
     </div>
   </div>
 </div>
