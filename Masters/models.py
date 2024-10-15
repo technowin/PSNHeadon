@@ -230,7 +230,7 @@ class SlotDetails(models.Model):
     class Meta:
         db_table = 'slot_details'
     def __str__(self):
-        return self.name
+        return self.slot_name
 
 class ShiftDetails(models.Model):
     shift_id = models.AutoField(primary_key=True)
