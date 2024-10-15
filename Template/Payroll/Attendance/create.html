@@ -2,7 +2,6 @@
 {% block content %}
 {% load static %}
 {% csrf_token %}
-<h1>Create Employee Rate Card Details</h1>
 <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
@@ -26,29 +25,48 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <h1>Upload Attendance</h1>
+    <h1 >Upload Attendance</h1>
+    <br>
+    <br>
+    <br>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ excel_form.as_p }}
+        <div class="row">
+            <div class="col-md-4">
         <label for="company_id">Company:</label>
-        <select id="company_id" name="company_id">
-            <option value="">Select Company</option>
-            {% for company in companies %}
-            <option value="{{ company.id }}">{{ company.company_name }}</option>
-            {% endfor %}
-        </select>
 
-        <label for="site_id">Site:</label>
-        <select id="site_id" name="site_id">
-            <option value="">Select Site</option>
-        </select>
+                <select class="form-control" id="company_id" name="company_id">
+                    <option value="">Select Company</option>
+                    {% for company in companies %}
+                    <option value="{{ company.company_id }}">{{ company.company_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="site_id">Site:</label>
+                <select id="site_id" class="form-control" name="site_id">
+                    <option value="">Select Site</option>
+                </select>
+        
+            </div>
+            <div class="col-md-4">
+                <label for="slot_id">Slot:</label>
+                <select id="slot_id" name="slot_id" class="form-control">
+                    <option value="">Select Slot</option>
+                </select>
+            </div>
+        </div>
+    
 
-        <label for="slot_id">Slot:</label>
-        <select id="slot_id" name="slot_id">
-            <option value="">Select Slot</option>
-        </select>
+       <br>
 
-        <button type="submit">Upload</button>
+       
+<div  style="text-align: center;">
+    <button type="submit" class="btn btn-primary">UPLOAD</button>
+
+</div>
     </form>
 
     <script>
@@ -61,6 +79,7 @@
                         'company_id': company_id
                     },
                     success: function(data) {
+                        console.log(data);
                         $('#site_id').empty();
                         $('#site_id').append('<option value="">Select Site</option>');
                         $.each(data, function(index, site) {

@@ -32,6 +32,7 @@
   <table id="dataTable">
       <tr>
           <th>ID</th>
+          <th>Employee ID</th>
           <th>Company</th>
           <th>Site</th>
           <th>Slot</th>
@@ -43,16 +44,16 @@
       {% for record in attendance_records %}
       <tr>
           <td>{{ record.id }}</td>
+          <td>{{ record.employee_id }}</td>
           <td>{{ record.company_id }}</td>
           <td>{{ record.site_id }}</td>
           <td>{{ record.slot_id }}</td>
           <td>{{ record.attendance_date }}</td>
           <td>{{ record.attendance_in }}</td>
           <td>{{ record.attendance_out }}</td>
-          <!-- <td>
-            <a href="{% url 'employee_rate_card_edit' rate_card.id %}">Edit</a> |
-            <a href="{% url 'employee_rate_card_view' rate_card.id %}">View</a>
-        </td> -->
+          <td>
+          
+        </td>
       </tr>
       {% endfor %}
   </table>

@@ -349,12 +349,14 @@ def upload_attendance(request):
         if excel_form.is_valid():
             excel_file = request.FILES['excel_file']
             data = pd.read_excel(excel_file)
-            
+            comp = company_master.objects.get(company_id=request.POST['company_id'])
+            site = site_master.objects.get(site_id=request.POST['site_id'])
+            slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
             for index, row in data.iterrows():
                 attendance = slot_attendance_details(
-                    company_id=request.POST['company_id'],
-                    site_id=request.POST['site_id'],
-                    slot_id=request.POST['slot_id'],
+                    company_id= comp ,
+                    site_id= site,
+                    slot_id= slot,
                     attendance_date=row['attendance_date'],
                     employee_id=row['employee_id'],
                     attendance_in=row['attendance_in'],

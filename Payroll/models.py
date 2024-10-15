@@ -75,6 +75,7 @@ class site_card_relation(models.Model):
     updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='site_role_card_updated_by',blank=True, null=True,db_column='updated_by')
     class Meta:
+        unique_together=['site_id','card_id','designation_id']
         db_table = 'site_card_relation'
 class employee_rate_card_details(models.Model):
     id = models.AutoField(primary_key=True)
@@ -112,5 +113,14 @@ class slot_attendance_details(models.Model):
         db_table = 'slot_attendance_details'  
 
     
-     
+class slot_employee_details(models.Model)     :
+    id = models.AutoField(primary_key=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='employee_slot_id',blank=True, null=True,db_column='slot_id')
+    employee_id = models.TextField(max_length=250,null=True,blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_employee_created_by',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_employee_updated_by',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'slot_employee_details'  
     
