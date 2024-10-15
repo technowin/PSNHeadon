@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
 from Masters.models import *
+from datetime import date
 from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
 import Db 
@@ -937,7 +938,7 @@ def slot_details(request):
 
             context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type}
         
-            messages.success(request, "Slot successfully created!")
+            # messages.success(request, "Slot successfully created!")
             
 
     except Exception as e:
@@ -1159,12 +1160,20 @@ def edit_slot_details(request):
             company_id = request.POST.get('company_id')
             slot_name = request.POST.get('slot_name')
             description = request.POST.get('description')
-            shift_date = request.POST.get('shift_date')
+            shift_date  = request.POST.get('shift_date')
             start_time = request.POST.get('start_time')
             end_time = request.POST.get('end_time')
             night_shift = 1 if request.POST.get('night_shift') == 'on' else 0
 
+            current_date = date.today()  # Get the current date
 
+            setting = get_object_or_404(SettingMaster, slot_id=slot_id)
+            noti_start_time = setting.noti_start_time  
+
+            if current_date > noti_start_time:  # Compare current date with noti_start_time
+                messages.error(request, "You Cannot Update Data as Notification Time has Started.")
+                return
+                
             slot_data.company_id = company_id
             slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id', ''))
             slot_data.slot_name = slot_name
@@ -1208,10 +1217,18 @@ def delete_slot(request):
         slot_idd = decrypt_parameter(slot_id)
 
         slots_to_delete = SlotDetails.objects.filter(slot_id=slot_idd)
+        setting = get_object_or_404(SettingMaster, slot_id=slot_idd)
+        noti_start_time = setting.noti_start_time  
+
+        current_date = date.today()
+
+        if current_date >= noti_start_time:  
+            return JsonResponse({'success': False, 'message': 'Slot Cannot be deleted,Because Notification time has begun!'})
 
         if slots_to_delete.exists():
             slots_to_delete.delete()
-            return JsonResponse({'success': True, 'message': 'Slot successfully deleted!'})
+            setting.delete()
+            return JsonResponse({'success': True, 'message': 'Slot  and its setttings successfully deleted!'})
         else:
             return JsonResponse({'success': False, 'message': 'No slots found with the specified slot_id.'})
 
@@ -1220,3 +1237,33 @@ def delete_slot(request):
         cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
 
         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
+    
+
+def deactivate_slot(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            slot_id = request.POST.get('slot_id')
+            slot_idd = decrypt_parameter(slot_id)
+            reason = request.POST.get('reason', '') 
+
+            slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
+            slot_detail.is_active = 0
+            slot_detail.messege = reason 
+            slot_detail.save()
+
+            return JsonResponse({'message': 'Slot deactivated successfully.'})
+    except SlotDetails.DoesNotExist:
+        return JsonResponse({'message': 'Slot ID not found.'}, status=404)
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+        return JsonResponse({'message': str(e)}, status=500)
+    
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()

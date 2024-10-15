@@ -77,6 +77,7 @@ urlpatterns = [
     path("setting_master",setting_master, name="setting_master"),
     path("edit_slot_details",edit_slot_details, name="edit_slot_details"),
     path("delete_slot",delete_slot, name="delete_slot"),
+    path("deactivate_slot",deactivate_slot, name="deactivate_slot"),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

@@ -223,6 +223,8 @@ class SlotDetails(models.Model):
     start_time = models.TextField(null=True,blank=True)
     end_time = models.TextField(null=True,blank=True)
     night_shift = models.BooleanField(null=True,blank=True,default=True)
+    is_active =models.BooleanField(null=True,blank=True,default=True)
+    messege = models.TextField(max_length=255,null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_created',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)

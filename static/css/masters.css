@@ -521,3 +521,7 @@ select[name="company_id"]:focus,select[name="roster_type"]:focus {
 th {
 color: black;
 }
+
+.button-spacing {
+  margin-left: 10px; 
+}
