@@ -35,66 +35,65 @@
             {% csrf_token %}
             
             <!-- Shift Details -->
-            {% for shift in shifts %}
             <div class="row mb-3">
-                <input type="hidden" name="shift_id" value="{{ shift.shift_id }}" id="shift_id">
-        
+                <input type="hidden" name="slot_id" value="{{ slot_data.slot_id }}" id="slot_id">
                 <div class="col-md-3">
-                    <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
-                    <input type="date" name="shift_date" class="form-control" id="shift_date" value="{{ shift.shift_date|date:'Y-m-d' }}" required>
+                    <label for="company" class="form-label">Company<span style="color:red;"> *</span> :</label>
+                    <select name="company_id" id="dropdown" class="form-control" required>
+                        <option value="" Selected disabled>Select</option>
+                        {% for item in company_names %}
+                            <option value="{{ item.0 }}" {% if item.0 == slot_data.company_id %}selected{% endif %}>
+                                {{ item.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="worsites" class="form-label">Worksite<span style="color:red;"> *</span> :</label>
+                    <select name="site_id" id="dropdown" class="form-control" required>
+                        <option value="" Selected disabled>Select</option>
+                        {% for item in site_names %}
+                            <option value="{{ item.0 }}" {% if item.0 == slot_data.site_id_id %}selected{% endif %}>
+                                {{ item.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
+                    <input type="text" value="{{slot_data.slot_name}}" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
                 </div>
         
                 <div class="col-md-3">
+                    <label for="Description" class="form-label">Description<span style="color:red;"> *</span> :</label>
+                    <input type="text"  value={{slot_data.slot_description}}  name="description" class="form-control" id="description" placeholder="Enter Description" required>
+                </div>
+        
+            </div>
+        
+            <div class="row mb-3">
+
+                <div class="col-md-3">
+                    <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
+                    <input type="date" value={{slot_data.shift_date|date:'Y-m-d'}} name="shift_date" class="form-control" id="shift_date" value="{{ shift.shift_date|date:'Y-m-d' }}" required>
+                </div>
+                <div class="col-md-3">
                     <label for="start_time" class="form-label">Start Time<span style="color:red;"> *</span> :</label>
-                    <input type="time" name="start_time" class="form-control" id="start_time" value="{{ shift.start_time }}" required>
+                    <input type="time"  value={{slot_data.start_time}}  name="start_time" class="form-control" id="start_time" value="{{ shift.start_time }}" required>
                 </div>
         
                 <div class="col-md-3">
                     <label for="end_time" class="form-label">End Time<span style="color:red;"> *</span> :</label>
-                    <input type="time" name="end_time" class="form-control" id="end_time" value="{{ shift.end_time }}" required>
+                    <input type="time"  value={{slot_data.end_time}}  name="end_time" class="form-control" id="end_time" value="{{ shift.end_time }}" required>
                 </div>
         
                 <div class="col-md-3">
                     <label for="night_shift" class="form-label">Night Shift:</label>
-                    <input type="checkbox" class="nightShiftCheckbox" name="night_shift_add" id="night_shift" {% if shift.night_shift %}checked{% endif %}>
+                    <input type="checkbox" class="nightShiftCheckbox" name="night_shift" id="night_shift" {% if slot_data.night_shift %}checked{% endif %}>
                 </div>
             </div>
-            {% endfor %}
-        
-            <!-- Notification Setting Section -->
-            <br/>
-            <div class="row mb-3">
-                <div class="col-md-12 text-center">
-                    <h2 style="color:#B12121;">
-                        <u>Edit Notification Setting</u>
-                    </h2>
-                </div>
-            </div>
-        
-            <div class="row mb-3">
-                <input type="hidden" name="setting_id" value="{{ setting_detail.id }}" id="sid">
-                
-                <div class="col-md-3">
-                    <label for="notification_start_time" class="form-label">Notification Start Date<span style="color:red;"> *</span> :</label>
-                    <input type="date" name="notification_start_time" class="form-control" id="notification_start_time" value="{{ setting_detail.noti_start_time|date:'Y-m-d' }}" required>
-                </div>
-        
-                <div class="col-md-3">
-                    <label for="notification_end_time" class="form-label">Notification End Date<span style="color:red;"> *</span> :</label>
-                    <input type="date" name="notification_end_time" class="form-control" id="notification_end_time" value="{{ setting_detail.noti_end_time|date:'Y-m-d' }}" required>
-                </div>
-        
-                <div class="col-md-3">
-                    <label for="number_of_notifications" class="form-label">Number of Notifications<span style="color:red;"> *</span> :</label>
-                    <input type="number" name="number_of_notifications" class="form-control" id="number_of_notifications" value="{{ setting_detail.no_of_notification }}" placeholder="Enter Number of Notifications" min="1" max="99" required>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="notification_interval_hours" class="form-label">Interval (Hours)<span style="color:red;"> *</span> :</label>
-                    <input type="number" name="notification_interval_hours" class="form-control" id="notification_interval_hours" value="{{ setting_detail.interval }}" placeholder="Enter Interval in Hours" min="1" max="99" required>
-                </div>
-            </div>
-        
             <div class="text-center">
                 <button type="submit" id="submitBtn" class="btn btn-primary">Submit</button>
             </div>
