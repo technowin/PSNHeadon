@@ -69,7 +69,7 @@ def masters(request):
                 header = list(result.fetchall())
             cursor.callproc("stp_get_masters",[entity,type,'data',user])
             for result in cursor.stored_results():
-                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd') and type !='err': 
+                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd' or entity == 'dm') and type !='err': 
                     data = []
                     rows = result.fetchall()
                     for row in rows:
