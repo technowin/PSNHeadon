@@ -124,3 +124,27 @@ class slot_employee_details(models.Model)     :
     class Meta:
         db_table = 'slot_employee_details'  
     
+
+class daily_salary(models.Model):
+    id = models.AutoField(primary_key=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='daily_salary_slot_id', db_column='slot_id')
+    employee_id = models.TextField(max_length=250, null=True, blank=True)
+    attendance_date = models.DateTimeField(null=True, blank=True)
+    work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Total working hours
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Salary amount for the day
+    element_name = models.TextField(null=True, blank=True)  # From salary elements
+    pay_type = models.TextField(null=True, blank=True)  # From salary elements
+    classification = models.TextField(null=True, blank=True)  # From salary elements
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='daily_salary_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='daily_salary_updated_by', blank=True, null=True, db_column='updated_by')
+
+    class Meta:
+        db_table = 'daily_salary'
+
+
+
+
+
+
