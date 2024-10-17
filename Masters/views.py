@@ -957,7 +957,7 @@ class confirm_schedule(APIView):
             roster.confirmation_date = timezone.now()
             roster.updated_by = user
             roster.save()
-            ser = SlotSerializer(roster)
+            ser = ScRosterSerializer(roster)
 
             return Response({'success': 'Confirmation updated successfully.','data':ser.data,'con':confirmation}, status=200)
         except sc_roster.DoesNotExist:
@@ -1010,9 +1010,13 @@ def slot_details(request):
             cursor.callproc("stp_get_dropdown_values", ['site'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
+            
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
 
             if slot_id == "0":
-                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'type': type}
+                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'designation':designation,'type': type}
 
 
         elif request.method == 'POST':
@@ -1021,7 +1025,11 @@ def slot_details(request):
             company_id = request.POST.get('company_id', '')
             site_id = request.POST.get('worksite', '')  
 
-            context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type}
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
+
+            context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type,'designation':designation}
         
             # messages.success(request, "Slot successfully created!")
             
@@ -1059,6 +1067,8 @@ def post_slot_details(request):
         shift_date = request.POST.get('shift_date', '')
         start_time = request.POST.get('start_time', '')
         end_time = request.POST.get('end_time', '')
+        designation = request.POST.get('designation') # Assuming designation_name is the field name
+
         night_shift = request.POST.get('night_shift', '0')
         company_id = request.POST.get('company_id', '')
        
@@ -1073,6 +1083,7 @@ def post_slot_details(request):
                 shift_date=shift_date,
                 start_time=start_time,
                 end_time=end_time,
+                designation_id=get_object_or_404(designation_master,  designation_id=designation),
                 night_shift=bool(int(night_shift)), 
                 company_id=company_id,
                 site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
@@ -1087,6 +1098,7 @@ def post_slot_details(request):
                     slot_name=slot_name,
                     slot_description=description,
                     shift_date=shift_date,
+                    designation_id=get_object_or_404(designation_master,  designation_id=designation),
                     start_time=shift.get('start_time'),
                     end_time=shift.get('end_time'),
                     night_shift=bool(int(shift.get('night_shift', '0'))), 
@@ -1102,6 +1114,7 @@ def post_slot_details(request):
                 shift_detail_add = SlotDetails(
                     slot_name=shift2.get('new_slot_name'),
                     slot_description=shift2.get('new_description'),
+                    designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
                     shift_date=shift2.get('shiftDate'),
                     start_time=shift2.get('startTime'),
                     end_time=shift2.get('endTime'),
@@ -1118,6 +1131,7 @@ def post_slot_details(request):
                     shift_detail_additional = SlotDetails(
                         slot_name=shift2.get('new_slot_name'),
                         slot_description=shift2.get('new_description'),
+                        designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
                         shift_date=shift2.get('shiftDate'),  # Use the same shift date
                         start_time=additional_shift.get('newStartTime'),
                         end_time=additional_shift.get('newEndTime'),
@@ -1128,20 +1142,21 @@ def post_slot_details(request):
                     )
                     shift_detail_additional.save()
 
+
         return JsonResponse({'success': True, 'redirect_url': '/masters?entity=sd&type=i'})
 
+    
     except Exception as e:
-        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
-        cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])  # Logging error with traceback and user ID
+        tb = traceback.format_exc()  # Get the full traceback as a string
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])  # Log the error with the traceback and user ID
         print(f"error: {e}")
-        return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
-
+        
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-
+        
 
 @login_required 
 def setting_master(request):
@@ -1225,11 +1240,12 @@ def edit_slot_details(request):
             cursor.callproc("stp_get_dropdown_values", ['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-                
-            # Fetch site (worksite) names
             cursor.callproc("stp_get_dropdown_values", ['worksite'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
             slot_id = request.GET.get('slot_id')
             slot_idd = decrypt_parameter(slot_id)
             slot_data = get_object_or_404(SlotDetails, slot_id=slot_idd)
@@ -1237,6 +1253,7 @@ def edit_slot_details(request):
             context = {
                 'slot_data': slot_data,
                 'company_names':company_names,
+                'designation':designation,
                 'site_names':site_names
             }
         elif request.method == 'POST':
@@ -1248,6 +1265,7 @@ def edit_slot_details(request):
             shift_date  = request.POST.get('shift_date')
             start_time = request.POST.get('start_time')
             end_time = request.POST.get('end_time')
+            designation_id=request.POST.get('designation')
             night_shift = 1 if request.POST.get('night_shift') == 'on' else 0
 
             current_date = date.today()  # Get the current date
@@ -1260,7 +1278,8 @@ def edit_slot_details(request):
                 return
                 
             slot_data.company_id = company_id
-            slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id', ''))
+            slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id',''))
+            slot_data.designation_id = get_object_or_404(designation_master, designation_id=designation_id)
             slot_data.slot_name = slot_name
             slot_data.slot_description = description
             slot_data.shift_date = shift_date
