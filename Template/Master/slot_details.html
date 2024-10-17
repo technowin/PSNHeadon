@@ -18,54 +18,60 @@
  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
- 
+ {% if type != 'slot' %}
     <div class="container mt-5" style="max-width: 1800px;">
         <div class="card">
             <div class="card-body">
+    {% endif %}
                 {% if type == 'slot' %}
-                <h2 class="text-center" style="color:#B12121;">
-                    <u>{% if slot_id == '0' %} Create {% else %} Edit {% endif %} Slot Details</u>
-                </h2>
-                <br>
-                    <form method="POST" action="{% url 'slot_details' %}">
-                
-                    {% csrf_token %}
-
-                    <input type="hidden" name="slot_id" value="{{ slot_id }}">
-                    <input type="hidden" name="type" value="{{ type }}">
-
-                    <div class="row mb-3">
-
-                        <div class="col-md-3">
-                            <label for="company" class="form-label">Company<span style="color:red;"> *</span> :</label>
-                            <select name="company_id" id="dropdown" class="form-control" required>
-                                <option value="" Selected disabled>Select</option>
-                                {% for item in company_names %}
-                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.company_id %}selected{% endif %}>
-                                        {{ item.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+            
+                   
+                    <div class="container mt-5" style="max-width: 700px;">
+                        <div class="card">
+                            <div class="card-body">
+                                <h2 class="text-center" style="color:#B12121;">
+                                    <u>Create Slot Details</u>
+                                </h2>
+                                <form method="POST" action="{% url 'slot_details' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="slot_id" value="{{ slot_id }}">
+                                    <input type="hidden" name="type" value="{{ type }}">
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label for="company" class="form-label">Company<span style="color:red;"> *</span> :</label>
+                                            <select name="company_id" id="dropdown" class="form-control" required>
+                                                <option value="" Selected disabled>Select</option>
+                                                {% for item in company_names %}
+                                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.company_id %}selected{% endif %}>
+                                                        {{ item.1 }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label for="worsites" class="form-label">Worksite<span style="color:red;"> *</span> :</label>
+                                            <select name="worksite" id="dropdown" class="form-control" required>
+                                                <option value="" Selected disabled>Select</option>
+                                                {% for item in site_names %}
+                                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.worksite %}selected{% endif %}>
+                                                        {{ item.1 }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                    
+                                    <div class="text-center">
+                                        <button type="submit" id="submitBtn1" class="btn btn-primary">Submit</button>
+                                        <button type="button" id="goBackBtn" onclick="window.history.back();" class="btn btn-secondary button-spacing">Go Back</button>
+                                    </div>
+                                </form>
+                                
+                            </div>
                         </div>
-                        
-                        <div class="col-md-3">
-                            <label for="worsites" class="form-label">Worksite<span style="color:red;"> *</span> :</label>
-                            <select name="worsite" id="dropdown" class="form-control" required>
-                                <option value="" Selected disabled>Select</option>
-                                {% for item in site_names %}
-                                    <option value="{{ item.0 }}" {% if item.0 == slot_details.site_id %}selected{% endif %}>
-                                        {{ item.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                </br>
-
-
-                    <div class="text-center">
-                        <button type="submit" id="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </form>
 {% elif type == 'shift'%}
@@ -78,20 +84,22 @@
     
     <div class="col-md-2 text-end">
         <button type="button" class="btn btn-primary" id="createShiftButton">
-            + Create Shift
+            + Create More Slot
         </button>
     </div>
 </div>
 <div class="row mb-3">
-    <input type="hidden" name='slot_id' value={{slot_id}} id ='slot_id'>
-        <div class="col-md-1">
+    <input type="hidden" id="company_id" value="{{ company_id }}">
+    <input type="hidden" id="site_id" value="{{ site_id }}">
+    
+        <div class="col-md-2">
             <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
-            <input type="text" value="{{ slot_details.slot_name }}" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
+            <input type="text" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
         </div>
 
         <div class="col-md-2">
             <label for="Description" class="form-label">Description<span style="color:red;"> *</span> :</label>
-            <input type="text" value="{{ slot_details.slot_description }}" name="Description" class="form-control" id="Description" placeholder="Enter Description" required>
+            <input type="text"  name="description" class="form-control" id="description" placeholder="Enter Description" required>
         </div>
         <div class="col-md-2">
             <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
@@ -113,62 +121,73 @@
             <input type="checkbox" class="nightShiftCheckbox" name="night_shift_add">
         </div>
                 
-        <div class="col-md-2">
+        <div class="col-md-1">
             <button type="button" class="btn btn-success btn-sm" id="addShiftField">+</button>
             <button type="button" class="btn btn-danger btn-sm" id="removeLastShiftField">-</button>
         </div>
         </div>
         <div class="row mb-3"> 
-            <div class="col-md-5">
+            <div class="col-md-6">
             </div>
             <div class="col-md-6">
-                <div id="shiftTimesContainer"></div><hr/>
+                <div id="shiftTimesContainer"></div>
             </div>
         </div>
+        <hr/>
         <div id="shiftContainer"></div>
     
     
     <div class="text-center">
         <button type="submit" id="submitBtn" class="btn btn-primary">Submit</button>
+        <button type="button" id="goBackBtn" onclick="window.history.back();" class="btn btn-secondary button-spacing">Go Back</button>
     </div>
     
 {% elif type == 'setting'%}
 <form method="POST" action="setting_master">
     {% csrf_token %}
-    <input type="hidden" name="slot_setting_id" value="" id="slot_setting_id">
+    <input type="hidden" name="slot_id" value={{slot_id}} id="slot_id">
+    <input type="hidden" name="setting_id1" value="{{settings_data.id}}" id="setting_id">
 
 
     <div class="row mb-3">
         <!-- Notification Start Time (Date) -->
         <div class="col-md-3">
             <label for="notification_start_time" class="form-label">Notification Start Date<span style="color:red;"> *</span> :</label>
-            <input type="date" name="notification_start_time" class="form-control" id="notification_start_time" placeholder="Select Start Date">
+            <input type="date"  value="{{ settings_data.noti_start_time|date:'Y-m-d' }}" name="notification_start_time" class="form-control" id="notification_start_time" placeholder="Select Start Date">
         </div>
 
         <!-- Notification End Time (Date) -->
         <div class="col-md-3">
             <label for="notification_end_time" class="form-label">Notification End Date<span style="color:red;"> *</span> :</label>
-            <input type="date" name="notification_end_time" class="form-control" id="notification_end_time" placeholder="Select End Date">
+            <input type="date"  value="{{ settings_data.noti_end_time|date:'Y-m-d' }}" name="notification_end_time" class="form-control" id="notification_end_time" placeholder="Select End Date">
         </div>
 
         <!-- Number of Notifications -->
         <div class="col-md-3">
             <label for="number_of_notifications" class="form-label">Number of Notifications<span style="color:red;"> *</span> :</label>
-            <input type="number" name="number_of_notifications" class="form-control" id="number_of_notifications" placeholder="Enter Number of Notifications" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
+            <input type="number"  value="{{ settings_data.no_of_notification }}"  name="number_of_notifications" class="form-control" id="number_of_notifications" placeholder="Enter Number of Notifications" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
         </div>
         
         <!-- Interval in Hours -->
         <div class="col-md-3">
             <label for="notification_interval_hours" class="form-label">Interval (Hours)<span style="color:red;"> *</span> :</label>
-            <input type="number" name="notification_interval_hours" class="form-control" id="notification_interval_hours" placeholder="Enter Interval in Hours" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
+            <input type="number" value="{{ settings_data.interval }}"  name="notification_interval_hours" class="form-control" id="notification_interval_hours" placeholder="Enter Interval in Hours" min="1" max="99" required oninput="this.value = this.value.slice(0, 2)">
         </div>
         
         
     </div>
 
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="notification_interval_hours" class="form-label">Employee Count<span style="color:red;"> *</span> :</label>
+            <input type="number" value="{{ settings_data.no_of_employee }}"  name="employee_count" class="form-control" id="employee_count" placeholder="Enter Employee Count"   >
+        </div>
+    </div>
+
     <!-- Submit Button -->
     <div class="text-center mt-4">
         <button type="submit" id="submit_notification_form" class="btn btn-primary">Submit</button>
+        <button type="button" id="goBackBtn" onclick="window.history.back();" class="btn btn-secondary button-spacing">Go Back</button>
     </div>
 </form>
 
@@ -207,7 +226,7 @@
                         <div class="col-md-4">
                             <input type="time" class="form-control end_time_add" name="end_time_add">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label class="form-label">Night Shift:</label>
                             <input type="checkbox" class="nightShiftCheckboxadd" name="night_shift_add">
                         </div>
@@ -235,14 +254,14 @@
     shiftCard.classList.add('shiftCard');
     shiftCard.innerHTML = `
         <div class="row mb-3">
-         <div class="col-md-1">
+         <div class="col-md-2">
             <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
-            <input type="text" value="{{ slot_details.slot_name }}" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
+            <input type="text"  name="new_slot_name" class="form-control" id="new_slot_name" placeholder="Enter Slot Name" required>
         </div>
 
         <div class="col-md-2">
             <label for="Description" class="form-label">Description<span style="color:red;"> *</span> :</label>
-            <input type="text" value="{{ slot_details.slot_description }}" name="Description" class="form-control" id="Description" placeholder="Enter Description" required>
+            <input type="text"  name="new_description" class="form-control" id="new_description" placeholder="Enter Description" required>
         </div>
             <div class="col-md-2">
                 <label for="shift_date" class="form-label">Shift Date<span style="color:red;"> *</span> :</label>
@@ -264,13 +283,14 @@
                 <input type="checkbox" class="nightShiftCheckboxadd" name="night_shift1">
             </div>
             
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <button type="button" class="btn btn-success btn-sm addShiftField">+</button>
                 <button type="button" class="btn btn-danger btn-sm removeLastShiftField">-</button>
                 <button type="button" class="btn btn-danger btn-sm removeShiftButton">X</button>
             </div>
         </div>
         <div class="shiftTimesContainer"></div>
+        <hr/>
 
     `;
 
@@ -290,7 +310,7 @@
         shiftCounter++;
         const shiftFields = `
             <div class="row mb-3" id="shift_${shiftCounter}">
-                <div class="col-md-5"></div>
+                <div class="col-md-6"></div>
                 <div class="col-md-2">
                     <input type="time" class="form-control" name="new_start_time_${shiftCounter}" id="new_start_time_${shiftCounter}">
                 </div>
@@ -318,17 +338,27 @@
 </script>
 
 <script>
-
-     $(document).ready(function() {
+      $(document).ready(function() {
         $('#submitBtn').click(function(e) {
             debugger;
-            e.preventDefault(); // Prevent default form submission
-    
-            var slot_id = $('#slot_id').val();
+            e.preventDefault();
+            var company_id = $('#company_id').val();
+            var site_id = $('#site_id').val();
+            var slot_name = $('#slot_name').val();
+            var description = $('#description').val();
             var shift_date = $('#shift_date').val();
             var start_time = $('#start_time').val(); // Initial single start time input
             var end_time = $('#end_time').val(); // Initial single end time input
             var night_shift = $('#nightShiftCheckbox').is(':checked') ? 1 : 0; // Initial night shift checkbox
+            if (!company_id || !site_id || !slot_name || !description || !shift_date || !start_time || !end_time) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Missing Fields',
+                    text: 'Please fill in all the required fields before submitting!',
+                    showConfirmButton: true
+                });
+                return;  // Stop the form submission if validation fails
+            }
     
             var shifts = []; // Array to hold dynamically added shift data
     
@@ -348,27 +378,32 @@
                 }
             });
     
-            // Handling the dynamically added shifts in a second format
+            // Handling the dynamically added shifts in the second format
             const shifts2 = [];
             document.querySelectorAll('.shiftCard').forEach(function(card) {
+                const new_slot_name = card.querySelector('input[name="new_slot_name"]').value;
+                const new_description = card.querySelector('input[name="new_description"]').value;
                 const shiftDate = card.querySelector('input[name="shift_date1"]').value;
                 const startTime = card.querySelector('input[name="start_time1"]').value;
                 const endTime = card.querySelector('input[name="end_time1"]').value;
                 const nightShift = card.querySelector('input[name="night_shift1"]').checked ? 1 : 0;
-                
+            
                 // Collect dynamic shift times
                 const shiftTimes = [];
                 card.querySelectorAll('.shiftTimesContainer .row').forEach(function(shiftRow) {
                     const newStartTime = shiftRow.querySelector('input[name^="new_start_time"]').value;
                     const newEndTime = shiftRow.querySelector('input[name^="new_end_time"]').value;
                     const newNightShift = shiftRow.querySelector('input[name^="night_shift"]').checked ? 1 : 0;
-                    
+            
                     if (newStartTime && newEndTime) {
                         shiftTimes.push({ newStartTime, newEndTime, newNightShift });
                     }
                 });
-    
+            
+                // Push collected data to the shifts2 array
                 shifts2.push({
+                    new_slot_name,
+                    new_description,
                     shiftDate,
                     startTime,
                     endTime,
@@ -378,7 +413,7 @@
             });
     
             // Log the collected data for debugging
-            console.log("Collected Shift Data (shifts):", shifts); 
+            console.log("Collected Shift Data (shifts):", shifts);
             console.log("Collected Shift Data (shifts2):", shifts2);
     
             // Sending the collected data via AJAX
@@ -386,10 +421,13 @@
                 url: 'post_slot_details',  
                 type: 'POST', 
                 data: {
+                    company_id: company_id,
+                    site_id: site_id,
+                    slot_name: slot_name,
+                    description: description,
                     shift_date: shift_date,
                     start_time: start_time,
                     end_time: end_time,
-                    slot_id: slot_id,
                     night_shift: night_shift,
                     shifts: JSON.stringify(shifts),
                     shifts2: JSON.stringify(shifts2),
@@ -397,7 +435,7 @@
                 },
                 success: function(response_data) {
                     debugger;
-                    const id = response_data.id;  // Get the id from the response
+                    const url = response_data.redirect_url;  // Get the id from the response
                     Swal.fire({
                         icon: 'success',
                         title: 'Shift Details Submitted',
@@ -405,9 +443,7 @@
                         showConfirmButton: true
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Redirect to the next page after SweetAlert confirmation
-                            window.location.href = `/slot_details?type=setting&id=${id}`; 
-                            document.getElementById('slot_setting_id').value = id;  // Use the id in the URL
+                            window.location.href = url;
                         }
                     });
                 },
@@ -421,31 +457,8 @@
                 }
             });
         });
-    });
-    
-
-</script>
-<script>
-
-    // Function to get URL parameters
-function getQueryParams() {
-    const params = {};
-    const queryString = window.location.search.substring(1);
-    const regex = /([^&=]+)=([^&]*)/g;
-    let match;
-    while ((match = regex.exec(queryString))) {
-        params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
-    }
-    return params;
-}
-
-// Use the function to get the parameters
-const params = getQueryParams();
-const slotSettingId = params.id; // Get the slot_setting_id from the URL
-document.getElementById('slot_setting_id').value = slotSettingId; // Set it in the input field if needed
-
-
-
+    }); 
+  
 </script>
 
 
