@@ -805,42 +805,42 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        current_roster_qs = sc_roster.objects.filter(
+        slot_alloted = SlotDetails.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
         )
         
-        current_roster_qsser = ScRosterSerializer(current_roster_qs, many=True)
+        current_roster_qsser = ScRosterSerializer(slot_alloted, many=True)
 
-        previous_roster_qs = sc_roster.objects.filter(
+        slot_attended = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__lt=current_date,
             shift_time__isnull=False
             
         )
-        previous_roster_qsser = ScRosterSerializer(previous_roster_qs, many=True)
+        previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
 
-        marked_roster_qs = sc_roster.objects.filter(
-            employee_id=employee_id,
-            confirmation__isnull=False ,
-            shift_time__isnull=False
-        )
-        marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
+        # marked_roster_qs = sc_roster.objects.filter(
+        #     employee_id=employee_id,
+        #     confirmation__isnull=False ,
+        #     shift_time__isnull=False
+        # )
+        # marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
 
-        unmarked_roster_qs = sc_roster.objects.filter(
-            employee_id=employee_id,
-            confirmation__isnull=True ,
-            shift_date__lt=current_date,
-            shift_time__isnull=False
-        )
-        unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
+        # unmarked_roster_qs = sc_roster.objects.filter(
+        #     employee_id=employee_id,
+        #     confirmation__isnull=True ,
+        #     shift_date__lt=current_date,
+        #     shift_time__isnull=False
+        # )
+        # unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
 
         # Count the number of rows in each query set
         current_roster_count = len(current_roster_qsser.data)
         previous_roster_count = len(previous_roster_qsser.data)
-        marked_roster_count = len(marked_roster_qsser.data)
-        unmarked_roster_count = len(unmarked_roster_qsser.data)
+        # marked_roster_count = len(marked_roster_qsser.data)
+        # unmarked_roster_count = len(unmarked_roster_qsser.data)
 
         # Return the counts and the lists
         return {
@@ -848,12 +848,97 @@ class RosterDataAPIView(APIView):
             'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
             'previous_roster_count': previous_roster_count,
             'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
-            'marked_roster_count': marked_roster_count,
-            'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
-            'unmarked_roster_count': unmarked_roster_count,
-            'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-            'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
+            # 'marked_roster_count': marked_roster_count,
+            # 'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
+            # 'unmarked_roster_count': unmarked_roster_count,
+            # 'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
+            'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
+    
+
+    # class RosterDataAPIView(APIView):
+    #     permission_classes = [IsAuthenticated]
+    #     authentication_classes = [JWTAuthentication]
+
+    # def get(self, request):
+    #     # Extract user ID from the JWT token
+    #     user = request.user  # This will get the user from the JWT token
+
+    #     # Call the function to get the roster data
+    #     slot_data = self.get_slot_data(user.id)
+    #     Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
+
+    #     return Response(slot_data)
+
+    # def get_slot_data(self, user_id):
+    #     # Step 1: Get the user by user_id
+    #     user = CustomUser.objects.get(id=user_id)
+        
+    #     # Step 2: Get the phone number of the user
+    #     phone_number = user.phone
+
+    #     # Step 3: Get the employee_id from sc_employee_master using the phone number
+    #     try:
+    #         employee = sc_employee_master.objects.get(mobile_no=phone_number)
+    #     except sc_employee_master.DoesNotExist:
+    #         return {
+    #             'error': 'Employee not found'
+    #         }
+    #     employee_id = employee.employee_id
+
+    #     # Step 4: Get the current date and the first date of the current month
+    #     current_date = timezone.now().date()
+
+    #     # Step 5: Query sc_roster for the current month and categorize the data
+    #     slot_alloted = SlotDetails.objects.filter(
+    #         employee_id=employee_id,
+    #         shift_date=current_date,
+    #         shift_time__isnull=False
+    #     )
+        
+    #     current_roster_qsser = SlotSerializer(slot_alloted, many=True)
+
+    #     previous_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         shift_date__lt=current_date,
+    #         shift_time__isnull=False
+            
+    #     )
+    #     previous_roster_qsser = SlotSerializer(previous_roster_qs, many=True)
+
+    #     marked_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         confirmation__isnull=False ,
+    #         shift_time__isnull=False
+    #     )
+    #     marked_roster_qsser = SlotSerializer(marked_roster_qs, many=True)
+
+    #     unmarked_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         confirmation__isnull=True ,
+    #         shift_date__lt=current_date,
+    #         shift_time__isnull=False
+    #     )
+    #     unmarked_roster_qsser = SlotSerializer(unmarked_roster_qs, many=True)
+
+    #     # Count the number of rows in each query set
+    #     current_roster_count = len(current_roster_qsser.data)
+    #     previous_roster_count = len(previous_roster_qsser.data)
+    #     marked_roster_count = len(marked_roster_qsser.data)
+    #     unmarked_roster_count = len(unmarked_roster_qsser.data)
+
+    #     # Return the counts and the lists
+    #     return {
+    #         'current_roster_count': current_roster_count,
+    #         'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
+    #         'previous_roster_count': previous_roster_count,
+    #         'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'marked_roster_count': marked_roster_count,
+    #         'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'unmarked_roster_count': unmarked_roster_count,
+    #         'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
+    #     }
 
 class confirm_schedule(APIView):
     permission_classes = [IsAuthenticated]
@@ -872,7 +957,7 @@ class confirm_schedule(APIView):
             roster.confirmation_date = timezone.now()
             roster.updated_by = user
             roster.save()
-            ser = ScRosterSerializer(roster)
+            ser = SlotSerializer(roster)
 
             return Response({'success': 'Confirmation updated successfully.','data':ser.data,'con':confirmation}, status=200)
         except sc_roster.DoesNotExist:
@@ -1267,3 +1352,129 @@ def deactivate_slot(request):
         m.commit()
         m.close()
         Db.closeConnection()
+
+# Changes by Palavee
+
+@login_required        
+def designation_master1(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    global user
+    
+    # user_id = request.session.get('user_id', '')
+    # user = CustomUser.objects.get(id=user_id)
+    try:
+        
+        if request.method == "GET":
+           
+            designation_id = request.GET.get('designation_id', '')
+            if designation_id == "0":
+                if request.method == "GET":
+                    context = {'designation_id':designation_id}
+
+            else:
+                designation_id = request.GET.get('designation_id', '')
+                designation_idd = decrypt_parameter(designation_id)
+                cursor.callproc("stp_designationedit", (designation_idd,))
+                for result in cursor.stored_results():
+                    data = result.fetchall()[0]  
+                    context = {
+                        'designation_id': data[0],
+                        'designation_name': data[1],
+                        'is_active':data[2]
+                    }
+
+        if request.method == "POST" :
+            id = request.POST.get('designation_id', '')
+            if id == '0':
+                designation_name = request.POST.get('designation_name', '')
+                # is_active = request.POST.get('is_active', '') 
+                params = [
+                    designation_name,
+                    # is_active  
+                ]
+                cursor.callproc("stp_designationinsert", params)
+                for result in cursor.stored_results():
+                        datalist = list(result.fetchall())
+                if datalist[0][0] == "success":
+                    messages.success(request, 'Data successfully entered !')
+                else: messages.error(request, datalist[0][0])
+            else:
+                designation_id = request.POST.get('designation_id', '')
+                designation_name = request.POST.get('designation_name', '')
+                # is_active1 = request.POST.get('is_active', '')
+                is_active = 1 if request.POST.get('is_active') == 'on' else 0 
+                            
+                params = [designation_id,designation_name,is_active]    
+                cursor.callproc("stp_designationupdate",params) 
+                messages.success(request, "Data successfully Updated!")
+
+    except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+        if request.method == "GET":
+            return render(request, "Master/designation_master.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')
+
+def view_designation(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == "GET":
+            designation_id = request.GET.get('designation_id', '')
+
+            # Initialize context variable before starting to populate it
+            context = {
+                'designation_id': None,
+                'designation_name': None,
+                'is_active': None
+            }
+
+            # If ID is "0", meaning we are adding a new employee
+            if designation_id == "0":
+                return render(request, "Master/designation_view.html", context)
+
+            # Otherwise, we are editing an existing employee
+            designation_id1 = request.GET.get('designation_id', '')
+            designation_id = decrypt_parameter(designation_id1)
+
+            cursor.callproc("stp_designationedit", (designation_id,))
+            for result in cursor.stored_results():
+                data = result.fetchall()[0]
+                context.update({
+                    'designation_id': data[0],
+                    'designation_name': data[1],
+                    'is_active': data[2],
+                })
+
+
+    except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+        if request.method == "GET":
+            return render(request, "Master/designation_view.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')
