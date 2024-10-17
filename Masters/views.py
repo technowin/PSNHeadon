@@ -10,6 +10,7 @@ from Masters.models import *
 from datetime import date
 from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
+from Payroll.models import designation_master 
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
