@@ -129,8 +129,6 @@ class sc_employee_master(models.Model):
     ifsc_code =  models.TextField(null=True,blank=True)
     account_no =  models.TextField(null=True,blank=True)
     account_holder_name =  models.TextField(null=True,blank=True)
-    designation = models.ForeignKey('Payroll.designation_master',  on_delete=models.CASCADE,related_name='designation_relation',blank=True,null=True,db_column='designation_id')
-    worksite = models.TextField(null=True,blank=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='employee_relation',blank=True, null=True,db_column='company_id')
     employment_status = models.ForeignKey(parameter_master, on_delete=models.CASCADE,related_name='parameter_data',blank=True, null=True)
     is_active =models.BooleanField(null=True,blank=True,default=True)
