@@ -10,7 +10,7 @@ from Masters.models import *
 from datetime import date
 from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
-from Payroll.models import designation_master 
+from Payroll.models import * 
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
@@ -806,7 +806,7 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        slot_alloted = SlotDetails.objects.filter(
+        slot_alloted = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
@@ -822,26 +822,26 @@ class RosterDataAPIView(APIView):
         )
         previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
 
-        # marked_roster_qs = sc_roster.objects.filter(
-        #     employee_id=employee_id,
-        #     confirmation__isnull=False ,
-        #     shift_time__isnull=False
-        # )
-        # marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
+        marked_roster_qs = sc_roster.objects.filter(
+            employee_id=employee_id,
+            confirmation__isnull=False ,
+            shift_time__isnull=False
+        )
+        marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
 
-        # unmarked_roster_qs = sc_roster.objects.filter(
-        #     employee_id=employee_id,
-        #     confirmation__isnull=True ,
-        #     shift_date__lt=current_date,
-        #     shift_time__isnull=False
-        # )
-        # unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
+        unmarked_roster_qs = sc_roster.objects.filter(
+            employee_id=employee_id,
+            confirmation__isnull=True ,
+            shift_date__lt=current_date,
+            shift_time__isnull=False
+        )
+        unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
 
         # Count the number of rows in each query set
         current_roster_count = len(current_roster_qsser.data)
         previous_roster_count = len(previous_roster_qsser.data)
-        # marked_roster_count = len(marked_roster_qsser.data)
-        # unmarked_roster_count = len(unmarked_roster_qsser.data)
+        marked_roster_count = len(marked_roster_qsser.data)
+        unmarked_roster_count = len(unmarked_roster_qsser.data)
 
         # Return the counts and the lists
         return {
@@ -849,98 +849,70 @@ class RosterDataAPIView(APIView):
             'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
             'previous_roster_count': previous_roster_count,
             'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
-            # 'marked_roster_count': marked_roster_count,
-            # 'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
-            # 'unmarked_roster_count': unmarked_roster_count,
-            # 'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
+            'marked_roster_count': marked_roster_count,
+            'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
+            'unmarked_roster_count': unmarked_roster_count,
+            'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
             'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
     
+class SlotDataAPIView(APIView):
+    # Ensure the user is authenticated using JWT
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
-    # class RosterDataAPIView(APIView):
-    #     permission_classes = [IsAuthenticated]
-    #     authentication_classes = [JWTAuthentication]
+    def get(self, request):
+        # Extract user ID from the JWT token
+        user = request.user  # This will get the user from the JWT token
 
-    # def get(self, request):
-    #     # Extract user ID from the JWT token
-    #     user = request.user  # This will get the user from the JWT token
+        # Call the function to get the roster data
+        roster_data = self.get_roster_data(user.id)
+        Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
 
-    #     # Call the function to get the roster data
-    #     slot_data = self.get_slot_data(user.id)
-    #     Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
+        return Response(roster_data)
 
-    #     return Response(slot_data)
-
-    # def get_slot_data(self, user_id):
-    #     # Step 1: Get the user by user_id
-    #     user = CustomUser.objects.get(id=user_id)
+    def get_roster_data(self, user_id):
+        # Step 1: Get the user by user_id
+        user = CustomUser.objects.get(id=user_id)
         
-    #     # Step 2: Get the phone number of the user
-    #     phone_number = user.phone
+        # Step 2: Get the phone number of the user
+        phone_number = user.phone
 
-    #     # Step 3: Get the employee_id from sc_employee_master using the phone number
-    #     try:
-    #         employee = sc_employee_master.objects.get(mobile_no=phone_number)
-    #     except sc_employee_master.DoesNotExist:
-    #         return {
-    #             'error': 'Employee not found'
-    #         }
-    #     employee_id = employee.employee_id
+        # Step 3: Get the employee_id from sc_employee_master using the phone number
+        try:
+            employee = sc_employee_master.objects.get(mobile_no=phone_number)
+        except sc_employee_master.DoesNotExist:
+            return {
+                'error': 'Employee not found'
+            }
+        employee_id = employee.employee_id
 
-    #     # Step 4: Get the current date and the first date of the current month
-    #     current_date = timezone.now().date()
+        # Step 4: Get the current date and the first date of the current month
+        current_date = timezone.now().date()
 
-    #     # Step 5: Query sc_roster for the current month and categorize the data
-    #     slot_alloted = SlotDetails.objects.filter(
-    #         employee_id=employee_id,
-    #         shift_date=current_date,
-    #         shift_time__isnull=False
-    #     )
-        
-    #     current_roster_qsser = SlotSerializer(slot_alloted, many=True)
+        # Step 5: Query sc_roster for the current month and categorize the data
+        slot_alloted = UserShiftDetails.objects.filter(
+        employee_id=employee_id,
+        confirmation=1
+        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
 
-    #     previous_roster_qs = sc_roster.objects.filter(
-    #         employee_id=employee_id,
-    #         shift_date__lt=current_date,
-    #         shift_time__isnull=False
-            
-    #     )
-    #     previous_roster_qsser = SlotSerializer(previous_roster_qs, many=True)
+        # Query for slot attended (confirmation = 0)
+        slot_attended = UserShiftDetails.objects.filter(
+            employee_id=employee_id,
+            confirmation=0
+        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
 
-    #     marked_roster_qs = sc_roster.objects.filter(
-    #         employee_id=employee_id,
-    #         confirmation__isnull=False ,
-    #         shift_time__isnull=False
-    #     )
-    #     marked_roster_qsser = SlotSerializer(marked_roster_qs, many=True)
+        # Count the number of records for each category
+        slot_alloted_count = slot_alloted.aggregate(Count('confirmation_count'))['confirmation_count__count']
+        slot_attended_count = slot_attended.aggregate(Count('confirmation_count'))['confirmation_count__count']
 
-    #     unmarked_roster_qs = sc_roster.objects.filter(
-    #         employee_id=employee_id,
-    #         confirmation__isnull=True ,
-    #         shift_date__lt=current_date,
-    #         shift_time__isnull=False
-    #     )
-    #     unmarked_roster_qsser = SlotSerializer(unmarked_roster_qs, many=True)
 
-    #     # Count the number of rows in each query set
-    #     current_roster_count = len(current_roster_qsser.data)
-    #     previous_roster_count = len(previous_roster_qsser.data)
-    #     marked_roster_count = len(marked_roster_qsser.data)
-    #     unmarked_roster_count = len(unmarked_roster_qsser.data)
-
-    #     # Return the counts and the lists
-    #     return {
-    #         'current_roster_count': current_roster_count,
-    #         'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
-    #         'previous_roster_count': previous_roster_count,
-    #         'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
-    #         'marked_roster_count': marked_roster_count,
-    #         'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
-    #         'unmarked_roster_count': unmarked_roster_count,
-    #         'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-    #         'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
-    #     }
-
+        # Return the counts and the lists
+        return {
+            'slot_alloted_count': slot_alloted_count,
+            'slot_attended_count': slot_attended_count,
+        }
+    
 class confirm_schedule(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
