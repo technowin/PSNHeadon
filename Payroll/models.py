@@ -131,7 +131,7 @@ class daily_salary(models.Model):
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='daily_salary_slot_id', db_column='slot_id')
     employee_id = models.TextField(max_length=250, null=True, blank=True)
-    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='daily_salary_company_id', db_column='company_id')
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='daily_salary_company_id', db_column='company_id',null=True,blank=True)
     attendance_date = models.DateTimeField(null=True, blank=True)
     work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Total working hours
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Salary amount for the day
