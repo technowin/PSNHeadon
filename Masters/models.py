@@ -86,6 +86,7 @@ class site_master(models.Model):
     site_id = models.AutoField(primary_key=True)
     company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='company_relation',blank=True, null=True)
     state_id = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='state_master_site_master',blank=True, null=True,db_column="state_id")
+    city_id = models.ForeignKey(CityMaster, on_delete=models.CASCADE,related_name='city_master_city_id',blank=True, null=True,db_column="city_id")
     site_name =models.TextField(null=True,blank=True)
     site_address =models.TextField(null=True,blank=True)
     pincode =models.TextField(null=True,blank=True)
