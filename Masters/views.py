@@ -1,13 +1,16 @@
 import json
 import pydoc
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
 from Masters.models import *
+from datetime import date
 from Masters.models import site_master as sit
+from Masters.models import SlotDetails as slot
+from Payroll.models import designation_master 
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
@@ -66,7 +69,7 @@ def masters(request):
                 header = list(result.fetchall())
             cursor.callproc("stp_get_masters",[entity,type,'data',user])
             for result in cursor.stored_results():
-                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd') and type !='err': 
+                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd' or entity == 'dm') and type !='err': 
                     data = []
                     rows = result.fetchall()
                     for row in rows:
@@ -77,10 +80,6 @@ def masters(request):
             cursor.callproc("stp_get_dropdown_values",['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['site'])
-            for result in cursor.stored_results():
-                site_name = list(result.fetchall())
-            
             if entity == 'r' and type == 'i':
                 cursor.callproc("stp_get_assigned_company",[user])
                 for result in cursor.stored_results():
@@ -174,7 +173,7 @@ def masters(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'site_name':site_name,'data':data,'pre_url':pre_url})
+            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'data':data,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters?entity={entity}&type={type}'
             return redirect(new_url) 
@@ -355,13 +354,10 @@ def site_master(request):
             cursor.callproc("stp_get_company_names")
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('states',))
-            for result in cursor.stored_results():
-                state_name = list(result.fetchall())
             site_id = request.GET.get('site_id', '')
             if site_id == "0":
                 if request.method == "GET":
-                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id,'state_name':state_name}
+                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id}
 
             else:
                 site_id1 = request.GET.get('site_id', '')
@@ -372,23 +368,19 @@ def site_master(request):
                     context = {
                         'roster_types':roster_types,
                         'company_names':company_names,
-                        'state_name':state_name,
                         'site_id' : data[0],
                         'site_name': data[1],
                         'site_address': data[2],
                         'pincode': data[3],
-                        'city':data[4],
-                        'contact_person_name': data[5],
-                        'contact_person_email': data[6], 
-                        'contact_person_mobile_no': data[7],
-                        'is_active':data[8],
-                        'no_of_days': data[9],               
-                        'notification_time': data[10],
-                        'reminder_time': data[11],
-                        'company_name' :data[12],
-                        'state_names' :data[13],
-                        'roster_type': data[14]
-                        
+                        'contact_person_name': data[4],
+                        'contact_person_email': data[5], 
+                        'contact_person_mobile_no': data[6],
+                        'is_active':data[7],
+                        'no_of_days': data[8],               
+                        'notification_time': data[9],
+                        'reminder_time': data[10],
+                        'company_name' :data[11],
+                        'roster_type': data[13]
                     }
 
         if request.method == "POST":
@@ -399,7 +391,6 @@ def site_master(request):
                 siteName = request.POST.get('siteName', '')
                 siteAddress = request.POST.get('siteAddress', '')
                 pincode = request.POST.get('pincode', '')
-                city = request.POST.get('city', '')
                 contactPersonName = request.POST.get('contactPersonName', '')
                 contactPersonEmail = request.POST.get('contactPersonEmail', '')
                 contactPersonMobileNo = request.POST.get('Number', '')  
@@ -407,15 +398,13 @@ def site_master(request):
                 # noOfDays = request.POST.get('FieldDays', '')  
                 # notificationTime = request.POST.get('notificationTime', '')
                 # ReminderTime = request.POST.get('ReminderTime', '')
-                companyId = request.POST.get('company_id', '') 
-                stateId = request.POST.get('state', '') 
+                companyId = request.POST.get('company_id', '')  
                 # rosterType = request.POST.get('roster_type', '')
                
                 params = [
                     siteName, 
                     siteAddress, 
                     pincode, 
-                    city,
                     contactPersonName, 
                     contactPersonEmail, 
                     contactPersonMobileNo, 
@@ -423,8 +412,7 @@ def site_master(request):
                     # noOfDays, 
                     # notificationTime, 
                     # ReminderTime, 
-                    companyId,
-                    stateId
+                    companyId
                     # rosterType
                 ]
                 
@@ -440,7 +428,6 @@ def site_master(request):
                     siteName = request.POST.get('siteName', '')
                     siteAddress = request.POST.get('siteAddress', '')
                     pincode = request.POST.get('pincode', '')
-                    city = request.POST.get('city', '')
                     contactPersonName = request.POST.get('contactPersonName', '')
                     contactPersonEmail = request.POST.get('contactPersonEmail', '')
                     contactPersonMobileNo = request.POST.get('Number', '')  
@@ -449,11 +436,10 @@ def site_master(request):
                     # notificationTime = request.POST.get('notificationTime', '')
                     # ReminderTime = request.POST.get('ReminderTime', '')
                     CompanyId = request.POST.get('company_id', '')
-                    stateId = request.POST.get('state', '') 
                     # Rostertype = request.POST.get('roster_type', '')
                     
-                    params = [siteId,siteName,siteAddress,pincode, city ,contactPersonName,contactPersonEmail,
-                                        contactPersonMobileNo,isActive,CompanyId,stateId]
+                    params = [siteId,siteName,siteAddress,pincode,contactPersonName,contactPersonEmail,
+                                        contactPersonMobileNo,isActive,CompanyId]
                     cursor.callproc("stp_update_site_master",params) 
                     messages.success(request, "Data updated successfully...!")
 
@@ -571,8 +557,7 @@ def employee_master(request):
     m = Db.get_connection()
     cursor=m.cursor()
     global user
-    # user_id = request.session.get('user_id', '')
-    # user = CustomUser.objects.get(id=user_id)
+    user  = request.session.get('user_id', '')
     try:
         
         if request.method == "GET":
@@ -585,18 +570,9 @@ def employee_master(request):
             cursor.callproc("stp_get_dropdown_values",('site',))
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('company',))
-            for result in cursor.stored_results():
-                company_names = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('states',))
-            for result in cursor.stored_results():
-                state_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('gender',))
-            for result in cursor.stored_results():
-                gender = list(result.fetchall())
             if id == "0":
                 if request.method == "GET":
-                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name,'gender':gender ,'company_names':company_names,'state_name':state_name}
+                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name}
 
             else:
                 id1 = request.GET.get('id', '')
@@ -605,35 +581,15 @@ def employee_master(request):
                 for result in cursor.stored_results():
                     data = result.fetchall()[0]  
                     context = {
-                        'id':id, 
-                        'employee_status':employee_status, 
-                        # 'employee_status_id': '',
                         'site_name':site_name,
-                        'gender':gender ,
-                        'company_names':company_names,
-                        'state_name':state_name,
                         'employee_status':employee_status,
-                        'employee_id' : data[0],
-                        'employee_name': data[1],
-                        'mobile_no': data[2],
-                        'site_name_value':data[5],
-                        'is_active': data[20],
-                        'employee_status_id': str(data[19]),
-                        'account_holder_name':data[10],
-                        'account_no':data[11],
-                        'address':data[8],
-                        'bank_name':data[12],
-                        'branch_name':data[13],
-                        'city':data[7],
-                        'company_names':data[7],
-                        'email':data[3],
-                        'esic':data[17],
-                        'gender_value': data[4],
-                        'handicapped_value': data[4],
-                        'ifsc_code':data[14],
-                        'pf_no':data[15],
-                        'pincode':data[10],
-                        'uan_no':data[16], 
+                        'id':data[0],
+                        'employee_id' : data[1],
+                        'employee_name': data[2],
+                        'mobile_no': data[3],
+                        'site_name_value': data[4],
+                        'employee_status_id': data[5],
+                        'is_active': data[6]
                     }
 
         if request.method == "POST" :
@@ -642,49 +598,16 @@ def employee_master(request):
 
                 employeeId = request.POST.get('employee_id', '')
                 employeeName = request.POST.get('employee_name', '')
-                mobile_no = request.POST.get('mobile_no', '')
-                email= request.POST.get('email', '')
-                worksite1 = request.POST.get('site_name', '')
-                gender = request.POST.get('gender', '')
-                handicapped = request.POST.get('handicapped', '')
-                address = request.POST.get('address', '')
-                city = request.POST.get('city', '')
-                state1 = request.POST.get('state_id', '')
-                pincode = request.POST.get('pincode', '')
-                company_id1 = request.POST.get('company_id', '')
-                account_holder_name = request.POST.get('account_holder_name', '')
-                account_no = request.POST.get('account_no', '')
-                bank_name = request.POST.get('bank_name', '')
-                branch_name = request.POST.get('branch_name', '')
-                ifsc_code = request.POST.get('ifsc_code', '')
-                pf_no = request.POST.get('pf_no', '')
-                uan_no = request.POST.get('uan_no', '')
-                esic = request.POST.get('esic', '')
+                mobileNo = request.POST.get('mobile_no', '')
+                site_name = request.POST.get('site_name', '')
                 # employeeStatus = request.POST.get('employee_status_name', '')
                 # activebtn = request.POST.get('status_value', '')
 
                 params = [
                     employeeId, 
                     employeeName, 
-                    mobile_no,
-                    email, 
-                    worksite1,
-                    gender,
-                    handicapped,
-                    address,
-                    city,
-                    state1,
-                    pincode,
-                    company_id1,
-                    account_holder_name,
-                    account_no,
-                    bank_name,
-                    branch_name,
-                    ifsc_code,
-                    pf_no,
-                    uan_no,
-                    esic
-                    
+                    mobileNo, 
+                    site_name
                     # employeeStatus,
                     # activebtn
                 ]
@@ -696,31 +619,15 @@ def employee_master(request):
                     messages.success(request, 'Data successfully entered !')
                 else: messages.error(request, datalist[0][0])
             else:
-                # id = request.POST.get('id', '')
+                id = request.POST.get('id', '')
                 employee_id = request.POST.get('employee_id', '')
                 employee_name = request.POST.get('employee_name', '')
                 mobile_no = request.POST.get('mobile_no', '')
-                email = request.POST.get('email', '')
-                worksite1 = request.POST.get('site_name', '')
-                gender = request.POST.get('gender', '')
-                handicapped = request.POST.get('handicapped', '')
-                address = request.POST.get('address', '')
-                city = request.POST.get('city', '')
-                state1 = request.POST.get('state_id', '')
-                pincode = request.POST.get('pincode', '')
-                company_id1 = request.POST.get('company_id', '')
-                account_holder_name = request.POST.get('account_holder_name', '')
-                account_no = request.POST.get('account_no', '')
-                bank_name = request.POST.get('bank_name', '')
-                branch_name = request.POST.get('branch_name', '')
-                ifsc_code = request.POST.get('ifsc_code', '')
-                pf_no = request.POST.get('pf_no', '')
-                uan_no = request.POST.get('uan_no', '')
-                esic = request.POST.get('esic', '')
-                # employee_status = request.POST.get('employee_status_name', '')
-                # is_active = request.POST.get('status_value', '')  
+                site_name = request.POST.get('site_name', '')
+                employee_status = request.POST.get('employee_status_name', '')
+                is_active = request.POST.get('status_value', '')  
                             
-                params = [employee_id,employee_name,mobile_no,email,worksite1, gender,handicapped,address,state1,city,pincode,company_id1,account_holder_name,account_no,bank_name,branch_name,ifsc_code,pf_no,uan_no,esic]    
+                params = [id,employee_id,employee_name,mobile_no,site_name,employee_status,is_active]    
                 cursor.callproc("stp_update_employee_master",params) 
                 messages.success(request, "Data successfully Updated!")
 
@@ -742,7 +649,7 @@ def employee_master(request):
 @login_required  
 def upload_excel(request):
 
-     if request.method == 'POST' and request.FILES.get('excelFile'):
+    if request.method == 'POST' and request.FILES.get('excelFile'):
         excel_file = request.FILES['excelFile']
         file_name = excel_file.name
         df = pd.read_excel(excel_file)
@@ -759,26 +666,21 @@ def upload_excel(request):
             entity = request.POST.get('entity', '')
             type = request.POST.get('type', '')
             company_id = request.POST.get('company_id', None)
-            site_id = request.POST.get('site_id', None)
-            state_id=request.POST.get('state_id', None)
             cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
             for result in cursor.stored_results():
                 columns = [col[0] for col in result.fetchall()]
-            # if not all(col in df.columns for col in columns):
-            #     messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
-            #     return redirect(f'/masters?entity={entity}&type={type}')
+            if not all(col in df.columns for col in columns):
+                messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
+                return redirect(f'/masters?entity={entity}&type={type}')
             upload_for = {'em': 'employee master','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
-            cursor.callproc('stp_insert_checksum', (upload_for,company_id,site_id,str(datetime.now().month),str(datetime.now().year),file_name))
+            cursor.callproc('stp_insert_checksum', (upload_for,company_id,str(datetime.now().month),str(datetime.now().year),file_name))
             for result in cursor.stored_results():
                 c = list(result.fetchall())
             checksum_id = c[0][0]
 
-
-
             if entity == 'em':
                 for index,row in df.iterrows():
                     params = tuple(str(row.get(column, '')) for column in columns)
-                    params += (str(company_id),(site_id),(state_id))
                     cursor.callproc('stp_insert_employee_master', params)
                     for result in cursor.stored_results():
                             r = list(result.fetchall())
@@ -904,42 +806,42 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        current_roster_qs = sc_roster.objects.filter(
+        slot_alloted = SlotDetails.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
         )
         
-        current_roster_qsser = ScRosterSerializer(current_roster_qs, many=True)
+        current_roster_qsser = ScRosterSerializer(slot_alloted, many=True)
 
-        previous_roster_qs = sc_roster.objects.filter(
+        slot_attended = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__lt=current_date,
             shift_time__isnull=False
             
         )
-        previous_roster_qsser = ScRosterSerializer(previous_roster_qs, many=True)
+        previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
 
-        marked_roster_qs = sc_roster.objects.filter(
-            employee_id=employee_id,
-            confirmation__isnull=False ,
-            shift_time__isnull=False
-        )
-        marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
+        # marked_roster_qs = sc_roster.objects.filter(
+        #     employee_id=employee_id,
+        #     confirmation__isnull=False ,
+        #     shift_time__isnull=False
+        # )
+        # marked_roster_qsser = ScRosterSerializer(marked_roster_qs, many=True)
 
-        unmarked_roster_qs = sc_roster.objects.filter(
-            employee_id=employee_id,
-            confirmation__isnull=True ,
-            shift_date__lt=current_date,
-            shift_time__isnull=False
-        )
-        unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
+        # unmarked_roster_qs = sc_roster.objects.filter(
+        #     employee_id=employee_id,
+        #     confirmation__isnull=True ,
+        #     shift_date__lt=current_date,
+        #     shift_time__isnull=False
+        # )
+        # unmarked_roster_qsser = ScRosterSerializer(unmarked_roster_qs, many=True)
 
         # Count the number of rows in each query set
         current_roster_count = len(current_roster_qsser.data)
         previous_roster_count = len(previous_roster_qsser.data)
-        marked_roster_count = len(marked_roster_qsser.data)
-        unmarked_roster_count = len(unmarked_roster_qsser.data)
+        # marked_roster_count = len(marked_roster_qsser.data)
+        # unmarked_roster_count = len(unmarked_roster_qsser.data)
 
         # Return the counts and the lists
         return {
@@ -947,15 +849,99 @@ class RosterDataAPIView(APIView):
             'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
             'previous_roster_count': previous_roster_count,
             'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
-            'marked_roster_count': marked_roster_count,
-            'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
-            'unmarked_roster_count': unmarked_roster_count,
-            'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-            'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
+            # 'marked_roster_count': marked_roster_count,
+            # 'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
+            # 'unmarked_roster_count': unmarked_roster_count,
+            # 'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
+            'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
+    
+
+    # class RosterDataAPIView(APIView):
+    #     permission_classes = [IsAuthenticated]
+    #     authentication_classes = [JWTAuthentication]
+
+    # def get(self, request):
+    #     # Extract user ID from the JWT token
+    #     user = request.user  # This will get the user from the JWT token
+
+    #     # Call the function to get the roster data
+    #     slot_data = self.get_slot_data(user.id)
+    #     Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
+
+    #     return Response(slot_data)
+
+    # def get_slot_data(self, user_id):
+    #     # Step 1: Get the user by user_id
+    #     user = CustomUser.objects.get(id=user_id)
+        
+    #     # Step 2: Get the phone number of the user
+    #     phone_number = user.phone
+
+    #     # Step 3: Get the employee_id from sc_employee_master using the phone number
+    #     try:
+    #         employee = sc_employee_master.objects.get(mobile_no=phone_number)
+    #     except sc_employee_master.DoesNotExist:
+    #         return {
+    #             'error': 'Employee not found'
+    #         }
+    #     employee_id = employee.employee_id
+
+    #     # Step 4: Get the current date and the first date of the current month
+    #     current_date = timezone.now().date()
+
+    #     # Step 5: Query sc_roster for the current month and categorize the data
+    #     slot_alloted = SlotDetails.objects.filter(
+    #         employee_id=employee_id,
+    #         shift_date=current_date,
+    #         shift_time__isnull=False
+    #     )
+        
+    #     current_roster_qsser = SlotSerializer(slot_alloted, many=True)
+
+    #     previous_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         shift_date__lt=current_date,
+    #         shift_time__isnull=False
+            
+    #     )
+    #     previous_roster_qsser = SlotSerializer(previous_roster_qs, many=True)
+
+    #     marked_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         confirmation__isnull=False ,
+    #         shift_time__isnull=False
+    #     )
+    #     marked_roster_qsser = SlotSerializer(marked_roster_qs, many=True)
+
+    #     unmarked_roster_qs = sc_roster.objects.filter(
+    #         employee_id=employee_id,
+    #         confirmation__isnull=True ,
+    #         shift_date__lt=current_date,
+    #         shift_time__isnull=False
+    #     )
+    #     unmarked_roster_qsser = SlotSerializer(unmarked_roster_qs, many=True)
+
+    #     # Count the number of rows in each query set
+    #     current_roster_count = len(current_roster_qsser.data)
+    #     previous_roster_count = len(previous_roster_qsser.data)
+    #     marked_roster_count = len(marked_roster_qsser.data)
+    #     unmarked_roster_count = len(unmarked_roster_qsser.data)
+
+    #     # Return the counts and the lists
+    #     return {
+    #         'current_roster_count': current_roster_count,
+    #         'current_roster_list': list(current_roster_qsser.data ),  # Using .values() to serialize queryset
+    #         'previous_roster_count': previous_roster_count,
+    #         'previous_roster_list': list(previous_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'marked_roster_count': marked_roster_count,
+    #         'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'unmarked_roster_count': unmarked_roster_count,
+    #         'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
+    #         'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
+    #     }
 
 class confirm_schedule(APIView):
-    # Ensure the user is authenticated using JWT
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     # authentication_classes = []
@@ -1010,178 +996,168 @@ class confirm_notification(APIView):
 def slot_details(request):
     Db.closeConnection()
     m = Db.get_connection()
-    cursor=m.cursor()
-    user_id  = request.session.get('user_id', '')
+    cursor = m.cursor()
+    user_id = request.session.get('user_id', '')
 
     try:
         if request.method == 'GET':
             slot_id = request.GET.get('slot_id', '')
-           
-            type = request.GET.get('type','')
-            cursor.callproc("stp_get_dropdown_values",['company'])
+            type = request.GET.get('type', '')
+
+            cursor.callproc("stp_get_dropdown_values", ['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
 
-            cursor.callproc("stp_get_dropdown_values",('site',))
+            cursor.callproc("stp_get_dropdown_values", ['site'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
-
-            context = {'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
+            
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
 
             if slot_id == "0":
-                context = {'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
-            else:
-                slot_idd = decrypt_parameter(slot_id)
-                slot_details = get_object_or_404(SlotDetails, slot_id=slot_idd)
+                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'designation':designation,'type': type}
 
-                context = {'slot_details':slot_details,'slot_id':slot_id,'company_names':company_names,'site_names':site_names,'type':type}
-                
-        elif request.method == 'POST': 
-            type = request.POST.get('type','')
-            user = CustomUser.objects.get(id=user_id)
+
+        elif request.method == 'POST':
             slot_id = request.POST.get('slot_id', '')
-            if slot_id == '0':
+            type = 'shift'
+            company_id = request.POST.get('company_id', '')
+            site_id = request.POST.get('worksite', '')  
+
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
+
+            context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type,'designation':designation}
+        
+            # messages.success(request, "Slot successfully created!")
             
-                slot = SlotDetails(
-                    company_id = request.POST.get('company_id', ''),
-                    site_id=get_object_or_404(sit, site_id=request.POST.get('worsite', '')),
-                    slot_name=request.POST.get('slot_name', ''),
-                    slot_description=request.POST.get('Description', ''),
-                    created_by= user
-                    )
-                slot.save()
-
-                id = encrypt_parameter(str(slot.slot_id))  
-
-                messages.success(request, "Slot successfully Created!")
-
-            else:
-                slot_idd = decrypt_parameter(slot_id)
-                slot = get_object_or_404(SlotDetails, slot_id=slot_idd)
-                slot.company_id = request.POST.get('company_id', slot.company_id)
-                slot.worksite = request.POST.get('worsite', slot.worksite)
-                slot.slot_name = request.POST.get('slot_name', slot.slot_name)
-                slot.slot_description = request.POST.get('Description', slot.slot_description)
-                slot.updated_by = user
-                slot.save()
-
-                messages.success(request, "Slot successfully Updated!")
 
     except Exception as e:
-        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
-        cursor.callproc("stp_error_log", [tb, str(e), str(user_id)])  # Logging error with traceback and user ID
+        tb = traceback.format_exc()  # Capture the full traceback
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_id)])  # Log the error with the traceback and user ID
         print(f"error: {e}")
         return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
+
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-        if request.method=="GET":
-            return render(request, 'Master/slot_details.html', context)
-        elif request.method=="POST" and slot_id == "0":  
-            new_url = f'/slot_details?type=shift&slot_id={id}'
-            return redirect(new_url) 
-        elif request.method=="POST" and slot_id != "0":  
-            new_url = f'/masters?entity=sd&type=i&'
-            return redirect(new_url) 
+        return render(request, 'Master/slot_details.html', context)
+
 
 @login_required 
 def post_slot_details(request):
-    Db.closeConnection()  # Close any previous connections
+    Db.closeConnection()
     m = Db.get_connection()
     cursor = m.cursor()
-    user_id = request.session.get('user_id', '')
-    user_idd = CustomUser.objects.get(id=user_id)  # Fetch the user object based on user_id
+    user_idd = request.session.get('user_id', '')
+    user = CustomUser.objects.get(id=user_idd)  
 
     try:
-        if request.method == 'POST':
-            # Fetching slot details from request
-            id = request.POST.get('slot_id', '')
-            slot_id = decrypt_parameter(id)
-            slot_idd = SlotDetails.objects.get(slot_id=slot_id)  # Fetch slot details
+        # Load additional shift data from JSON input
+        shifts_data = json.loads(request.POST.get('shifts', '[]'))  
+        shifts_data2 = json.loads(request.POST.get('shifts2', '[]')) 
 
-            # Fetching shift details from the request
-            shift_date = request.POST.get('shift_date', '')
-            start_time = request.POST.get('start_time', '')
-            end_time = request.POST.get('end_time', '')
-            night_shift = request.POST.get('night_shift', '0')  # Default to '0' if not provided
+        # Gather main shift data from POST request
+        slot_name = request.POST.get('slot_name', '')
+        description = request.POST.get('description', '')
+        shift_date = request.POST.get('shift_date', '')
+        start_time = request.POST.get('start_time', '')
+        end_time = request.POST.get('end_time', '')
+        designation = request.POST.get('designation') # Assuming designation_name is the field name
 
-            # Load additional shift data from JSON input
-            shifts_data = json.loads(request.POST.get('shifts', '[]'))  # Extra shifts
-            shifts_data2 = json.loads(request.POST.get('shifts2', '[]'))  # Multi-date shifts
+        night_shift = request.POST.get('night_shift', '0')
+        company_id = request.POST.get('company_id', '')
+       
+        if not shift_date and not shifts_data and not shifts_data2:
+            return JsonResponse({'status': 'error', 'message': 'No shift data received.'})
 
-            # Check if no shift data was received
-            if not shift_date and not shifts_data and not shifts_data2:
-                return JsonResponse({'status': 'error', 'message': 'No shift data received.'})
+        # Save the main shift if all necessary data is provided
+        if shift_date and start_time and end_time:
+            initial_shift_detail = SlotDetails(
+                slot_name=slot_name,
+                slot_description=description,
+                shift_date=shift_date,
+                start_time=start_time,
+                end_time=end_time,
+                designation_id=get_object_or_404(designation_master,  designation_id=designation),
+                night_shift=bool(int(night_shift)), 
+                company_id=company_id,
+                site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                created_by=user # User reference
+            )
+            initial_shift_detail.save()
 
-            # Save the main shift if all necessary data is provided
-            if shift_date and start_time and end_time:
-                initial_shift_detail = ShiftDetails(
+        # Process extra shifts (shifts_data)
+        for shift in shifts_data:
+            if shift.get('start_time') and shift.get('end_time'):
+                shift_detail_add = SlotDetails(
+                    slot_name=slot_name,
+                    slot_description=description,
                     shift_date=shift_date,
-                    start_time=start_time,
-                    end_time=end_time,
-                    night_shift=bool(int(night_shift)),  # Convert '0'/'1' to boolean
-                    slot_id=slot_idd,  # Reference to SlotDetails
-                    created_by=user_idd  # User reference
+                    designation_id=get_object_or_404(designation_master,  designation_id=designation),
+                    start_time=shift.get('start_time'),
+                    end_time=shift.get('end_time'),
+                    night_shift=bool(int(shift.get('night_shift', '0'))), 
+                    company_id=company_id,
+                    site_id= get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                    created_by=user  # User reference
                 )
-                initial_shift_detail.save()
+                shift_detail_add.save()
 
-            # Save additional shift data from 'shifts_data'
-            for shift in shifts_data:
-                if shift.get('start_time') and shift.get('end_time'):
-                    shift_detail_add = ShiftDetails(
-                        shift_date=shift_date,  # Assuming the same date for dynamic shifts
-                        start_time=shift.get('start_time'),
-                        end_time=shift.get('end_time'),
-                        night_shift=bool(int(shift.get('night_shift', '0'))),  # Safely convert night_shift
-                        slot_id=slot_idd,  # Reference to SlotDetails
-                        created_by=user_idd  # User reference
+        # Process multiple shifts (shifts_data2)
+        for shift2 in shifts_data2:
+            if shift2.get('shiftDate') and shift2.get('startTime') and shift2.get('endTime'):
+                shift_detail_add = SlotDetails(
+                    slot_name=shift2.get('new_slot_name'),
+                    slot_description=shift2.get('new_description'),
+                    designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
+                    shift_date=shift2.get('shiftDate'),
+                    start_time=shift2.get('startTime'),
+                    end_time=shift2.get('endTime'),
+                    night_shift=bool(int(shift2.get('nightShift', '0'))), 
+                    company_id=company_id,
+                    site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                    created_by=user
+                )
+                shift_detail_add.save()
+
+            # Save additional shift times (newStartTime and newEndTime)
+            for additional_shift in shift2.get('shiftTimes', []):
+                if additional_shift.get('newStartTime') and additional_shift.get('newEndTime'):
+                    shift_detail_additional = SlotDetails(
+                        slot_name=shift2.get('new_slot_name'),
+                        slot_description=shift2.get('new_description'),
+                        designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
+                        shift_date=shift2.get('shiftDate'),  # Use the same shift date
+                        start_time=additional_shift.get('newStartTime'),
+                        end_time=additional_shift.get('newEndTime'),
+                        night_shift=bool(int(additional_shift.get('newNightShift', '0'))),  
+                        company_id=company_id,
+                        site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                        created_by=user # User reference
                     )
-                    shift_detail_add.save()
+                    shift_detail_additional.save()
 
-            # Save shift data from 'shifts_data2' (with multiple shift dates and times)
-            for shift2 in shifts_data2:
-                if shift2.get('shiftDate') and shift2.get('startTime') and shift2.get('endTime'):
-                    shift_detail_add = ShiftDetails(
-                        shift_date=shift2.get('shiftDate'),
-                        start_time=shift2.get('startTime'),
-                        end_time=shift2.get('endTime'),
-                        night_shift=bool(int(shift2.get('nightShift', '0'))),  # Safely convert night_shift
-                        slot_id=slot_idd,  # Reference to SlotDetails
-                        created_by=user_idd  # User reference
-                    )
-                    shift_detail_add.save()
 
-                # Save additional shift times (newStartTime and newEndTime)
-                for additional_shift in shift2.get('shiftTimes', []):
-                    if additional_shift.get('newStartTime') and additional_shift.get('newEndTime'):
-                        shift_detail_additional = ShiftDetails(
-                            shift_date=shift2.get('shiftDate'),  # Use the same shift date
-                            start_time=additional_shift.get('newStartTime'),
-                            end_time=additional_shift.get('newEndTime'),
-                            night_shift=bool(int(additional_shift.get('newNightShift', '0'))),  # Safely convert night_shift
-                            slot_id=slot_idd,  # Reference to SlotDetails
-                            created_by=user_idd  # User reference
-                        )
-                        shift_detail_additional.save()
+        return JsonResponse({'success': True, 'redirect_url': '/masters?entity=sd&type=i'})
 
-            response_data = {
-                'id': id
-            }
-            
+    
     except Exception as e:
-        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
-        cursor.callproc("stp_error_log", [tb, str(e), str(user_id)])  # Logging error with traceback and user ID
+        tb = traceback.format_exc()  # Get the full traceback as a string
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])  # Log the error with the traceback and user ID
         print(f"error: {e}")
-        return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
-
+        
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-        return JsonResponse(response_data)
+        
 
 @login_required 
 def setting_master(request):
@@ -1189,28 +1165,51 @@ def setting_master(request):
     m = Db.get_connection()
     cursor=m.cursor()
     user_id  = request.session.get('user_id', '')
-    user = CustomUser.objects.get(id=user_id)
+    user_idd = CustomUser.objects.get(id=user_id)
     try:
-        if request.method == 'POST':
-            id = request.POST.get('slot_setting_id', '')
-            slot_id = decrypt_parameter(id)
-            slot_idd = SlotDetails.objects.get(slot_id=slot_id)
-            notification_start_time = request.POST.get('notification_start_time', '')
-            notification_end_time = request.POST.get('notification_end_time', '')
-            number_of_notifications = request.POST.get('number_of_notifications', '')
-            interval = request.POST.get('notification_interval_hours','')
+        if request.method == 'GET':
+            slot_id = request.GET.get('slot_id', '')
+            slot_idd = decrypt_parameter(slot_id)
+            type = request.GET.get('type', '')
+            # setting_id = request.GET.get('setting_id', '')
 
-        notification = SettingMaster(
-            noti_start_time=notification_start_time,
-            noti_end_time=notification_end_time,
-            no_of_notification=number_of_notifications,
-            interval = interval,
-            slot_id= slot_idd,
-            created_by=user
-        )
-        notification.save()
+            try:
+                settings_data = get_object_or_404(SettingMaster, slot_id=slot_idd)
+                context = {'settings_data': settings_data, 'type': type}
+            except Http404:
+                context = {'slot_id':slot_id,'type': type} 
+            
+        elif request.method == 'POST':
+            setting_id = request.POST.get('setting_id1', '')
+            # slot_id = request.POST.get('slot_id', '')
+            # slot_idd = decrypt_parameter(slot_id)
+            # slot_id1 = get_object_or_404(SlotDetails, slot_id=slot_idd),
+            if setting_id:
+                notification = get_object_or_404(SettingMaster, id=setting_id)
+                notification.noti_start_time = request.POST.get('notification_start_time', '')
+                notification.noti_end_time = request.POST.get('notification_end_time', '')
+                notification.no_of_notification = request.POST.get('number_of_notifications', '')
+                notification.interval = request.POST.get('notification_interval_hours', '')
+                notification.no_of_employee = request.POST.get('employee_count', '')
+                notification.updated_by = user_idd
+                notification.save()
 
-        messages.success(request, "Shift Settings successfully Saved!")
+                messages.success(request, "Slot Settings successfully updated!")
+            else:
+                notification = SettingMaster(
+                noti_start_time= request.POST.get('notification_start_time', ''),
+                noti_end_time=request.POST.get('notification_end_time', ''),
+                no_of_notification=request.POST.get('number_of_notifications', ''),
+                interval = request.POST.get('notification_interval_hours',''),
+                no_of_employee = request.POST.get('employee_count',''),
+                slot_id = get_object_or_404(slot, slot_id=decrypt_parameter(request.POST.get('slot_id', ''))),
+                created_by=user_idd
+                )
+                notification.save()
+
+                messages.success(request, "Slot Settings successfully Saved!")
+
+
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -1222,8 +1221,11 @@ def setting_master(request):
         m.commit()
         m.close()
         Db.closeConnection()
-        new_url = f'/masters?entity=sd&type=i'
-        return redirect(new_url) 
+        if request.method == 'GET':
+            return render(request, 'Master/slot_details.html', context)
+        elif request.method == 'POST':
+            new_url = f'/masters?entity=sd&type=i'
+            return redirect(new_url) 
 
 @login_required  
 def edit_slot_details(request):
@@ -1236,56 +1238,62 @@ def edit_slot_details(request):
 
     try:
         if request.method == 'GET':
+            cursor.callproc("stp_get_dropdown_values", ['company'])
+            for result in cursor.stored_results():
+                company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values", ['worksite'])
+            for result in cursor.stored_results():
+                site_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
             slot_id = request.GET.get('slot_id')
             slot_idd = decrypt_parameter(slot_id)
-            shift_details = ShiftDetails.objects.filter(slot_id=slot_idd)
-
-            shifts = []
-            for detail in shift_details:
-                shifts.append({
-                    'shift_id':detail.shift_id,
-                    'shift_date': detail.shift_date,
-                    'start_time': detail.start_time,
-                    'end_time': detail.end_time,
-                    'night_shift': detail.night_shift,
-                })
-            setting_detail = SettingMaster.objects.filter(slot_id=slot_idd).first()
-
+            slot_data = get_object_or_404(SlotDetails, slot_id=slot_idd)
+          
             context = {
-                'shifts': shifts,
-                'setting_detail': setting_detail 
+                'slot_data': slot_data,
+                'company_names':company_names,
+                'designation':designation,
+                'site_names':site_names
             }
-        if request.method == 'POST':
-            shift_ids = request.POST.getlist('shift_id')
-            shift_dates = request.POST.getlist('shift_date')
-            start_times = request.POST.getlist('start_time')
-            end_times = request.POST.getlist('end_time')
+        elif request.method == 'POST':
+            slot_id = request.POST.get('slot_id')
+            slot_data = get_object_or_404(SlotDetails, slot_id=slot_id)
+            company_id = request.POST.get('company_id')
+            slot_name = request.POST.get('slot_name')
+            description = request.POST.get('description')
+            shift_date  = request.POST.get('shift_date')
+            start_time = request.POST.get('start_time')
+            end_time = request.POST.get('end_time')
+            designation_id=request.POST.get('designation')
+            night_shift = 1 if request.POST.get('night_shift') == 'on' else 0
 
-            # Get checkboxes as they will only be submitted if checked
-            night_shifts = request.POST.getlist('night_shift_add')
+            current_date = date.today()  # Get the current date
 
-            for i, shift_id in enumerate(shift_ids):
-                shift = get_object_or_404(ShiftDetails, shift_id=shift_id)
-                shift.shift_date = shift_dates[i]
-                shift.start_time = start_times[i]
-                shift.end_time = end_times[i]
+            setting = get_object_or_404(SettingMaster, slot_id=slot_id)
+            noti_start_time = setting.noti_start_time  
 
-                # Check if this specific shift is in the checked night shifts list
-                shift.night_shift = 1 if str(shift_id) in night_shifts else 0
+            if current_date > noti_start_time:  # Compare current date with noti_start_time
+                messages.error(request, "You Cannot Update Data as Notification Time has Started.")
+                return
+                
+            slot_data.company_id = company_id
+            slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id',''))
+            slot_data.designation_id = get_object_or_404(designation_master, designation_id=designation_id)
+            slot_data.slot_name = slot_name
+            slot_data.slot_description = description
+            slot_data.shift_date = shift_date
+            slot_data.start_time = start_time
+            slot_data.end_time = end_time
+            slot_data.night_shift = night_shift
+            slot_data.updated_by = user_idd
 
-                shift.save()
+            # Save the updated slot details to the database
+            slot_data.save()
 
-
-            # Update Notification settings
-            notification_id = request.POST.get('setting_id')
-            notification = get_object_or_404(SettingMaster, id=notification_id)
-            notification.noti_start_time = request.POST.get('notification_start_time')
-            notification.noti_end_time = request.POST.get('notification_end_time')
-            notification.no_of_notification = request.POST.get('number_of_notifications')
-            notification.interval = request.POST.get('notification_interval_hours')
-            notification.save()
-
-            messages.success(request, "Shift details and notification settings updated successfully.")
+            # Show success message and redirect
+            messages.success(request, "Slot details updated successfully.")
             
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -1314,10 +1322,18 @@ def delete_slot(request):
         slot_idd = decrypt_parameter(slot_id)
 
         slots_to_delete = SlotDetails.objects.filter(slot_id=slot_idd)
+        setting = get_object_or_404(SettingMaster, slot_id=slot_idd)
+        noti_start_time = setting.noti_start_time  
+
+        current_date = date.today()
+
+        if current_date >= noti_start_time:  
+            return JsonResponse({'success': False, 'message': 'Slot Cannot be deleted,Because Notification time has begun!'})
 
         if slots_to_delete.exists():
             slots_to_delete.delete()
-            return JsonResponse({'success': True, 'message': 'Slot successfully deleted!'})
+            setting.delete()
+            return JsonResponse({'success': True, 'message': 'Slot  and its setttings successfully deleted!'})
         else:
             return JsonResponse({'success': False, 'message': 'No slots found with the specified slot_id.'})
 
@@ -1326,99 +1342,159 @@ def delete_slot(request):
         cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
 
         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
+    
 
+def deactivate_slot(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            slot_id = request.POST.get('slot_id')
+            slot_idd = decrypt_parameter(slot_id)
+            reason = request.POST.get('reason', '') 
+
+            slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
+            slot_detail.is_active = 0
+            slot_detail.messege = reason 
+            slot_detail.save()
+
+            return JsonResponse({'message': 'Slot deactivated successfully.'})
+    except SlotDetails.DoesNotExist:
+        return JsonResponse({'message': 'Slot ID not found.'}, status=404)
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+        return JsonResponse({'message': str(e)}, status=500)
+    
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+# Changes by Palavee
 
 @login_required        
-def slot_details(request):
+def designation_master1(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor=m.cursor()
     global user
-    user  = request.session.get('user_id', '')
+    
+    # user_id = request.session.get('user_id', '')
+    # user = CustomUser.objects.get(id=user_id)
     try:
         
         if request.method == "GET":
-            id = request.GET.get('id', '')
-            
-
-            cursor.callproc("stp_get_employee_status")
-            for result in cursor.stored_results():
-                employee_status = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('site',))
-            for result in cursor.stored_results():
-                site_name = list(result.fetchall())
-            if id == "0":
+           
+            designation_id = request.GET.get('designation_id', '')
+            if designation_id == "0":
                 if request.method == "GET":
-                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name}
+                    context = {'designation_id':designation_id}
 
             else:
-                id1 = request.GET.get('id', '')
-                id = decrypt_parameter(id1)
-                cursor.callproc("stp_edit_employee_master", (id,))
+                designation_id = request.GET.get('designation_id', '')
+                designation_idd = decrypt_parameter(designation_id)
+                cursor.callproc("stp_designationedit", (designation_idd,))
                 for result in cursor.stored_results():
                     data = result.fetchall()[0]  
                     context = {
-                        'site_name':site_name,
-                        'employee_status':employee_status,
-                        'id':data[0],
-                        'employee_id' : data[1],
-                        'employee_name': data[2],
-                        'mobile_no': data[3],
-                        'site_name_value': data[4],
-                        'employee_status_id': data[5],
-                        'is_active': data[6]
+                        'designation_id': data[0],
+                        'designation_name': data[1],
+                        'is_active':data[2]
                     }
 
         if request.method == "POST" :
-            id = request.POST.get('id', '')
+            id = request.POST.get('designation_id', '')
             if id == '0':
-
-                employeeId = request.POST.get('employee_id', '')
-                employeeName = request.POST.get('employee_name', '')
-                mobileNo = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
-                # employeeStatus = request.POST.get('employee_status_name', '')
-                # activebtn = request.POST.get('status_value', '')
-
+                designation_name = request.POST.get('designation_name', '')
+                # is_active = request.POST.get('is_active', '') 
                 params = [
-                    employeeId, 
-                    employeeName, 
-                    mobileNo, 
-                    site_name
-                    # employeeStatus,
-                    # activebtn
+                    designation_name,
+                    # is_active  
                 ]
-                
-                cursor.callproc("stp_insert_employee_master", params)
+                cursor.callproc("stp_designationinsert", params)
                 for result in cursor.stored_results():
                         datalist = list(result.fetchall())
                 if datalist[0][0] == "success":
                     messages.success(request, 'Data successfully entered !')
                 else: messages.error(request, datalist[0][0])
             else:
-                id = request.POST.get('id', '')
-                employee_id = request.POST.get('employee_id', '')
-                employee_name = request.POST.get('employee_name', '')
-                mobile_no = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
-                employee_status = request.POST.get('employee_status_name', '')
-                is_active = request.POST.get('status_value', '')  
+                designation_id = request.POST.get('designation_id', '')
+                designation_name = request.POST.get('designation_name', '')
+                # is_active1 = request.POST.get('is_active', '')
+                is_active = 1 if request.POST.get('is_active') == 'on' else 0 
                             
-                params = [id,employee_id,employee_name,mobile_no,site_name,employee_status,is_active]    
-                cursor.callproc("stp_update_employee_master",params) 
+                params = [designation_id,designation_name,is_active]    
+                cursor.callproc("stp_designationupdate",params) 
                 messages.success(request, "Data successfully Updated!")
 
     except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         cursor.callproc("stp_error_log", [fun, str(e), user])  
         messages.error(request, 'Oops...! Something went wrong!')
+
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-        if request.method=="GET":
-            return render(request, "Master/slot_details.html", context)
-        elif request.method=="POST":  
-            return redirect(f'/masters?entity=sd&type=i')
+
+        if request.method == "GET":
+            return render(request, "Master/designation_master.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')
+
+def view_designation(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == "GET":
+            designation_id = request.GET.get('designation_id', '')
+
+            # Initialize context variable before starting to populate it
+            context = {
+                'designation_id': None,
+                'designation_name': None,
+                'is_active': None
+            }
+
+            # If ID is "0", meaning we are adding a new employee
+            if designation_id == "0":
+                return render(request, "Master/designation_view.html", context)
+
+            # Otherwise, we are editing an existing employee
+            designation_id1 = request.GET.get('designation_id', '')
+            designation_id = decrypt_parameter(designation_id1)
+
+            cursor.callproc("stp_designationedit", (designation_id,))
+            for result in cursor.stored_results():
+                data = result.fetchall()[0]
+                context.update({
+                    'designation_id': data[0],
+                    'designation_name': data[1],
+                    'is_active': data[2],
+                })
+
+
+    except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+        if request.method == "GET":
+            return render(request, "Master/designation_view.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')

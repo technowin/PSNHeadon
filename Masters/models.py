@@ -100,6 +100,7 @@ class sc_employee_master(models.Model):
     ifsc_code =  models.TextField(null=True,blank=True)
     account_no =  models.TextField(null=True,blank=True)
     account_holder_name =  models.TextField(null=True,blank=True)
+    designation = models.ForeignKey('Payroll.designation_master',  on_delete=models.CASCADE,related_name='designation_relation',blank=True,null=True,db_column='designation_id')
     worksite = models.TextField(null=True,blank=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='employee_relation',blank=True, null=True,db_column='company_id')
     employment_status = models.ForeignKey(parameter_master, on_delete=models.CASCADE,related_name='parameter_data',blank=True, null=True)
@@ -215,14 +216,15 @@ class SlotDetails(models.Model):
     company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='slot_relation',blank=True, null=True)
     # worksite = models.TextField(null=True,blank=True)
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='SlotDetails_site_id',blank=True, null=True,db_column="site_id")
-    
+    designation_id = models.ForeignKey('Payroll.designation_master', on_delete=models.CASCADE,related_name='SlotDetails_designation_id',blank=True, null=True,db_column="designation_id")
     slot_name = models.TextField(null=True,blank=True)
-    
     slot_description = models.CharField(max_length=200, null=True, blank=True)
     shift_date = models.DateField(null=True,blank=True)
     start_time = models.TextField(null=True,blank=True)
     end_time = models.TextField(null=True,blank=True)
     night_shift = models.BooleanField(null=True,blank=True,default=True)
+    is_active =models.BooleanField(null=True,blank=True,default=True)
+    messege = models.TextField(max_length=255,null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_created',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
@@ -230,7 +232,7 @@ class SlotDetails(models.Model):
     class Meta:
         db_table = 'slot_details'
     def __str__(self):
-        return self.name
+        return self.slot_name
 
 class ShiftDetails(models.Model):
     shift_id = models.AutoField(primary_key=True)
@@ -255,6 +257,7 @@ class SettingMaster(models.Model):
     noti_start_time =  models.DateField(null=True,blank=True)
     noti_end_time = models.DateField(null=True,blank=True)
     no_of_notification = models.IntegerField(null=True, blank=False)
+    no_of_employee =  models.IntegerField(null=True, blank=False)
     interval = models.TextField(null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='setting_created',blank=True, null=True,db_column='created_by')

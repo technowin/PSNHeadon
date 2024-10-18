@@ -7,6 +7,10 @@ from Masters.models import sc_employee_master
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
+from datetime import timedelta
+from django.db.models import Sum
+import pandas as pd
+
 # Index (list all salary elements)
 @login_required
 def index(request):
@@ -334,11 +338,164 @@ def employee_rate_card_view(request, id):
 
 
 
+@login_required
+def attendance_index(request):
+    attendance_records = slot_attendance_details.objects.all()
+    return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records})
+
+@login_required
+def upload_attendance(request):
+    if request.method == 'POST':
+        excel_form = ExcelUploadForm(request.POST, request.FILES)
+        if excel_form.is_valid():
+            excel_file = request.FILES['excel_file']
+            data = pd.read_excel(excel_file)
+            comp = company_master.objects.get(company_id=request.POST['company_id'])
+            site = site_master.objects.get(site_id=request.POST['site_id'])
+            slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
+            for index, row in data.iterrows():
+                attendance = slot_attendance_details(
+                    company_id= comp ,
+                    site_id= site,
+                    slot_id= slot,
+                    attendance_date=row['attendance_date'],
+                    employee_id=row['employee_id'],
+                    attendance_in=row['attendance_in'],
+                    attendance_out=row['attendance_out'],
+                )
+                attendance.save()
+            messages.success(request, 'Attendance records uploaded successfully.')
+            return redirect('attendance_index')
+
+    else:
+        excel_form = ExcelUploadForm()
+
+    return render(request, 'Payroll/Attendance/create.html', {
+        'excel_form': excel_form,
+        'companies': company_master.objects.all()
+    })
+@login_required
+def get_sites(request):
+    company_id = request.GET.get('company_id')
+    sites = site_master.objects.filter(company_id=company_id).values('site_id', 'site_name')
+    return JsonResponse(list(sites), safe=False)
+@login_required
+def get_slots(request):
+    site_id = request.GET.get('site_id')
+    slots = SlotDetails.objects.filter(site_id=site_id).values('slot_id', 'slot_name')
+    return JsonResponse(list(slots), safe=False)
 
 
 
 
 
+def calculate_daily_salary(request,slot_id):
+    # Step 1: Fetch employees for the given slot_id from slot_employee_details
+    employees = slot_employee_details.objects.filter(slot_id=slot_id)
+
+    # Step 2: Get the slot details
+    slot = SlotDetails.objects.get(slot_id=slot_id)
+    
+    for employee in employees:
+        employee_id = employee.employee_id
+        
+        # Step 3: Check attendance for the employee in the given slot
+        attendance = slot_attendance_details.objects.filter(
+            site_id=slot.site_id,
+            slot_id=slot_id,
+            employee_id=employee_id
+        ).first()
+        
+        if attendance:
+            # Step 4: Calculate the total working hours
+            if attendance.attendance_in and attendance.attendance_out:
+                time_in = attendance.attendance_in
+                time_out = attendance.attendance_out
+                # Calculate the time difference
+                working_hours = (time_out - time_in).total_seconds() / 3600
+
+                # Step 5: Fetch the rate card from site_card_relation based on site and designation
+                site_card_relation_obj = site_card_relation.objects.filter(
+                    site_id=slot.site_id,
+                    designation_id=slot.designation_id
+                ).first()
+
+                if site_card_relation_obj:
+                    # Get the rate card ID and related salary elements
+                    card_id = site_card_relation_obj.card_id
+                    salary_elements = RateCardSalaryElement.objects.filter(rate_card=card_id)
+
+                    # Step 6: Fetch the BASIC element before looping
+                    basic_element = salary_elements.filter(item_name='BASIC').first()
+                    basic_amount = 0
+
+                    # Determine BASIC amount based on working hours
+                    if basic_element:
+                        if working_hours < 9:
+                            basic_amount = basic_element.four_hour_amount
+                        else:
+                            basic_amount = basic_element.nine_hour_amount
+                    
+                    # Step 7: Process each salary element
+                    for element in salary_elements:
+                        # Step 8: Handle Percentage-based calculations
+                        if element.classification == 'Percentage':
+                            if element.item_name == 'DA':
+                                # Calculate percentage based on BASIC
+                                if working_hours < 9:
+                                    amount = (basic_amount * element.four_hour_amount) / 100
+                                else:
+                                    amount = (basic_amount * element.nine_hour_amount) / 100
+                            else:
+                                # For other percentage-based items, use the normal logic
+                                if working_hours < 9:
+                                    amount = element.four_hour_amount
+                                else:
+                                    amount = element.nine_hour_amount
+                        
+                        elif element.classification == "Calculation":
+                            if element.item_name == 'DA':
+                                # Calculate percentage based on BASIC
+                                if working_hours < 9:
+                                    amount = (basic_amount * element.four_hour_amount) / 100
+                                else:
+                                    amount = (basic_amount * element.nine_hour_amount) / 100
+                            else:
+                                # For other percentage-based items, use the normal logic
+                                if working_hours < 9:
+                                    amount = element.four_hour_amount
+                                else:
+                                    amount = element.nine_hour_amount
+                        elif element.classification == 'total' and element.item_name == 'Gross':
+                            # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                            total_earnings = daily_salary.objects.filter(
+                                employee_id=employee_id,
+                                slot_id=slot_id,
+                                attendance_date=attendance.attendance_date,
+                                pay_type='earning'
+                            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                            amount = total_earnings    
+                        else:
+                            # For non-percentage-based elements
+                            if working_hours < 9:
+                                amount = element.four_hour_amount
+                            else:
+                                amount = element.nine_hour_amount
+
+                        # Step 9: Insert the record into daily_salary
+                        daily_salary.objects.create(
+                            slot_id=slot,
+                            employee_id=employee_id,
+                            attendance_date=attendance.attendance_date,
+                            work_hours=working_hours,
+                            amount=amount,
+                            element_name=element.item_name,
+                            pay_type=element.pay_type,
+                            classification=element.classification,
+                            created_by=request.user,
+                            updated_by=request.user
+                        )
 
 
 
