@@ -62,7 +62,8 @@ class designation_master(models.Model)    :
     class Meta:
         db_table = 'designation_master'
     def __str__(self):
-        return f"{self.designation_name}"    
+        return f"{self.designation_name}"   
+     
 class site_card_relation(models.Model):
     relation_id = models.AutoField(primary_key=True)
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='site_master_id',blank=True, null=True,db_column='site_id')

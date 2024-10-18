@@ -10,6 +10,7 @@ from Masters.models import *
 from datetime import date
 from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
+from Payroll.models import * 
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
@@ -68,7 +69,7 @@ def masters(request):
                 header = list(result.fetchall())
             cursor.callproc("stp_get_masters",[entity,type,'data',user])
             for result in cursor.stored_results():
-                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd') and type !='err': 
+                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd' or entity == 'dm') and type !='err': 
                     data = []
                     rows = result.fetchall()
                     for row in rows:
@@ -805,21 +806,21 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        current_roster_qs = sc_roster.objects.filter(
+        slot_alloted = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
         )
         
-        current_roster_qsser = ScRosterSerializer(current_roster_qs, many=True)
+        current_roster_qsser = ScRosterSerializer(slot_alloted, many=True)
 
-        previous_roster_qs = sc_roster.objects.filter(
+        slot_attended = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__lt=current_date,
             shift_time__isnull=False
             
         )
-        previous_roster_qsser = ScRosterSerializer(previous_roster_qs, many=True)
+        previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
 
         marked_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
@@ -852,9 +853,66 @@ class RosterDataAPIView(APIView):
             'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
             'unmarked_roster_count': unmarked_roster_count,
             'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-            'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
+            'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
+    
+class SlotDataAPIView(APIView):
+    # Ensure the user is authenticated using JWT
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
+    def get(self, request):
+        # Extract user ID from the JWT token
+        user = request.user  # This will get the user from the JWT token
+
+        # Call the function to get the roster data
+        roster_data = self.get_roster_data(user.id)
+        Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
+
+        return Response(roster_data)
+
+    def get_roster_data(self, user_id):
+        # Step 1: Get the user by user_id
+        user = CustomUser.objects.get(id=user_id)
+        
+        # Step 2: Get the phone number of the user
+        phone_number = user.phone
+
+        # Step 3: Get the employee_id from sc_employee_master using the phone number
+        try:
+            employee = sc_employee_master.objects.get(mobile_no=phone_number)
+        except sc_employee_master.DoesNotExist:
+            return {
+                'error': 'Employee not found'
+            }
+        employee_id = employee.employee_id
+
+        # Step 4: Get the current date and the first date of the current month
+        current_date = timezone.now().date()
+
+        # Step 5: Query sc_roster for the current month and categorize the data
+        slot_alloted = UserShiftDetails.objects.filter(
+        employee_id=employee_id,
+        confirmation=1
+        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
+
+        # Query for slot attended (confirmation = 0)
+        slot_attended = UserShiftDetails.objects.filter(
+            employee_id=employee_id,
+            confirmation=0
+        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
+
+        # Count the number of records for each category
+        slot_alloted_count = slot_alloted.aggregate(Count('confirmation_count'))['confirmation_count__count']
+        slot_attended_count = slot_attended.aggregate(Count('confirmation_count'))['confirmation_count__count']
+
+
+        # Return the counts and the lists
+        return {
+            'slot_alloted_count': slot_alloted_count,
+            'slot_attended_count': slot_attended_count,
+        }
+    
 class confirm_schedule(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -925,9 +983,13 @@ def slot_details(request):
             cursor.callproc("stp_get_dropdown_values", ['site'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
+            
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
 
             if slot_id == "0":
-                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'type': type}
+                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'designation':designation,'type': type}
 
 
         elif request.method == 'POST':
@@ -936,7 +998,11 @@ def slot_details(request):
             company_id = request.POST.get('company_id', '')
             site_id = request.POST.get('worksite', '')  
 
-            context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type}
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
+
+            context= {'slot_id':slot_id,'company_id':company_id, 'site_id':site_id,'type':type,'designation':designation}
         
             # messages.success(request, "Slot successfully created!")
             
@@ -974,6 +1040,8 @@ def post_slot_details(request):
         shift_date = request.POST.get('shift_date', '')
         start_time = request.POST.get('start_time', '')
         end_time = request.POST.get('end_time', '')
+        designation = request.POST.get('designation') # Assuming designation_name is the field name
+
         night_shift = request.POST.get('night_shift', '0')
         company_id = request.POST.get('company_id', '')
        
@@ -988,6 +1056,7 @@ def post_slot_details(request):
                 shift_date=shift_date,
                 start_time=start_time,
                 end_time=end_time,
+                designation_id=get_object_or_404(designation_master,  designation_id=designation),
                 night_shift=bool(int(night_shift)), 
                 company_id=company_id,
                 site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
@@ -1002,6 +1071,7 @@ def post_slot_details(request):
                     slot_name=slot_name,
                     slot_description=description,
                     shift_date=shift_date,
+                    designation_id=get_object_or_404(designation_master,  designation_id=designation),
                     start_time=shift.get('start_time'),
                     end_time=shift.get('end_time'),
                     night_shift=bool(int(shift.get('night_shift', '0'))), 
@@ -1017,6 +1087,7 @@ def post_slot_details(request):
                 shift_detail_add = SlotDetails(
                     slot_name=shift2.get('new_slot_name'),
                     slot_description=shift2.get('new_description'),
+                    designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
                     shift_date=shift2.get('shiftDate'),
                     start_time=shift2.get('startTime'),
                     end_time=shift2.get('endTime'),
@@ -1033,6 +1104,7 @@ def post_slot_details(request):
                     shift_detail_additional = SlotDetails(
                         slot_name=shift2.get('new_slot_name'),
                         slot_description=shift2.get('new_description'),
+                        designation_id=get_object_or_404(designation_master, designation_id = shift2.get('new_designation')),
                         shift_date=shift2.get('shiftDate'),  # Use the same shift date
                         start_time=additional_shift.get('newStartTime'),
                         end_time=additional_shift.get('newEndTime'),
@@ -1043,20 +1115,21 @@ def post_slot_details(request):
                     )
                     shift_detail_additional.save()
 
+
         return JsonResponse({'success': True, 'redirect_url': '/masters?entity=sd&type=i'})
 
+    
     except Exception as e:
-        tb = traceback.format_exc()  # Use format_exc to get full traceback as a string
-        cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])  # Logging error with traceback and user ID
+        tb = traceback.format_exc()  # Get the full traceback as a string
+        cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])  # Log the error with the traceback and user ID
         print(f"error: {e}")
-        return JsonResponse({'result': 'fail', 'message': 'Something went wrong!'})
-
+        
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-
+        
 
 @login_required 
 def setting_master(request):
@@ -1140,11 +1213,12 @@ def edit_slot_details(request):
             cursor.callproc("stp_get_dropdown_values", ['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-                
-            # Fetch site (worksite) names
             cursor.callproc("stp_get_dropdown_values", ['worksite'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values", ['designation'])
+            for result in cursor.stored_results():
+                designation = list(result.fetchall())
             slot_id = request.GET.get('slot_id')
             slot_idd = decrypt_parameter(slot_id)
             slot_data = get_object_or_404(SlotDetails, slot_id=slot_idd)
@@ -1152,6 +1226,7 @@ def edit_slot_details(request):
             context = {
                 'slot_data': slot_data,
                 'company_names':company_names,
+                'designation':designation,
                 'site_names':site_names
             }
         elif request.method == 'POST':
@@ -1163,6 +1238,7 @@ def edit_slot_details(request):
             shift_date  = request.POST.get('shift_date')
             start_time = request.POST.get('start_time')
             end_time = request.POST.get('end_time')
+            designation_id=request.POST.get('designation')
             night_shift = 1 if request.POST.get('night_shift') == 'on' else 0
 
             current_date = date.today()  # Get the current date
@@ -1175,7 +1251,8 @@ def edit_slot_details(request):
                 return
                 
             slot_data.company_id = company_id
-            slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id', ''))
+            slot_data.site_id = get_object_or_404(sit, site_id=request.POST.get('site_id',''))
+            slot_data.designation_id = get_object_or_404(designation_master, designation_id=designation_id)
             slot_data.slot_name = slot_name
             slot_data.slot_description = description
             slot_data.shift_date = shift_date
@@ -1267,3 +1344,129 @@ def deactivate_slot(request):
         m.commit()
         m.close()
         Db.closeConnection()
+
+# Changes by Palavee
+
+@login_required        
+def designation_master1(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    global user
+    
+    # user_id = request.session.get('user_id', '')
+    # user = CustomUser.objects.get(id=user_id)
+    try:
+        
+        if request.method == "GET":
+           
+            designation_id = request.GET.get('designation_id', '')
+            if designation_id == "0":
+                if request.method == "GET":
+                    context = {'designation_id':designation_id}
+
+            else:
+                designation_id = request.GET.get('designation_id', '')
+                designation_idd = decrypt_parameter(designation_id)
+                cursor.callproc("stp_designationedit", (designation_idd,))
+                for result in cursor.stored_results():
+                    data = result.fetchall()[0]  
+                    context = {
+                        'designation_id': data[0],
+                        'designation_name': data[1],
+                        'is_active':data[2]
+                    }
+
+        if request.method == "POST" :
+            id = request.POST.get('designation_id', '')
+            if id == '0':
+                designation_name = request.POST.get('designation_name', '')
+                # is_active = request.POST.get('is_active', '') 
+                params = [
+                    designation_name,
+                    # is_active  
+                ]
+                cursor.callproc("stp_designationinsert", params)
+                for result in cursor.stored_results():
+                        datalist = list(result.fetchall())
+                if datalist[0][0] == "success":
+                    messages.success(request, 'Data successfully entered !')
+                else: messages.error(request, datalist[0][0])
+            else:
+                designation_id = request.POST.get('designation_id', '')
+                designation_name = request.POST.get('designation_name', '')
+                # is_active1 = request.POST.get('is_active', '')
+                is_active = 1 if request.POST.get('is_active') == 'on' else 0 
+                            
+                params = [designation_id,designation_name,is_active]    
+                cursor.callproc("stp_designationupdate",params) 
+                messages.success(request, "Data successfully Updated!")
+
+    except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+        if request.method == "GET":
+            return render(request, "Master/designation_master.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')
+
+def view_designation(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == "GET":
+            designation_id = request.GET.get('designation_id', '')
+
+            # Initialize context variable before starting to populate it
+            context = {
+                'designation_id': None,
+                'designation_name': None,
+                'is_active': None
+            }
+
+            # If ID is "0", meaning we are adding a new employee
+            if designation_id == "0":
+                return render(request, "Master/designation_view.html", context)
+
+            # Otherwise, we are editing an existing employee
+            designation_id1 = request.GET.get('designation_id', '')
+            designation_id = decrypt_parameter(designation_id1)
+
+            cursor.callproc("stp_designationedit", (designation_id,))
+            for result in cursor.stored_results():
+                data = result.fetchall()[0]
+                context.update({
+                    'designation_id': data[0],
+                    'designation_name': data[1],
+                    'is_active': data[2],
+                })
+
+
+    except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+        if request.method == "GET":
+            return render(request, "Master/designation_view.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=dm&type=i')

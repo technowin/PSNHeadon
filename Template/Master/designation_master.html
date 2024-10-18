@@ -1,0 +1,107 @@
+{% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+{% block content %}
+{% load static %}
+{% comment %} {% csrf_token %} {% endcomment %}
+
+ <!-- Custom styles for this html-->
+ <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/activebtn.css' %}" rel="stylesheet" type="text/css" >
+ 
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+ <!-- Include DataTables CSS -->
+ <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+ <!-- Include DataTables JS -->
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<!-- Selectize css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js"></script>
+ 
+
+ <body>
+    <div class="container mt-5" style="max-width: 1800px;">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center" style="color:#B12121;">
+                  <u>{% if designation_id == '0' %} Create {% else %} Edit {% endif %}Designation  Master</u>
+                </h2>
+                <br>
+                
+                <form id ="form_id" method="POST" action="{% url 'designation_master1' %}">
+                
+                    {% csrf_token %}
+
+                    <input type="hidden" value="{{ designation_id }}" name="designation_id" >
+
+                    <div class="row mb-3">
+                        
+                    
+                        <div class="col-md-3">  
+                            <label for="Desgination" class="form-label"> Designation Name <span style="color:red;"> *</span> :</label>
+                            <input type="text" value="{{ designation_name }}" name="designation_name" class="form-control" id="designation_name" placeholder="Enter Your Desgination" required>
+                        </div>
+                        {% if designation_id != "0" %}
+                            <div class="col-md-3">  
+                                <label for="activeBtn" class="form-label">Is Active<span style="color:red;"> *</span> :</label>
+                                <br>
+                                <label class="switch">
+                                    <input type="checkbox" values ="{{ is_active }}" id="statusSwitch" name="is_active" 
+                                           {% if is_active == "1" %} checked {% endif %} 
+                                           onchange="updateStatus()">
+                                    <span class="slider"></span>
+                                </label>
+                                <input type="text" id="statusValue" name="status_value" value="{{ is_active }}" hidden>
+                                {% endif %} 
+                            </div>
+                        </div>
+                  
+                    
+                   
+
+                    <div class="text-center">
+                        <button type="submit" id="submitBtn" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    
+</body>
+
+<script>
+    document.getElementById('submitBtn').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent form submission for some reason
+        console.log("Form submission is prevented.");
+        // You can do additional validation or AJAX calls here.
+        // To manually submit the form with the specific form_id:
+        document.getElementById('form_id').submit();
+    });
+</script>
+
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('statusSwitch');
+        const isActive = checkbox.getAttribute('values');
+        checkbox.checked = (isActive == '1');
+        updateStatus(); 
+      });
+
+</script>
+
+
+
+<script>
+    function updateStatus() {
+        var checkBox = document.getElementById("statusSwitch");
+        var statusValue = document.getElementById("statusValue");
+    
+        statusValue.value = checkBox.checked ? "1" : "0";
+    }
+</script>
+
+
+ {% endblock %} 
