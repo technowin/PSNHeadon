@@ -16,4 +16,8 @@ class ScRosterSerializer(serializers.ModelSerializer):
     class Meta:
         model = sc_roster
         fields = '__all__'  # Include all fields, or specify specific fields as needed
-  
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = sc_employee_master
+        fields = '__all__'  # Include all fields, or specify specific fields as needed
