@@ -54,10 +54,38 @@ class parameter_master(models.Model):
         db_table = 'parameter_master'
     def __str__(self):
         return self.parameter_name
+    
+class StateMaster(models.Model):
+    state_id =  models.AutoField(primary_key=True)
+    state_name = models.TextField(null=True,blank=True) 
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.TextField(null=True, blank=True)
+    state_status = models.BooleanField(null=True,blank=True,default=True)
+    class Meta:
+        db_table = 'tbl_state_master'
+    def __str__(self):
+        return self.name
+class CityMaster(models.Model):
+    id =  models.AutoField(primary_key=True)
+    city_id =  models.IntegerField(null=True, blank=False)
+    city_name = models.TextField(null=True,blank=True) 
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.TextField(null=True, blank=True)
+    state_status = models.BooleanField(null=True,blank=True,default=True)
+    class Meta:
+        db_table = 'tbl_city_master'
+    def __str__(self):
+        return self.name       
+
 
 class site_master(models.Model):
     site_id = models.AutoField(primary_key=True)
     company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='company_relation',blank=True, null=True)
+    state_id = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='state_master_site_master',blank=True, null=True,db_column="state_id")
     site_name =models.TextField(null=True,blank=True)
     site_address =models.TextField(null=True,blank=True)
     pincode =models.TextField(null=True,blank=True)
@@ -223,7 +251,7 @@ class SlotDetails(models.Model):
     end_time = models.TextField(null=True,blank=True)
     night_shift = models.BooleanField(null=True,blank=True,default=True)
     is_active =models.BooleanField(null=True,blank=True,default=True)
-    messege = models.TextField(max_length=255,null=True,blank=True)
+    message = models.TextField(max_length=255,null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_created',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
@@ -267,31 +295,14 @@ class SettingMaster(models.Model):
     def __str__(self):
         return self.name
     
-class UserShiftDetails(models.Model):
+class UserSlotDetails(models.Model):
     id = models.AutoField(primary_key=True) 
     employee_id = models.TextField(null=True,blank=True)
-    slot_id = models.TextField(null=True,blank=True) 
-    shift_id = models.TextField(null=True,blank=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='UserSlotDetails_slot_id',blank=True, null=True,db_column='slot_id')
     confirmation = models.BooleanField(null=True,blank=True,default=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
     class Meta:
-        db_table = 'user_shift_details'
+        db_table = 'user_slot_details'
     def __str__(self):
         return self.name
-    
-class StateMaster(models.Model):
-    id =  models.AutoField(primary_key=True)
-    state_id =  models.IntegerField(null=True, blank=False)
-    state_name = models.TextField(null=True,blank=True) 
-    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
-    created_by = models.TextField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
-    updated_by = models.TextField(null=True, blank=True)
-    state_status = models.BooleanField(null=True,blank=True,default=True)
-    class Meta:
-        db_table = 'tbl_state_master'
-    def __str__(self):
-        return self.name
-       
-

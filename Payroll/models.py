@@ -117,6 +117,7 @@ class slot_employee_details(models.Model)     :
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='employee_slot_id',blank=True, null=True,db_column='slot_id')
     employee_id = models.TextField(max_length=250,null=True,blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='slot_employee_company_id',blank=True, null=True,db_column='company_id')
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_employee_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
@@ -129,6 +130,7 @@ class daily_salary(models.Model):
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='daily_salary_slot_id', db_column='slot_id')
     employee_id = models.TextField(max_length=250, null=True, blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='daily_salary_company_id', db_column='company_id')
     attendance_date = models.DateTimeField(null=True, blank=True)
     work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Total working hours
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Salary amount for the day
@@ -143,8 +145,28 @@ class daily_salary(models.Model):
     class Meta:
         db_table = 'daily_salary'
 
+class salary_generated_log(models.Model):
+    id = models.AutoField(primary_key=True)
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='sal_gen_log_slot_id', db_column='slot_id')
+    employee_id = models.TextField(max_length=250, null=True, blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='sal_gen_log_company_id', db_column='company_id')
+    slot_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sal_gen_log_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sal_gen_log_updated_by', blank=True, null=True, db_column='updated_by')
 
-
-
-
-
+class income_tax_deduction(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.TextField(max_length=250, null=True, blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='income_tax_deduction_company_id', db_column='company_id')
+    deduction_date = models.DateField(null=True, blank=True)
+    deduction_amount = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_deduction_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_deduction_updated_by', blank=True, null=True, db_column='updated_by')
+    
+    
+    
+    

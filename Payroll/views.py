@@ -391,12 +391,18 @@ def get_slots(request):
 
 def calculate_daily_salary(request,slot_id):
     # Step 1: Fetch employees for the given slot_id from slot_employee_details
-    employees = slot_employee_details.objects.filter(slot_id=slot_id)
 
     # Step 2: Get the slot details
     slot = SlotDetails.objects.get(slot_id=slot_id)
-    
-    for employee in employees:
+    employees = slot_employee_details.objects.filter(slot_id=slot_id)
+    generated_logs = salary_generated_log.objects.filter(
+    slot_id=slot_id,
+    slot_date=slot.shift_date  # slot.shift_date is the slot_date
+    ).values_list('employee_id', flat=True)
+
+# Exclude employees that are already in salary_generated_log
+    filtered_employees = employees.exclude(employee_id__in=generated_logs)
+    for employee in filtered_employees:
         employee_id = employee.employee_id
         
         # Step 3: Check attendance for the employee in the given slot
@@ -454,19 +460,40 @@ def calculate_daily_salary(request,slot_id):
                                     amount = element.nine_hour_amount
                         
                         elif element.classification == "Calculation":
-                            if element.item_name == 'DA':
+                            if element.item_name == 'PF':
                                 # Calculate percentage based on BASIC
                                 if working_hours < 9:
                                     amount = (basic_amount * element.four_hour_amount) / 100
                                 else:
                                     amount = (basic_amount * element.nine_hour_amount) / 100
+                            elif element.item_name == 'LWF':
+                                # Calculate percentage based on BASIC
+                                if working_hours < 9:
+                                    amount = (basic_amount * element.four_hour_amount) / 100
+                                else:
+                                    amount = (basic_amount * element.nine_hour_amount) / 100
+                            elif element.item_name == 'ESIC':
+                                # Calculate percentage based on BASIC
+                                if working_hours < 9:
+                                    amount = (basic_amount * element.four_hour_amount) / 100
+                                else:
+                                    amount = (basic_amount * element.nine_hour_amount) / 100
+                            elif element.item_name == 'Income Tax':
+                                try:
+                                    deduction = income_tax_deduction.objects.get(
+                                        employee_id=employee_id,
+                                        company_id=employee.company_id,
+                                        deduction_date=attendance.attendance_date
+                                    )
+                                    amount = deduction.deduction_amount
+                                except income_tax_deduction.DoesNotExist:
+                                    amount = 0
                             else:
-                                # For other percentage-based items, use the normal logic
                                 if working_hours < 9:
                                     amount = element.four_hour_amount
                                 else:
                                     amount = element.nine_hour_amount
-                        elif element.classification == 'total' and element.item_name == 'Gross':
+                        elif element.classification == 'Total' and element.item_name == 'Gross Earning':
                             # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
                             total_earnings = daily_salary.objects.filter(
                                 employee_id=employee_id,
@@ -475,7 +502,33 @@ def calculate_daily_salary(request,slot_id):
                                 pay_type='earning'
                             ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-                            amount = total_earnings    
+                            amount = total_earnings 
+                        elif element.classification == 'Total' and element.item_name == 'Gross Deduction':
+                            # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                            total_deduction = daily_salary.objects.filter(
+                                employee_id=employee_id,
+                                slot_id=slot_id,
+                                attendance_date=attendance.attendance_date,
+                                pay_type='deduction'
+                            ).aggregate(Sum('amount'))['amount__sum'] or 0
+                            amount = total_deduction
+                        elif element.classification == 'Total' and element.item_name == 'Net Salary':
+                            total_earnings = daily_salary.objects.filter(
+                                employee_id=employee_id,
+                                slot_id=slot_id,
+                                attendance_date=attendance.attendance_date,
+                                pay_type='earning'
+                            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                            amount = total_earnings 
+                            # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                            total_deduction = daily_salary.objects.filter(
+                                employee_id=employee_id,
+                                slot_id=slot_id,
+                                attendance_date=attendance.attendance_date,
+                                pay_type='deduction'
+                            ).aggregate(Sum('amount'))['amount__sum'] or 0
+                            amount = total_earnings - total_deduction           
                         else:
                             # For non-percentage-based elements
                             if working_hours < 9:
@@ -487,6 +540,7 @@ def calculate_daily_salary(request,slot_id):
                         daily_salary.objects.create(
                             slot_id=slot,
                             employee_id=employee_id,
+                            company_id = employee.company_id,
                             attendance_date=attendance.attendance_date,
                             work_hours=working_hours,
                             amount=amount,
@@ -496,6 +550,13 @@ def calculate_daily_salary(request,slot_id):
                             created_by=request.user,
                             updated_by=request.user
                         )
+                        salary_generated_log.objects.create(slot_id=slot,
+                            employee_id=employee_id,
+                            company_id = employee.company_id,
+                            attendance_date=attendance.attendance_date,
+                            created_by=request.user,
+                            updated_by=request.user
+                            )
 
 
 
