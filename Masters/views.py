@@ -891,13 +891,13 @@ class SlotDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        slot_alloted = UserShiftDetails.objects.filter(
+        slot_alloted = UserSlotDetails.objects.filter(
         employee_id=employee_id,
         confirmation=1
         ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
 
         # Query for slot attended (confirmation = 0)
-        slot_attended = UserShiftDetails.objects.filter(
+        slot_attended = UserSlotDetails.objects.filter(
             employee_id=employee_id,
             confirmation=0
         ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
