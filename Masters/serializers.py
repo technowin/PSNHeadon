@@ -18,6 +18,7 @@ class ScRosterSerializer(serializers.ModelSerializer):
         fields = '__all__'  # Include all fields, or specify specific fields as needed
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    company_id = CompanyMasterSerializer()
     class Meta:
         model = sc_employee_master
         fields = '__all__'  # Include all fields, or specify specific fields as needed

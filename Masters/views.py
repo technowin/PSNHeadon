@@ -1472,10 +1472,13 @@ def view_designation(request):
             return redirect(f'/masters?entity=dm&type=i')
         
 class EmployeeData(APIView):
+    # Ensure the user is authenticated using JWT
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     def get(self, request, *args, **kwargs):
         # Get parameters from the request
-        employee_id = request.query_params.get('employeeId')
-        company_id = request.query_params.get('companyId')
+        employee_id = request.data['employee_id']
+        company_id =request.data['company_id']
 
         try:
             # Fetch the employee using the provided parameters
