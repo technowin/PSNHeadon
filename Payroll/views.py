@@ -455,9 +455,9 @@ def calculate_daily_salary(request,slot_id):
                             else:
                                 # For other percentage-based items, use the normal logic
                                 if working_hours < 9:
-                                    amount = element.four_hour_amount
+                                    amount = (basic_amount * element.four_hour_amount) / 100
                                 else:
-                                    amount = element.nine_hour_amount
+                                    amount = (basic_amount * element.four_hour_amount) / 100
                         
                         elif element.classification == "Calculation":
                             if element.item_name == 'PF':
@@ -483,7 +483,9 @@ def calculate_daily_salary(request,slot_id):
                                     deduction = income_tax_deduction.objects.get(
                                         employee_id=employee_id,
                                         company_id=employee.company_id,
-                                        deduction_date=attendance.attendance_date
+                                        deduction_month=attendance.attendance_date.month,
+                                        deduction_year = attendance.attendance_date.year,
+                                        is_deducted = False
                                     )
                                     amount = deduction.deduction_amount
                                 except income_tax_deduction.DoesNotExist:
@@ -529,12 +531,6 @@ def calculate_daily_salary(request,slot_id):
                                 pay_type='deduction'
                             ).aggregate(Sum('amount'))['amount__sum'] or 0
                             amount = total_earnings - total_deduction           
-                        else:
-                            # For non-percentage-based elements
-                            if working_hours < 9:
-                                amount = element.four_hour_amount
-                            else:
-                                amount = element.nine_hour_amount
 
                         # Step 9: Insert the record into daily_salary
                         daily_salary.objects.create(
@@ -557,6 +553,15 @@ def calculate_daily_salary(request,slot_id):
                             created_by=request.user,
                             updated_by=request.user
                             )
+                        deduction = income_tax_deduction.objects.get(
+                                        employee_id=employee_id,
+                                        company_id=employee.company_id,
+                                        deduction_month=attendance.attendance_date.month,
+                                        deduction_year = attendance.attendance_date.year,
+                                        is_deducted = False
+                                    )
+                        deduction.is_deducted = True
+                        deduction.save()
 
 
 
