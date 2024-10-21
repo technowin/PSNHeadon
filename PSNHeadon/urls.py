@@ -83,6 +83,7 @@ urlpatterns = [
     path("designation_master1",designation_master1, name="designation_master1"),
     # path("view_employee",view_employee, name="view_employee"),
     path("view_designation",view_designation, name="view_designation"),
+    path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

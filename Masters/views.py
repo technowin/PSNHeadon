@@ -1472,12 +1472,21 @@ def view_designation(request):
             return redirect(f'/masters?entity=dm&type=i')
         
 class EmployeeData(APIView):
-    def get_employee_details(request, employee_id):
+    def get(self, request, *args, **kwargs):
+        # Get parameters from the request
+        employee_id = request.query_params.get('employeeId')
+        company_id = request.query_params.get('companyId')
+
         try:
-            employee = sc_employee_master.objects.get(employee_id=employee_id)
-            serializer = EmployeeSerializer(employee)
-            return Response(serializer.data)
-        except sc_employee_master.DoesNotExist:
-            return Response({"error": "Employee not found"}, status=404)
-        
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if employee:
+                serializer = EmployeeSerializer(employee)
+                return Response(serializer.data)
+            else:
+                return Response({"error": "Employee not found"}, status=404)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
