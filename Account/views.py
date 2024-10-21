@@ -63,6 +63,7 @@ class LoginView(APIView):
                     login(request, user,backend='django.contrib.auth.backends.ModelBackend')
                     user.device_token  = device_token
                     user.save()
+                    serializer['employee_id'] = employee.employee_id
                     serializer = UserSerializer(user).data
                     
                     refresh = RefreshToken.for_user(user)
