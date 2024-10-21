@@ -14,7 +14,7 @@ from Payroll.models import *
 import Db 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1470,3 +1470,14 @@ def view_designation(request):
             return render(request, "Master/designation_view.html", context)
         elif request.method == "POST":  
             return redirect(f'/masters?entity=dm&type=i')
+        
+class EmployeeData(APIView):
+    def get_employee_details(request, employee_id):
+        try:
+            employee = sc_employee_master.objects.get(employee_id=employee_id)
+            serializer = EmployeeSerializer(employee)
+            return Response(serializer.data)
+        except sc_employee_master.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=404)
+        
+
