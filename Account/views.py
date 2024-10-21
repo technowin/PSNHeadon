@@ -57,15 +57,17 @@ class LoginView(APIView):
                     return Response({'message': 'User Not Found'}, status=status.HTTP_400_BAD_REQUEST)  
                  
                 employee = get_object_or_404(sc_employee_master, mobile_no=phone)
+                employee_id = ""
                 if employee:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     user.device_token = device_token
                     user.save()
                     serializer = UserSerializer(user).data
-                    serializer['employee_id'] = employee.id
+                    employee_id = employee.employee_id 
+                    company_id = employee.company_id 
                     refresh = RefreshToken.for_user(user)
 
-                return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer}, status=status.HTTP_200_OK, safe=False)
+                return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer,'employee_id':employee_id,'company_id':company_id}, status=status.HTTP_200_OK, safe=False)
         except Exception as e:
             print(str(e))
             return Response({'message': 'Invalid credentials  '}, status=status.HTTP_400_BAD_REQUEST)
