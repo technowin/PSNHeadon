@@ -57,14 +57,13 @@ class LoginView(APIView):
                     return Response({'message': 'User Not Found'}, status=status.HTTP_400_BAD_REQUEST)  
                  
                 employee = get_object_or_404(sc_employee_master, mobile_no=phone)
-                employee_id = ""
                 if employee:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     user.device_token = device_token
                     user.save()
                     serializer = UserSerializer(user).data
                     employee_id = employee.employee_id 
-                    company_id = employee.company_id 
+                    company_id = employee.company_id.company_id 
                     refresh = RefreshToken.for_user(user)
 
                 return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer,'employee_id':employee_id,'company_id':company_id}, status=status.HTTP_200_OK, safe=False)
@@ -84,7 +83,7 @@ def Login(request):
     Error=False
     if request.method=="POST":
         next =request.POST.get('next', '')
-        if request.method =="POST":
+        if request.method    =="POST":
             username = request.POST.get('username')
             password = request.POST.get('password')
             remember_me = request.POST.get('remember_me')
