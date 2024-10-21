@@ -56,24 +56,16 @@ class LoginView(APIView):
                     print(str(e))
                     return Response({'message': 'User Not Found'}, status=status.HTTP_400_BAD_REQUEST)  
                  
-            try:
-                employee = get_object_or_404(sc_employee_master,mobile_no=phone)
-                if(employee):
-                    # if user.check_password(password):
-                    login(request, user,backend='django.contrib.auth.backends.ModelBackend')
-                    user.device_token  = device_token
+                employee = get_object_or_404(sc_employee_master, mobile_no=phone)
+                if employee:
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    user.device_token = device_token
                     user.save()
-                    serializer['employee_id'] = employee.id
                     serializer = UserSerializer(user).data
-                    
+                    serializer['employee_id'] = employee.id
                     refresh = RefreshToken.for_user(user)
-                    return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data':serializer}, status=status.HTTP_200_OK,safe=False)
-            except Exception as e:
-                print(str(e))
-                return Response({'message': 'User Not Found In Employee Master  '}, status=status.HTTP_400_BAD_REQUEST)  
-                # return JsonResponse(serializer, status=status.HTTP_200_OK,safe=False)
-            # else:
-            #     return JsonResponse({'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED,safe=False)
+
+                return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer}, status=status.HTTP_200_OK, safe=False)
         except Exception as e:
             print(str(e))
             return Response({'message': 'Invalid credentials  '}, status=status.HTTP_400_BAD_REQUEST)
