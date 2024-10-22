@@ -18,7 +18,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, StateMasterSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -2043,29 +2043,21 @@ class EmployeeData(APIView):
     authentication_classes = [JWTAuthentication]
     def get(self, request, *args, **kwargs):
         # Get parameters from the request
-        employee_id = request.query_params.get('employee_id')  # Changed to query_params
-        company_id = request.query_params.get('company_id')    # Changed to query_params
+        employee_id = request.data['employee_id']
+        company_id =request.data['company_id']
 
         try:
             # Fetch the employee using the provided parameters
             employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
 
-            # Fetch all states
-            states = StateMaster.objects.all()
-            states_serializer = StateMasterSerializer(states, many=True)
-
             if employee:
                 serializer = EmployeeSerializer(employee)
-                return Response({
-                    "employee": serializer.data,
-                    "states": states_serializer.data
-                })
+                return Response(serializer.data)
             else:
                 return Response({"error": "Employee not found"}, status=404)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-
 
 def deactivate_slot(request):
     Db.closeConnection()  
