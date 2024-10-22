@@ -1471,14 +1471,37 @@ def view_designation(request):
         elif request.method == "POST":  
             return redirect(f'/masters?entity=dm&type=i')
         
+# class EmployeeData(APIView):
+#     # Ensure the user is authenticated using JWT
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+#     def get(self, request, *args, **kwargs):
+#         # Get parameters from the request
+#         employee_id = request.data['employee_id']
+#         company_id =request.data['company_id']
+
+#         try:
+#             # Fetch the employee using the provided parameters
+#             employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+#             if employee:
+#                 serializer = EmployeeSerializer(employee)
+#                 return Response(serializer.data)
+#             else:
+#                 return Response({"error": "Employee not found"}, status=404)
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)
+
 class EmployeeData(APIView):
     # Ensure the user is authenticated using JWT
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+
     def get(self, request, *args, **kwargs):
         # Get parameters from the request
-        employee_id = request.data['employee_id']
-        company_id =request.data['company_id']
+        employee_id = request.data('employee_id')
+        company_id = request.data('company_id')
 
         try:
             # Fetch the employee using the provided parameters
@@ -1492,4 +1515,27 @@ class EmployeeData(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+    def put(self, request, *args, **kwargs):
+        # Get parameters from the request
+        employee_id = request.data.get('employee_id')
+        company_id = request.data.get('company_id')
+
+        try:
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if employee:
+                # Update the employee details with the provided data
+                serializer = EmployeeSerializer(employee, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=200)
+                return Response(serializer.errors, status=400)
+            else:
+                return Response({"error": "Employee not found"}, status=404)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+        
 

@@ -22,7 +22,13 @@ class ScRosterSerializer(serializers.ModelSerializer):
         model = sc_roster
         fields = '__all__'  
 
+class StateMasterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StateMaster
+        fields = '__all__'
+
 class EmployeeSerializer(serializers.ModelSerializer):
+    state_id = StateMasterSerializer()
     company_id = CompanyMasterSerializer()
     employement_status_id = ParameterMasterSerializer()
     class Meta:
