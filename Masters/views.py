@@ -885,7 +885,7 @@ def employee_master(request):
 @login_required  
 def upload_excel(request):
 
-    if request.method == 'POST' and request.FILES.get('excelFile'):
+     if request.method == 'POST' and request.FILES.get('excelFile'):
         excel_file = request.FILES['excelFile']
         file_name = excel_file.name
        # Read the Excel file into three separate DataFrames
@@ -2036,6 +2036,57 @@ def employee_upload(request):
             new_url = f'/masters1?entity={entity}&type={type}'
             return redirect(new_url)      
 
+
+class EmployeeData(APIView):
+    # Ensure the user is authenticated using JWT
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    def get(self, request, *args, **kwargs):
+        # Get parameters from the request
+        employee_id = request.data['employee_id']
+        company_id =request.data['company_id']
+
+        try:
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if employee:
+                serializer = EmployeeSerializer(employee)
+                return Response(serializer.data)
+            else:
+                return Response({"error": "Employee not found"}, status=404)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+def deactivate_slot(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            slot_id = request.POST.get('slot_id')
+            slot_idd = decrypt_parameter(slot_id)
+            reason = request.POST.get('reason', '') 
+
+            slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
+            slot_detail.is_active = 0
+            slot_detail.messege = reason 
+            slot_detail.save()
+
+            return JsonResponse({'message': 'Slot deactivated successfully.'})
+    except SlotDetails.DoesNotExist:
+        return JsonResponse({'message': 'Slot ID not found.'}, status=404)
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+        return JsonResponse({'message': str(e)}, status=500)
+    
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
 
 
 

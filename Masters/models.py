@@ -311,20 +311,6 @@ class UserSlotDetails(models.Model):
     def __str__(self):
         return self.name
     
-class StateMaster(models.Model):
-    id =  models.AutoField(primary_key=True)
-    state_id =  models.IntegerField(null=True, blank=False)
-    state_name = models.TextField(null=True,blank=True) 
-    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
-    created_by = models.TextField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
-    updated_by = models.TextField(null=True, blank=True)
-    state_status = models.BooleanField(null=True,blank=True,default=True)
-    class Meta:
-        db_table = 'tbl_state_master'
-    def __str__(self):
-        return self.name
-    
 class employee_designation(models.Model):
     id =  models.AutoField(primary_key=True)
     designation_id = models.ForeignKey(designation_master, on_delete=models.CASCADE,related_name='employee_designation_relation',blank=True, null=True,db_column='designation_id')
