@@ -29,6 +29,7 @@ class StateMasterSerializer(serializers.ModelSerializer):
 
 class EmployeeSerializer(serializers.ModelSerializer):
     company_id = CompanyMasterSerializer()
+    state_id = StateMasterSerializer()
     employment_status = ParameterMasterSerializer()
     class Meta:
         model = sc_employee_master
