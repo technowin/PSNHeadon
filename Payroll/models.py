@@ -1,8 +1,10 @@
 from django.db import models
 
 from Account.models import CustomUser
-from Masters.models import company_master, site_master
-from Masters.views import slot_details
+# from Masters.models import site_master
+
+# from Masters.models import company_master, site_master,SlotDetails
+# from Masters.views import slot_details
 
 # Create your models here.
 class salary_element_master(models.Model):
@@ -66,7 +68,7 @@ class designation_master(models.Model)    :
         return f"{self.designation_name}"    
 class site_card_relation(models.Model):
     relation_id = models.AutoField(primary_key=True)
-    site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='site_master_id',blank=True, null=True,db_column='site_id')
+    site_id = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='site_master_id',blank=True, null=True,db_column='site_id')
     designation_id = models.ForeignKey(designation_master, on_delete=models.CASCADE,related_name='site_designation_master',blank=True, null=True,db_column='designation_id')
     relation_name = models.TextField(null=True,blank=True)
     # working_hours =models.BigIntegerField(null=True,blank=False)
@@ -98,9 +100,9 @@ class employee_rate_card_details(models.Model):
 
 class slot_attendance_details(models.Model):
     id = models.AutoField(primary_key=True)
-    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='attendance_company_id',blank=True, null=True,db_column='company_id')
-    site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='attendance_site_id',blank=True, null=True,db_column='site_id')
-    slot_id = models.ForeignKey(slot_details, on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
+    company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE,related_name='attendance_company_id',blank=True, null=True,db_column='company_id')
+    site_id = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='attendance_site_id',blank=True, null=True,db_column='site_id')
+    slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
     attendance_date = models.DateTimeField(null=True,blank=True)
     attendance_in = models.TextField(null=True,blank=True)
     attendance_out = models.TextField(null=True,blank=True)

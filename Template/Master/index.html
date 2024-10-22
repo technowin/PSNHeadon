@@ -112,7 +112,7 @@
         <h5 class="modal-title" style="color:black">
           {% if entity == 'sm' %} Site Upload
           {% elif entity == 'cm' %} Company Upload
-          {% elif entity == 'em' %} Employee Upload
+          {% elif entity == 'um' %} Employee Upload
           {% endif %}
         </h5>
         <button type="button" class="close" data-dismiss="modal"> <span>&times;</span></button>
@@ -141,33 +141,9 @@
           <hr>
           {% endif %}
 
-          <!-- Conditional dropdowns for 'Employee Upload' -->
-          {% comment %} {% if entity == 'em' %}
-          <div class="row d-flex justify-content-center align-items-center">
-            <div class="col-md-6 mb-3">
-              <label for="company_id" class="form-label">Company</label>
-              <select id="company_id" name="company_id" class="form-control" required>
-                <option value="" selected>Select</option>
-                {% for item in company_names %}
-                <option value="{{ item.0 }}">{{ item.1 }}</option>
-                {% endfor %}
-              </select>
-            </div>
+  
         
-            <div class="col-md-6 mb-3">
-              <label for="site_id" class="form-label">Worksite</label>
-              <select id="site_id" name="site_id" class="form-control" required>
-                <option value="" selected>Select</option>
-                {% for item in site_name %}
-                <option value="{{ item.0 }}">{{ item.1 }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <hr>
-        {% endif %} {% endcomment %}
-        
-        {% if entity == 'em' %}
+        {% if entity == 'um' %}
   <div class="row d-flex justify-content-center align-items-center">
     <!-- Company Dropdown -->
     <div class="col-md-6 mb-3">
@@ -224,11 +200,12 @@
                    <div class="{% if entity == 'r' %}col-md-7{% else %}col-md-5{% endif %}">
                        <h3> <strong style="color: #B12121;"> <u>{{name}}</u> </strong></h3>
                    </div>
-                   {% if entity == 'user' and entity == 'sd' %}
+                   {% if entity == 'user' and entity == 'sd' and entity == 'dm'  and entity == 'em' and entity == 'um' %}
                    <div class="col-md-5">
+
                    </div>
                    {% endif %}
-                   {% if entity != 'user' and entity != 'sd' %}
+                   {% if entity != 'user' and entity != 'sd' and entity != 'dm' and entity != 'em' and entity != 'um'  %}
                    <div class="col-md-1">
                       <a href="{% if entity == 'r' %}#{% else %}/sample_xlsx?entity={{entity}}&type={{type}}{% endif %}" class="Btn1" hover-tooltip="Download Sample"  tooltip-position="top"
                       type="button" {% if entity == 'r' %} data-toggle="modal"  data-target="#roster_sample_xlsx_id" {% endif %}>
@@ -238,7 +215,7 @@
                     </div>
                    <div class="col-sm-2">
                        <!-- Button trigger modal -->
-                       <button class="buttonu" type="button" data-toggle="modal"  data-target="{% if entity == 'r' %}#roster_model_id{% else %}#excel_upload{% endif %}">
+                       <button class="buttonu" type="button" data-toggle="modal"  data-target="{% if entity == 'r' %}#roster_model_id{% elif entity == 'um' %}#id{% else %}#excel_upload{% endif %}">
                            <span class="btn__icon">
                                <svg stroke-linejoin="round" stroke-linecap="round" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
                                    <path fill="none" d="M0 0h24v24H0z" stroke="none"></path>
@@ -251,6 +228,16 @@
                        </button>                  
                    </div>
                    {% endif %}
+                   {% if entity == 'em' %}
+                   <div style="justify-content: center">
+                    <a href="/employee_upload" style="text-decoration: none;">
+                      <button type="submit" class="Btn"><div class="sign">&#x2191;</div> <div class="text">Launch</div></button>
+                </a>
+                   </div> 
+               {% endif %}
+
+               
+               
                    {% if entity == 'r'%}
                     <div class="col-sm-2">
                       <form method="GET" action="/masters">
@@ -264,13 +251,15 @@
                         </button> 
                       </form>
                     </div>
+                    
                   {% else %}   
                     <div class="col-sm-2">
-                     <form method="GET" action="{% if entity == 'sm' %}/site_master{% elif entity == 'cm' %}/company_master{% elif entity == 'em' %}/employee_master{% elif entity == 'user' %}/register_new_user{% elif entity == 'sd' %}/slot_details{% endif %}">
+                     <form method="GET" action="{% if entity == 'sm' %}/site_master{% elif entity == 'cm' %}/company_master{% elif entity == 'em' %}/employee_master{% elif entity == 'user' %}/register_new_user{% elif entity == 'sd' %}/slot_details}{% elif entity == 'dm' %}/designation_master1{% elif entity == 'um' %}/masters{% endif %}">
                       {% if entity == 'sd'%}
                         <input type="hidden" name='type' value="slot">
-                       {% endif %} 
-                      <input type="hidden" name="{% if entity == 'sm' %}site_id{% elif entity == 'cm' %}company_id{% elif entity == 'em' %}id{% elif entity == 'sd' %}slot_id{% elif entity == 'user' %}id{% endif %}" value="0">
+                       
+                {% endif %}
+                      <input type="hidden" name="{% if entity == 'sm' %}site_id{% elif entity == 'cm' %}company_id{% elif entity == 'em' %}id{% elif entity == 'sd' %}slot_id{% elif entity == 'user' %}id{% elif entity == 'dm' %}designation_id{% endif %}" value="0">
                        <button type="submit" class="Btn"><div class="sign">+ </div> <div class="text">Create</div></button>
                      </form>
                     </div>
@@ -337,7 +326,9 @@
                                   <td style="display: flex; gap: 10px;">
                                   <a href="{% if entity == 'sm' %}/site_master?site_id={{ row.0 }}
                                   {% elif entity == 'cm' %}/company_master?company_id={{ row.0 }}
+                                   {% elif entity == 'dm' %}/designation_master1?designation_id={{ row.0 }}
                                    {% elif entity == 'em' %}/employee_master?id={{ row.0 }}
+                                    {% elif entity == 'um' %}/employee_upload?id={{ row.0 }}
                                     {% elif entity == 'user' %}/register_new_user?id={{ row.0 }}
                                      {% elif entity == 'sd' %}/edit_slot_details?type=slot&slot_id={{ row.0 }}
                                     {% elif entity == 'r' %}/masters?month={{ row.0 }}&entity={{entity}}&type=ed&empid={{row.1}}{% endif %}" class="edit-button">
@@ -345,7 +336,8 @@
                                         <path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path>
                                     </svg>
                                   </a>
-                                  {% if entity == 'sd' %}
+   
+                        {% if entity == 'sd' %}
                                   <a href="#" class="trigger-btn" data-toggle="modal" data-id="{{ row.0 }}" onclick="delete_slot('{{ row.0 }}'); return false;">
                                     <button class="toggle-Btn">
                                         <div class="sign">
@@ -356,11 +348,42 @@
                                         <div class="text">Delete</div>
                                     </button>
                                   </a> 
-                                  {% endif %}
+                                  {% comment %} href="{% url 'setting_master' %}?type=setting&slot_id={{ row.0 }}" {% endcomment %}
+                                  {% elif entity == 'em' %}
+                                  <a href="{% url 'view_employee' %}?id={{ row.0 }}" class="trigger-btn">
+                                    <button class="toggle-Btn">
+                                        <div class="sign">
+                                            <svg viewBox="0 0 16 16" fill="white" class="bi bi-eye-fill" height="18" width="18" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8 3.5a7.35 7.35 0 0 0-6.661 4.142.5.5 0 0 0 0 .316A7.35 7.35 0 0 0 8 12.5a7.35 7.35 0 0 0 6.661-4.142.5.5 0 0 0 0-.316A7.35 7.35 0 0 0 8 3.5zM8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="text">View</div>
+                                    </button>
+                                  </a>
+                                
+                               
+                                {% elif entity == 'dm' %}
+                                <a href="{% url 'view_designation' %}?designation_id={{ row.0 }}" class="trigger-btn">
+                                  <button class="toggle-Btn">
+                                      <div class="sign">
+                                          <svg viewBox="0 0 16 16" fill="white" class="bi bi-eye-fill" height="18" width="18" xmlns="http://www.w3.org/2000/svg">
+                                              <path d="M8 3.5a7.35 7.35 0 0 0-6.661 4.142.5.5 0 0 0 0 .316A7.35 7.35 0 0 0 8 12.5a7.35 7.35 0 0 0 6.661-4.142.5.5 0 0 0 0-.316A7.35 7.35 0 0 0 8 3.5zM8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"></path>
+                                          </svg>
+                                      </div>
+                                      <div class="text">View</div>
+                                  </button>
+                                </a>
+                              
+                              {% endif %}
+                              
+                                
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>
+                  
+                  </td>
+              </tr>
+            </tbody>
                    </table>
                 </div>
                </div>
@@ -444,10 +467,11 @@
                         <td>{{ forloop.counter }}</td>
                         {% for cell in row %}
                           <td>
-                            {% if 'Employee' in cell or 'Worksite' in cell or 'The employee with ID' in cell or 'The worksite' in cell or 'The company' in cell%}
-                                <span class="badge badge-danger" style="font-size: 16px;">{{ cell }}</span>
-                            {% elif 'Total' in cell %}
+                            {% comment %} {% if 'Employee' in cell or 'Worksite' in cell or 'The employee with ID' in cell or 'The worksite' in cell or 'The company' in cell%} {% endcomment %}
+                            {% if 'Total' in cell %}
                                 <span class="badge badge-dark" style="font-size: 16px;">{{ cell }}</span>
+                             {% elif forloop.counter == 2 %}
+                                <span class="badge badge-danger" style="font-size: 16px;">{{ cell }}</span>
                             {% else %}
                                 {{ cell }}
                             {% endif %}
@@ -820,6 +844,25 @@
         });
     }
 </script>
+
+{% comment %} <script>
+  function view_employee(employee_id) {
+      Swal.fire({
+          title: 'View Employee Details',
+          icon: 'info',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'OK',
+          cancelButtonText: 'Cancel',
+      }).then((result) => {
+          if (result.isConfirmed) {
+              // Redirect to the view page, passing employee_id as a query parameter
+              window.location.href = "{% url 'employee_master' %}?employee_id=" + employee_id;
+          }
+      });
+  }
+</script> {% endcomment %}
 
 
 {% endblock %}

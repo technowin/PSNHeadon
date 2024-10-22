@@ -71,12 +71,16 @@ urlpatterns = [
     path("employee_master",employee_master, name="employee_master"),
     path("upload_excel",upload_excel, name="upload_excel"),
     path("site_master",sm, name="site_master"),
+    path("designation_master1",designation_master1, name="designation_master1"),
     path("get_access_control",get_access_control, name="get_access_control"),
     path("slot_details",slot_details, name="slot_details"),
     path("post_slot_details",post_slot_details, name="post_slot_details"),
     path("setting_master",setting_master, name="setting_master"),
     path("edit_slot_details",edit_slot_details, name="edit_slot_details"),
     path("delete_slot",delete_slot, name="delete_slot"),
+    path("view_employee",view_employee, name="view_employee"),
+    path("view_designation",view_designation, name="view_designation"),
+    path("employee_upload",employee_upload, name="employee_upload"),
 
     #Reports 
     path('common_html', common_html, name='common_html'),
