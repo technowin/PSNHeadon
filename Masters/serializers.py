@@ -28,9 +28,8 @@ class StateMasterSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    state_id = StateMasterSerializer()
     company_id = CompanyMasterSerializer()
-    employement_status_id = ParameterMasterSerializer()
+    employment_status = ParameterMasterSerializer()
     class Meta:
         model = sc_employee_master
         fields = '__all__' 
