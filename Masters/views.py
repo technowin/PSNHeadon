@@ -2071,7 +2071,7 @@ def deactivate_slot(request):
 
             slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
             slot_detail.is_active = 0
-            slot_detail.messege = reason 
+            slot_detail.message = reason 
             slot_detail.save()
 
             return JsonResponse({'message': 'Slot deactivated successfully.'})
