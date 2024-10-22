@@ -1,0 +1,256 @@
+{% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+{% block content %}
+{% load static %}
+{% comment %} {% csrf_token %} {% endcomment %}
+
+ <!-- Custom styles for this html-->
+ <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/activebtn.css' %}" rel="stylesheet" type="text/css" >
+ 
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+ <!-- Include DataTables CSS -->
+ <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+ <!-- Include DataTables JS -->
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<!-- Selectize css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js"></script>
+ 
+
+ <body>
+    <div class="container mt-5" style="max-width: 1800px;">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center" style="color:#B12121;">
+                  <u>{% if designation_id == '0' %} view{% endif %} Designation Veiw Details</u>
+                </h2>
+                <br>
+                
+                <form id ="form_id" method="POST" action="{% url 'designation_master1' %}">
+                
+                    {% csrf_token %}
+
+                    <input type="hidden" value="{{ designation_id }}" name="designation_id" >
+
+                    <div class="row mb-3">
+                        <!-- First Row: Employee No, Employee Name, Mobile Number, Email Id -->
+                       
+                        <div class="col-md-3">  
+                            <label for="Desgination" class="form-label"> Designation Name <span style="color:red;"> *</span> :</label>
+                            <input type="text" value="{{ designation_name }}" name="designation_name" class="form-control" id="designation_name" placeholder="Enter Your Desgination" readonly>
+                        </div>
+                        <div class="col-md-3">  
+                            <label for="activeBtn" class="form-label">Is Active<span style="color:red;"> *</span> :</label>
+                            <br>
+                            <label class="switch">
+                                <input type="checkbox" values ="{{ is_active }}" id="statusSwitch" name="is_active" 
+                                       {% if is_active == "1" %} checked {% endif %} onchange="updateStatus()" disabled>
+                                <span class="slider"></span>
+                            </label>
+                            
+                            <input type="text" id="statusValue" name="status_value" value="{{ is_active }}" hidden>
+                        
+                        </div>
+                        </div>
+                       
+                    
+                   
+              
+               
+
+                </form>
+            </div></div>
+        
+</body>
+
+<script>
+$(document).ready(function() {
+    debugger;
+    
+
+    // Initialize the selectize dropdown
+    var $select = $('#designationdropdown').selectize({
+        plugins: ['remove_button'],
+        delimiter: ',',
+        persist: false,
+        create: false,
+        selectOnTab: false,
+        maxItems: null,
+        onInitialize: function() {
+            var control = this;
+            control.clear();
+        }
+    });
+
+    // Get the Selectize instance
+    var designationdropdown_instance = $select[0].selectize;
+    // var desig_list=$('#designation_hidden').val();
+    var desig_list = JSON.parse('{{ selected_designation|escapejs }}');
+    // Array of values to be selected by default
+    // var selectedValues = designationdropdownArray.map(item => item[0]);
+
+    // Set the default selected values
+    designationdropdown_instance.setValue(desig_list, true);
+});
+
+</script>
+
+
+<script>
+
+    $(document).ready(function() {
+        // Initialize the selectize dropdown
+        var $select1 = $('#sitedropdown').selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false,
+            selectOnTab: false,
+            maxItems: null,
+            onInitialize: function() {
+                var control = this;
+                control.clear();
+            }
+        });
+    
+        var sitedropdown_instance = $select1[0].selectize;
+        
+        var site_list = JSON.parse('{{ selected_site|escapejs }}');
+
+        sitedropdown_instance.setValue(site_list, true);
+    });
+    
+</script>
+
+
+
+<script>
+    document.getElementById('submitBtn').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent form submission for some reason
+        console.log("Form submission is prevented.");
+        // You can do additional validation or AJAX calls here.
+        // To manually submit the form with the specific form_id:
+        document.getElementById('form_id').submit();
+    });
+</script>
+
+   
+    
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('statusSwitch');
+        const isActive = checkbox.getAttribute('values');
+        checkbox.checked = (isActive == '1');
+        updateStatus(); 
+      });
+
+</script>
+
+<script>
+    function updateStatus() {
+        var checkBox = document.getElementById("statusSwitch");
+        var statusValue = document.getElementById("statusValue");
+        statusValue.value = checkBox.checked ? "1" : "0";
+    }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('HandicappedSwitch');
+        const handicappedValue = checkbox.getAttribute('value'); // Fetching the 'value' attribute
+        checkbox.checked = (handicappedValue == '1');
+        updateHandicapped(); // Call the function to set the initial state
+    });
+</script>
+
+<script>
+    function updateHandicapped() {
+        var checkBox = document.getElementById("HandicappedSwitch");
+        var handicappedValue = document.getElementById("HandicappedValue");
+        handicappedValue.value = checkBox.checked ? "1" : "0"; // Set value to '1' if checked, otherwise '0'
+    }
+</script>
+
+
+
+<script>
+function limitMobileNumber(input) {
+    // Remove any non-digit characters
+    input.value = input.value.replace(/\D/g, '');
+
+    // Check if the length exceeds 10 digits
+    if (input.value.length > 10) {
+        input.value = input.value.slice(0, 10); // Truncate to 10 digits
+    }
+
+    // Optional: Show an error message if more than 10 digits are entered
+    const errorMsg = document.getElementById('mobileError');
+    if (input.value.length === 10) {
+        errorMsg.style.display = 'none'; // Hide error message when valid
+    } else {
+        errorMsg.style.display = 'block'; // Show error message if invalid
+    }
+}
+</script>
+
+<script>
+    function limitUAN(input) {
+        // Remove any non-digit characters
+        input.value = input.value.replace(/\D/g, '');
+
+        // Check if the length exceeds 12 digits
+        if (input.value.length > 12) {
+            input.value = input.value.slice(0, 12); // Truncate to 12 digits
+        }
+
+        // Optional: Show an error message if more than 12 digits are entered
+        const errorMsg = document.getElementById('uanError');
+        if (input.value.length === 12) {
+            errorMsg.style.display = 'none'; // Hide error message when valid
+        } else {
+            errorMsg.style.display = 'block'; // Show error message if invalid
+        }
+    }
+</script>
+
+<script>
+    function validateIFSC(input) {
+        // Regular expression for IFSC: 4 letters followed by 7 digits
+        const ifscPattern = /^[A-Za-z]{4}\d{7}$/;
+        
+        // Check if the input matches the IFSC pattern
+        const isValid = ifscPattern.test(input.value);
+
+        // Display error message if the input doesn't match the pattern
+        const errorMsg = document.getElementById('ifscError');
+        if (isValid) {
+            errorMsg.style.display = 'none'; // Hide error if valid
+        } else {
+            errorMsg.style.display = 'block'; // Show error if invalid
+        }
+
+        // Optionally limit the input to 11 characters
+        if (input.value.length > 11) {
+            input.value = input.value.slice(0, 11); // Limit to 11 characters
+        }
+    }
+</script>
+
+<script>
+    // Function to update the textbox with selected options from the dropdown
+    document.getElementById('designationdropdown').addEventListener('change', function() {
+        var selectedOptions = Array.from(this.selectedOptions).map(option => option.text); // Get the text of selected options
+        document.getElementById('designationText').value = selectedOptions.join(', '); // Join them with commas
+    });
+    
+    
+</script>
+
+
+ {% endblock %} 
