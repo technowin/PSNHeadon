@@ -1171,21 +1171,21 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        slot_alloted = sc_roster.objects.filter(
+        current_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
         )
         
-        current_roster_qsser = ScRosterSerializer(slot_alloted, many=True)
+        current_roster_qsser = ScRosterSerializer(current_roster_qs, many=True)
 
-        slot_attended = sc_roster.objects.filter(
+        previous_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__lt=current_date,
             shift_time__isnull=False
             
         )
-        previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
+        previous_roster_qsser = ScRosterSerializer(previous_roster_qs, many=True)
 
         marked_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
@@ -1218,7 +1218,7 @@ class RosterDataAPIView(APIView):
             'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
             'unmarked_roster_count': unmarked_roster_count,
             'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-            'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
+            'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
     
 class SlotDataAPIView(APIView):
