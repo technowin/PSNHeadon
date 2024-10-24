@@ -2037,14 +2037,37 @@ def employee_upload(request):
             return redirect(new_url)      
 
 
+# class EmployeeData(APIView):
+#     # Ensure the user is authenticated using JWT
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+#     def get(self, request, *args, **kwargs):
+#         # Get parameters from the request
+#         employee_id = request.data['employee_id']
+#         company_id =request.data['company_id']
+
+#         try:
+#             # Fetch the employee using the provided parameters
+#             employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+#             if employee:
+#                 serializer = EmployeeSerializer(employee)
+#                 return Response(serializer.data)
+#             else:
+#                 return Response({"error": "Employee not found"}, status=404)
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)
+
 class EmployeeData(APIView):
     # Ensure the user is authenticated using JWT
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+
     def get(self, request, *args, **kwargs):
         # Get parameters from the request
         employee_id = request.data['employee_id']
-        company_id =request.data['company_id']
+        company_id = request.data['company_id']
 
         try:
             # Fetch the employee using the provided parameters
@@ -2058,6 +2081,38 @@ class EmployeeData(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+    def put(self, request, *args, **kwargs):
+        # Get employee_id and company_id from the request
+        employee_id = request.data.get('employee_id')
+        company_id = request.data.get('company_id')
+
+        try:
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if not employee:
+                return Response({"error": "Employee not found"}, status=404)
+
+            # Update only the fields that are provided in the request
+            employee.email = request.data.get('email', employee.email)
+            employee.address = request.data.get('address', employee.address)
+            employee.city = request.data.get('city', employee.city)
+            employee.state_id = request.data.get('state', employee.state_id)
+            employee.account_holder_name = request.data.get('account_holder_name', employee.account_holder_name)
+            employee.account_no = request.data.get('account_no', employee.account_no)
+            employee.bank_name = request.data.get('bank_name', employee.bank_name)
+            employee.branch_name = request.data.get('branch_name', employee.branch_name)
+            employee.ifsc_code = request.data.get('ifsc', employee.ifsc_code)
+
+            # Save the updated employee record
+            employee.save()
+
+            return Response({"success": "Employee data updated successfully"}, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 def deactivate_slot(request):
     Db.closeConnection()  
