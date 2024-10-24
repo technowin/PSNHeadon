@@ -88,6 +88,7 @@ urlpatterns = [
     # path("view_employee",view_employee, name="view_employee"),
     path("view_designation",view_designation, name="view_designation"),
     path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
+    path('StateName', StateName.as_view(), name='StateName'),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

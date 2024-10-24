@@ -18,7 +18,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, StateMasterSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -2112,6 +2112,18 @@ class EmployeeData(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+class StateName(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request):
+        try:
+            states = StateMaster.objects.all()  
+            serializer = StateMasterSerializer(states, many=True)  
+            return Response(serializer.data)  
+        except Exception as e:
+            return Response({"error": str(e)},  status=404)
+
 
 
 def deactivate_slot(request):
