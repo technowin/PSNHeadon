@@ -68,7 +68,7 @@ class StateMaster(models.Model):
     class Meta:
         db_table = 'tbl_state_master'
     def __str__(self):
-        return self.name
+        return self.state_name
 class CityMaster(models.Model):
     id =  models.AutoField(primary_key=True)
     city_id =  models.IntegerField(null=True, blank=False)

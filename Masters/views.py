@@ -2093,12 +2093,13 @@ class EmployeeData(APIView):
 
             if not employee:
                 return Response({"error": "Employee not found"}, status=404)
-
+            vv = request.data.get('state_id', employee.state_id)
+            cc = get_object_or_404(StateMaster,  state_id=vv)    
             # Update only the fields that are provided in the request
             employee.email = request.data.get('email', employee.email)
             employee.address = request.data.get('address', employee.address)
             employee.city = request.data.get('city', employee.city)
-            employee.state_id = request.data.get('state', employee.state_id)
+            employee.state_id=cc
             employee.account_holder_name = request.data.get('account_holder_name', employee.account_holder_name)
             employee.account_no = request.data.get('account_no', employee.account_no)
             employee.bank_name = request.data.get('bank_name', employee.bank_name)
