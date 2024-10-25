@@ -1,7 +1,7 @@
 from django.db import models
 
 from Account.models import CustomUser
-from Masters.models import SlotDetails, company_master, site_master
+from Masters.models import SlotDetails, company_master, sc_employee_master, site_master
 
 # Create your models here.
 class salary_element_master(models.Model):
@@ -102,7 +102,7 @@ class slot_attendance_details(models.Model):
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='attendance_company_id',blank=True, null=True,db_column='company_id')
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='attendance_site_id',blank=True, null=True,db_column='site_id')
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
-    attendance_date = models.DateTimeField(null=True,blank=True)
+    attendance_date = models.DateField(null=True,blank=True)
     attendance_in = models.TextField(null=True,blank=True)
     employee_id = models.TextField(max_length=250,null=True,blank=True)
     attendance_out = models.TextField(null=True,blank=True)
@@ -151,11 +151,13 @@ class salary_generated_log(models.Model):
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='sal_gen_log_slot_id', db_column='slot_id')
     employee_id = models.TextField(max_length=250, null=True, blank=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='sal_gen_log_company_id', db_column='company_id')
-    slot_date = models.DateTimeField(null=True, blank=True)
+    slot_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sal_gen_log_created_by', blank=True, null=True, db_column='created_by')
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sal_gen_log_updated_by', blank=True, null=True, db_column='updated_by')
+    class Meta:
+        db_table = 'salary_generated_log'
 
 class income_tax_deduction(models.Model):
     id = models.AutoField(primary_key=True)
@@ -163,13 +165,50 @@ class income_tax_deduction(models.Model):
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='income_tax_deduction_company_id', db_column='company_id')
     deduction_month = models.IntegerField(null=True, blank=True)
     deduction_year = models.IntegerField(null=True, blank=True)
+    deducted_on = models.DateField(null=True,blank=False)
     deduction_amount = models.BigIntegerField(null=True, blank=True)
     is_deducted = models.BooleanField(default=False)
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_deduction_created_by', blank=True, null=True, db_column='created_by')
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_deduction_updated_by', blank=True, null=True, db_column='updated_by')
+    class Meta:
+        db_table = 'income_tax_deduction'
     
     
     
+class StatusMaster(models.Model):
+    status_id = models.AutoField(primary_key=True)
+    status_name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'status_master'
+        
+        
+class PayoutDetails(models.Model):
+    payout_id = models.AutoField(primary_key=True)
+    employee_id = models.ForeignKey(sc_employee_master, on_delete=models.CASCADE, related_name='payout_employee')
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='payout_company')
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='payout_slot')
     
+    # Razorpay response fields
+    razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True)  # Payout ID from Razorpay
+    fund_account_id = models.CharField(max_length=100, null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    fees = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    utr = models.CharField(max_length=100, null=True, blank=True)
+    failure_reason = models.TextField(null=True, blank=True)
+    payout_status = models.ForeignKey(StatusMaster, on_delete=models.CASCADE, related_name='payout_status')
+
+    payout_for_date = models.DateField(null=True, blank=True)
+    payment_initiated_date = models.DateTimeField(null=True, blank=True)
+    payment_completed_date = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='payout_created_by')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='payout_updated_by')
+
+    class Meta:
+        db_table = 'payout_details'

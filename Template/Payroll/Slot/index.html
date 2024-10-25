@@ -1,0 +1,44 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+    <h2>Slot Details</h2>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <table id="slotsTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Slot Name</th>
+                <th>Slot Description</th>
+                <th>Shift Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for slot in slots %}
+            <tr>
+                <td>{{ slot.slot_name }}</td>
+                <td>{{ slot.slot_description }}</td>
+                <td>{{ slot.shift_date }}</td>
+                <td>{{ slot.start_time }}</td>
+                <td>{{ slot.end_time }}</td>
+                <td>
+                    <a href="{% url 'user_slot_details_list' slot.slot_id %}" class="btn btn-primary">Generate Salary</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function () {
+            $('#slotsTable').DataTable();  // Initialize DataTables.js
+        });
+    </script>
+{% endblock %}

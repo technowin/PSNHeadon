@@ -139,8 +139,13 @@ urlpatterns = [
     path('employee_rate_card_index', employee_rate_card_index, name='employee_rate_card_index'),
     path('employee_rate_card_create/', employee_rate_card_create, name='employee_rate_card_create'),
     
+    path('slots', SlotListView.as_view(), name='slot_list'),
+    path('slots/<int:slot_id>/', user_slot_details_list, name='user_slot_details_list'),
+    path('slots/generate-salary/<int:slot_id>/', generate_salary_redirect, name='generate_salary_redirect'),
+    path('calculate-salary/<int:slot_id>/', calculate_daily_salary, name='generate_salary'),
     
     path('attendance_index', attendance_index, name='attendance_index'),
+    
     path('attendance/create', upload_attendance, name='create_attendance'),
     path('get_sites', get_sites, name='get_sites'),
     path('get_slots', get_slots, name='get_slots'),
