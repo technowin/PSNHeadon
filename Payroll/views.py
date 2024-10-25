@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
-from Masters.models import UserSlotDetails, sc_employee_master
+from Masters.models import SlotDetails, UserSlotDetails, sc_employee_master
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
@@ -626,6 +626,7 @@ class SlotListView(ListView):
     paginate_by = 10  # for pagination, optional
 def generate_salary_redirect(request, slot_id):
     return redirect('generate_salary', slot_id=slot_id)
+
 @login_required
 def user_slot_details_list(request, slot_id):
     slot = get_object_or_404(SlotDetails, slot_id=slot_id)
