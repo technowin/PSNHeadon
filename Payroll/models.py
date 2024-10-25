@@ -150,7 +150,7 @@ class salary_generated_log(models.Model):
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='sal_gen_log_slot_id', db_column='slot_id')
     employee_id = models.TextField(max_length=250, null=True, blank=True)
-    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='sal_gen_log_company_id', db_column='company_id')
+    company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='sal_gen_log_company_id', db_column='company_id')
     slot_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sal_gen_log_created_by', blank=True, null=True, db_column='created_by')
@@ -187,9 +187,9 @@ class StatusMaster(models.Model):
         
 class PayoutDetails(models.Model):
     payout_id = models.AutoField(primary_key=True)
-    employee_id = models.ForeignKey(sc_employee_master, on_delete=models.CASCADE, related_name='payout_employee')
-    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE, related_name='payout_company')
-    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE, related_name='payout_slot')
+    employee_id = models.ForeignKey('Masters.sc_employee_master', on_delete=models.CASCADE, related_name='payout_employee')
+    company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='payout_company')
+    slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='payout_slot')
     
     # Razorpay response fields
     razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True)  # Payout ID from Razorpay
