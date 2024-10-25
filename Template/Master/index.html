@@ -271,6 +271,13 @@
                        </button>                  
                    </div>
                    {% endif %}
+                   {% if entity == 'em' %}
+                   <div style="justify-content: center">
+                    <a href="/employee_upload" style="text-decoration: none;">
+                      <button type="submit" class="Btn"><div class="sign">&#x2191;</div> <div class="text">Launch</div></button>
+                </a>
+                   </div> 
+               {% endif %}
                    {% if entity == 'r'%}
                     <div class="col-sm-2">
                       <form method="GET" action="/masters">
@@ -358,6 +365,7 @@
                                   {% elif entity == 'cm' %}/company_master?company_id={{ row.0 }}
                                    {% elif entity == 'em' %}/employee_master?id={{ row.0 }}
                                     {% elif entity == 'user' %}/register_new_user?id={{ row.0 }}
+                                     {% elif entity == 'um' %}/employee_upload?id={{ row.0 }}
                                      {% elif entity == 'sd' %}/edit_slot_details?type=slot&slot_id={{ row.0 }}
                                        {% elif entity == 'dm' %}/designation_master1?designation_id={{ row.0 }}
                                     {% elif entity == 'r' %}/masters?month={{ row.0 }}&entity={{entity}}&type=ed&empid={{row.1}}{% endif %}" class="edit-button">
@@ -399,6 +407,18 @@
                                         <div class="text">InActive</div>
                                     </button>
                                   </a>
+                                  {% elif entity == 'em' %}
+                                  <a href="{% url 'view_employee' %}?id={{ row.0 }}" class="trigger-btn">
+                                    <button class="toggle-Btn">
+                                        <div class="sign">
+                                            <svg viewBox="0 0 16 16" fill="white" class="bi bi-eye-fill" height="18" width="18" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8 3.5a7.35 7.35 0 0 0-6.661 4.142.5.5 0 0 0 0 .316A7.35 7.35 0 0 0 8 12.5a7.35 7.35 0 0 0 6.661-4.142.5.5 0 0 0 0-.316A7.35 7.35 0 0 0 8 3.5zM8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="text">View</div>
+                                    </button>
+                                  </a>
+                                  
                                   {% elif entity == 'dm' %}
                                   <a href="{% url 'view_designation' %}?designation_id={{ row.0 }}" class="trigger-btn">
                                     <button class="toggle-Btn">

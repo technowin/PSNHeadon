@@ -26,7 +26,7 @@
         <div class="card">
             <div class="card-body">
                 <h2 class="text-center" style="color:#B12121;">
-                  <u>{% if id == '0' %} Create {% else %} Edit  {% endif %} Employee Master</u>
+                  <u>{% if id == '0' %} view{% endif %} Employee Veiw Details</u>
                 </h2>
                 <br>
                 
@@ -41,7 +41,7 @@
                        
                         <div class="col-md-3">
                             <label for="company_id" class="form-label">Company <span style="color:red;"> *</span> :</label>
-                            <select name="company_id" id="dropdown" class="form-control" required>
+                            <select name="company_id" id="dropdown" class="form-control" disabled>
                                 {% if id == '0' %}
                                     <!-- For adding a new entry -->
                                     <option value="" selected disabled>Select</option>
@@ -62,7 +62,7 @@
                         
                         <div class="col-md-3">
                             <label for="dropdown" class="">Worksite<span style="color:red;"> *</span> :</label>
-                            <select name="site_name" id="sitedropdown" class="sitedropdown" multiple required>
+                            <select name="site_name" id="sitedropdown" class="sitedropdown" multiple readonly>
                                 <option value="" disabled>Select</option>
                                 {% for item in site_name %}
                                     <option value="{{ item.0 }}">{{ item.1 }}</option>
@@ -74,43 +74,46 @@
                        
                         <div class="col-md-3">
                             <label for="EmployeeNumber" class="form-label">Employee No.<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ employee_id }}" name="employee_id" class="form-control" id="EmployeeNumber" placeholder="Enter Employee Id" required>
+                            <input type="text" value="{{ employee_id }}" name="employee_id" class="form-control" id="EmployeeNumber" placeholder="Enter Employee Id" readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="EmployeeName" class="form-label">Employee Name<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ employee_name }}" name="employee_name" class="form-control" id="EmployeeName" placeholder="Enter Employee Name" required>
+                            <input type="text" value="{{ employee_name }}" name="employee_name" class="form-control" id="EmployeeName" placeholder="Enter Employee Name" readonly>
                         </div>
                        
                     </div>
                     <div class="row mb-3">
                         <!-- Second Row: Gender, Handicapped, Worksite, Company Id -->
 
+                        
+                        
                         <div class="col-md-3">
                             <label for="dropdown" class="">Designation<span style="color:red;"> *</span> :</label>
-                            <select name="designation_name" id="designationdropdown" class="designationdropdown" multiple required>
+                            
+                            <!-- Dropdown (multi-select) -->
+                            <select name="designation_name" id="designationdropdown" class="designationdropdown" multiple>
                                 <option value="" disabled>Select</option>
                                 {% for item in designation_name %}
                                     <option value="{{ item.0 }}">{{ item.1 }}</option>
                                 {% endfor %}
                             </select>
-                            
                         </div>
-  
+                            
                         <div class="col-md-3">
                             <label for="MobileNumber" class="form-label">Mobile Number<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ mobile_no }}" name="mobile_no" class="form-control" id="MobileNumber" placeholder="Enter Mobile Number" required oninput="limitMobileNumber(this)">
+                            <input type="text" value="{{ mobile_no }}" name="mobile_no" class="form-control" id="MobileNumber" placeholder="Enter Mobile Number" readonly oninput="limitMobileNumber(this)">
                             <small id="mobileError" style="color:red; display:none;">Mobile number must be 10 digits.</small>
                         </div>
 
                         <div class="col-md-3">
                             <label for="EmailId" class="form-label">Email Id<span style="color:red;"> *</span> :</label>
-                            <input type="email" value="{{ email }}" name="email" class="form-control" id="EmailId" placeholder="Enter Email Id" required>
+                            <input type="email" value="{{ email }}" name="email" class="form-control" id="EmailId" placeholder="Enter Email Id" readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="gender" class="form-label">Gender<span style="color:red;"> *</span> :</label>
-                            <select name="gender" id="dropdown" class="form-control" required>
+                            <select name="gender" id="dropdown" class="form-control" disabled>
                                 {% if id == '0' %}
                                     <option value="" selected disabled>Select</option>
                                     {% for item in gender %}
@@ -133,7 +136,7 @@
                         <!-- Third Row: Worksite, Address, City, State -->
                         <div class="col-md-3">
                             <label for="state_id" class="form-label">State <span style="color:red;"> *</span> :</label>
-                            <select name="state_id" id="dropdown" class="form-control" required>
+                            <select name="state_id" id="dropdown" class="form-control" disabled>
                                 {% if id == '0' %}
                                     <!-- For adding a new entry -->
                                     <option value="" selected disabled>Select</option>
@@ -154,17 +157,17 @@
 
                         <div class="col-md-3">
                             <label for="City" class="form-label">City<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ city }}" name="city" class="form-control" id="City" placeholder="Enter Your City" required>
+                            <input type="text" value="{{ city }}" name="city" class="form-control" id="City" placeholder="Enter Your City" readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="Address" class="form-label">Address<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ address }}" name="address" class="form-control" id="address" placeholder="Enter Your Address" required>
+                            <input type="text" value="{{ address }}" name="address" class="form-control" id="address" placeholder="Enter Your Address" readonly>
                         </div> 
                        
                         <div class="col-md-3">
                             <label for="Pincode" class="form-label">Pincode<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="Pincode" placeholder="Enter Your Pincode" required>
+                            <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="Pincode" placeholder="Enter Your Pincode" readonly>
                         </div>
                         
                         
@@ -174,22 +177,22 @@
                       
                         <div class="col-md-3">
                             <label for="AccountHolderName" class="form-label">Account Holder Name<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ account_holder_name }}" name="account_holder_name" class="form-control" id="AccountHolderName" placeholder="Enter Your Name As Per Bank" required>
+                            <input type="text" value="{{ account_holder_name }}" name="account_holder_name" class="form-control" id="AccountHolderName" placeholder="Enter Your Name As Per Bank" readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="AccountNo" class="form-label">Account No<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ account_no }}" name="account_no" class="form-control" id="AccountNo" placeholder="Enter Your Account No." required>
+                            <input type="text" value="{{ account_no }}" name="account_no" class="form-control" id="AccountNo" placeholder="Enter Your Account No." readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="BankName" class="form-label">Bank Name<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ bank_name }}" name="bank_name" class="form-control" id="BankName" placeholder="Enter Your Bank Name" required>
+                            <input type="text" value="{{ bank_name }}" name="bank_name" class="form-control" id="BankName" placeholder="Enter Your Bank Name" readonly>
                         </div>
 
                         <div class="col-md-3">
                             <label for="BranchName" class="form-label">Branch Name<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ branch_name }}" name="branch_name" class="form-control" id="BranchName" placeholder="Enter Your Branch Name" required>
+                            <input type="text" value="{{ branch_name }}" name="branch_name" class="form-control" id="BranchName" placeholder="Enter Your Branch Name" readonly>
                         </div>
                         
                     </div>
@@ -198,25 +201,25 @@
                        
                         <div class="col-md-3">
                             <label for="IFSCCode" class="form-label">IFSC Code<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ ifsc_code }}" name="ifsc_code" class="form-control" id="IFSCCode" placeholder="Enter Bank's IFSC Code" required oninput="validateIFSC(this)">
+                            <input type="text" value="{{ ifsc_code }}" name="ifsc_code" class="form-control" id="IFSCCode" placeholder="Enter Bank's IFSC Code" readonly oninput="validateIFSC(this)">
                             <small id="ifscError" style="color:red; display:none;">IFSC Code must be 4 alphabets followed by 7 digits (e.g., ABCD1234567).</small>
                         </div>
 
                         <div class="col-md-3">
                             <label for="ProvidentFundNo" class="form-label">Provident Fund No.<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ pf_no }}" name="pf_no" class="form-control" id="ProvidentFundNo" placeholder="Enter Your Provident Fund No." required>
+                            <input type="text" value="{{ pf_no }}" name="pf_no" class="form-control" id="ProvidentFundNo" placeholder="Enter Your Provident Fund No." readonly>
                         </div>
                   
 
                         <div class="col-md-3">
                             <label for="UniversalAccountNo" class="form-label">Universal Account No.<span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ uan_no }}" name="uan_no" class="form-control" id="UniversalAccountNo" placeholder="Enter Your Universal Account No." required oninput="limitUAN(this)">
+                            <input type="text" value="{{ uan_no }}" name="uan_no" class="form-control" id="UniversalAccountNo" placeholder="Enter Your Universal Account No." readonly oninput="limitUAN(this)">
                             <small id="uanError" style="color:red; display:none;">Universal Account No. must be 12 digits.</small>
                         </div>
 
                         <div class="col-md-3">
                             <label for="ESICNo" class="form-label">ESIC No. <span style="color:red;"> *</span> :</label>
-                            <input type="text" value="{{ esic }}" name="esic" class="form-control" id="ESICNo" placeholder="Enter Your ESIC No." required>
+                            <input type="text" value="{{ esic }}" name="esic" class="form-control" id="ESICNo" placeholder="Enter Your ESIC No." readonly>
                         </div>
                         
                     </div>
@@ -228,7 +231,7 @@
                                 <br>
                                 <label class="switch">
                                     <input type="checkbox" value="{{ handicapped_value }}" id="HandicappedSwitch" name="handicapped" 
-                                           {% if handicapped_value == "1" %} checked {% endif %} onchange="updateHandicapped()">
+                                           {% if handicapped_value == "1" %} checked {% endif %} onchange="updateHandicapped()" disabled>
                                     <span class="slider"></span>
                                 </label>
                                 <input type="text" id="HandicappedValue" name="handicapped_value" value="{{ handicapped_value }}" hidden>
@@ -239,7 +242,7 @@
                             {% if id != '0' %}
                             <div class="col-md-3">
                                 <label for="employment_status_id" class="form-label">Employee Status<span style="color:red;"> *</span> :</label>
-                                <select name="employment_status" id="dropdown" class="form-control" required>
+                                <select name="employment_status" id="dropdown" class="form-control" disabled>
                                     <option value="" disabled {% if employment_status_id %}selected{% endif %}>Select</option>
                                     {% for item in employee_status %}
                                         <option value="{{ item.0 }}" 
@@ -259,12 +262,15 @@
                                 <br>
                                 <label class="switch">
                                     <input type="checkbox" values ="{{ is_active }}" id="statusSwitch" name="is_active" 
-                                           {% if is_active == "1" %} checked {% endif %} onchange="updateStatus()">
+                                           {% if is_active == "1" %} checked {% endif %} onchange="updateStatus()" disabled>
                                     <span class="slider"></span>
                                 </label>
+                                
                                 <input type="text" id="statusValue" name="status_value" value="{{ is_active }}" hidden>
+                            
                             </div>
                         {% endif %}
+                       
                     </div>
                     {% comment %} <input type="hidden" id="hiddenActiveStatus" name="employee_status" value="0"> {% endcomment %}
 
@@ -272,10 +278,6 @@
               
                
 
-                    <div class="text-center">
-                        <button  type="submit" id = "submitBtn" class="btn btn-primary"  >Submit</button>
-                    </div>
-              
                 </form>
             </div></div>
         
@@ -455,5 +457,16 @@ function limitMobileNumber(input) {
         }
     }
 </script>
+
+<script>
+    // Function to update the textbox with selected options from the dropdown
+    document.getElementById('designationdropdown').addEventListener('change', function() {
+        var selectedOptions = Array.from(this.selectedOptions).map(option => option.text); // Get the text of selected options
+        document.getElementById('designationText').value = selectedOptions.join(', '); // Join them with commas
+    });
+    
+    
+</script>
+
 
  {% endblock %} 

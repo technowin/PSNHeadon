@@ -12,9 +12,13 @@ from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
 from Payroll.models import * 
 import Db 
+import re
+from datetime import datetime
+
+
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, StateMasterSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -44,6 +48,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import AccessToken
 from django.utils import timezone
 from .models import Log, sc_roster, sc_employee_master, CustomUser 
+from django.shortcuts import render
+from django.db import connection
 
 @login_required
 def masters(request):
@@ -69,7 +75,7 @@ def masters(request):
                 header = list(result.fetchall())
             cursor.callproc("stp_get_masters",[entity,type,'data',user])
             for result in cursor.stored_results():
-                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd' or entity == 'dm') and type !='err': 
+                if (entity == 'em' or entity == 'sm' or entity == 'cm' or entity == 'menu' or entity == 'user' or entity =='sd' or entity =='dm' or entity =='um') and type !='err': 
                     data = []
                     rows = result.fetchall()
                     for row in rows:
@@ -80,6 +86,13 @@ def masters(request):
             cursor.callproc("stp_get_dropdown_values",['company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['site'])
+            for result in cursor.stored_results():
+                site_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['designation'])
+            for result in cursor.stored_results():
+                designation_name = list(result.fetchall())
+            
             if entity == 'r' and type == 'i':
                 cursor.callproc("stp_get_assigned_company",[user])
                 for result in cursor.stored_results():
@@ -173,7 +186,7 @@ def masters(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'data':data,'pre_url':pre_url})
+            return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'site_name':site_name,'designation_name':designation_name,'data':data,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters?entity={entity}&type={type}'
             return redirect(new_url) 
@@ -184,73 +197,161 @@ def gen_roster_xlsx_col(columns,month_input):
     date_columns = [(datetime(year, month, day)).strftime('%d-%m-%Y') for day in range(1, num_days + 1)]
     columns.extend(date_columns)
     return columns
-        
+
 def sample_xlsx(request):
     Db.closeConnection()
     m = Db.get_connection()
-    cursor=m.cursor()
+    cursor = m.cursor()
     pre_url = request.META.get('HTTP_REFERER')
-    response =''
+    response = ''
     global user
-    user  = request.session.get('user_id', '')
+    user = request.session.get('user_id', '')
+
     try:
-        
+        # Create a new workbook
         workbook = openpyxl.Workbook()
         sheet = workbook.active
         sheet.title = 'Sample Format'
         columns = []
-        if request.method=="GET":
-            entity = request.GET.get('entity', '')
+
+        # Fetching entity and type based on request method
+        if request.method == "GET":
+            entity = request.GET.get('entity', '')  # Ensure entity is fetched from GET
             type = request.GET.get('type', '')
-        if request.method=="POST":
-            entity = request.POST.get('entity', '')
+        elif request.method == "POST":
+            entity = request.POST.get('entity', '')  # Ensure entity is fetched from POST
             type = request.POST.get('type', '')
-        file_name = {'em': 'Employee Master','sm': 'Worksite Master','cm': 'Company Master','r': 'Roster'}[entity]
-        cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
+
+        # Map the entity to a file name
+        file_name = {
+            'em': 'Employee Master',
+            'sm': 'Worksite Master',
+            'cm': 'Company Master',
+            'r': 'Roster',
+            'um': 'Employee Master Upload'
+        }.get(entity, 'Unknown File')
+
+        # Call stored procedure with provided parameters
+        cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx', user])
+
         for result in cursor.stored_results():
             columns = [col[0] for col in result.fetchall()]
-        # columns = ['Column 1', 'Column 2', 'Column 3']
+
+        # Additional logic for roster entity
         if entity == "r":
             month = request.POST.get('month', '')
-            columns = gen_roster_xlsx_col(columns,month)
+            columns = gen_roster_xlsx_col(columns, month)
 
+        # Define black border style
         black_border = Border(
             left=Side(border_style="thin", color="000000"),
             right=Side(border_style="thin", color="000000"),
             top=Side(border_style="thin", color="000000"),
             bottom=Side(border_style="thin", color="000000")
         )
-        
+
+        # Write headers to the Excel file
         for col_num, header in enumerate(columns, 1):
             cell = sheet.cell(row=1, column=col_num)
             cell.value = header
             cell.font = Font(bold=True)
             cell.border = black_border
-        
+
+        # Adjust column widths
         for col in sheet.columns:
             max_length = 0
-            column = col[0].column_letter  
+            column = col[0].column_letter
             for cell in col:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-                    
-            adjusted_width = max_length + 2 
-            sheet.column_dimensions[column].width = adjusted_width  
+            adjusted_width = max_length + 2
+            sheet.column_dimensions[column].width = adjusted_width
+
+        # Create HTTP response with Excel file
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="' + str(file_name) +" "+str(datetime.now().strftime("%d-%m-%Y")) + '.xlsx"'
+        response['Content-Disposition'] = 'attachment; filename="{} {}.xlsx"'.format(file_name, datetime.now().strftime("%d-%m-%Y"))
         workbook.save(response)
-    
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
-        cursor.callproc("stp_error_log",[fun,str(e),user])  
+        cursor.callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
+
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
-        return response      
+
+    return response
+        
+# def sample_xlsx(request):
+#     Db.closeConnection()
+#     m = Db.get_connection()
+#     cursor=m.cursor()
+#     pre_url = request.META.get('HTTP_REFERER')
+#     response =''
+#     global user
+#     user  = request.session.get('user_id', '')
+#     try:
+        
+#         workbook = openpyxl.Workbook()
+#         sheet = workbook.active
+#         sheet.title = 'Sample Format'
+#         columns = []
+#         if request.method=="GET":
+#             entity = request.GET.get('entity', '')
+#             type = request.GET.get('type', '')
+#         if request.method=="POST":
+#             entity = request.POST.get('entity', '')
+#             type = request.POST.get('type', '')
+#         file_name = {'em': 'Employee Master','sm': 'Worksite Master','cm': 'Company Master','r': 'Roster','um': 'Employee Master Upload'}[entity]
+#         cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
+#         for result in cursor.stored_results():
+#             columns = [col[0] for col in result.fetchall()]
+#         # columns = ['Column 1', 'Column 2', 'Column 3']
+#         if entity == "r":
+#             month = request.POST.get('month', '')
+#             columns = gen_roster_xlsx_col(columns,month)
+
+#         black_border = Border(
+#             left=Side(border_style="thin", color="000000"),
+#             right=Side(border_style="thin", color="000000"),
+#             top=Side(border_style="thin", color="000000"),
+#             bottom=Side(border_style="thin", color="000000")
+#         )
+        
+#         for col_num, header in enumerate(columns, 1):
+#             cell = sheet.cell(row=1, column=col_num)
+#             cell.value = header
+#             cell.font = Font(bold=True)
+#             cell.border = black_border
+        
+#         for col in sheet.columns:
+#             max_length = 0
+#             column = col[0].column_letter  
+#             for cell in col:
+#                 if len(str(cell.value)) > max_length:
+#                     max_length = len(str(cell.value))
+                    
+#             adjusted_width = max_length + 2 
+#             sheet.column_dimensions[column].width = adjusted_width  
+#         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+#         response['Content-Disposition'] = 'attachment; filename="' + str(file_name) +" "+str(datetime.now().strftime("%d-%m-%Y")) + '.xlsx"'
+#         workbook.save(response)
+    
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         cursor.callproc("stp_error_log",[fun,str(e),user])  
+#         messages.error(request, 'Oops...! Something went wrong!')
+#     finally:
+#         cursor.close()
+#         m.commit()
+#         m.close()
+#         Db.closeConnection()
+#         return response      
 
 @login_required  
 def roster_upload(request):
@@ -557,7 +658,9 @@ def employee_master(request):
     m = Db.get_connection()
     cursor=m.cursor()
     global user
-    user  = request.session.get('user_id', '')
+    
+    # user_id = request.session.get('user_id', '')
+    # user = CustomUser.objects.get(id=user_id)
     try:
         
         if request.method == "GET":
@@ -570,9 +673,21 @@ def employee_master(request):
             cursor.callproc("stp_get_dropdown_values",('site',))
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('company',))
+            for result in cursor.stored_results():
+                company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('states',))
+            for result in cursor.stored_results():
+                state_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('gender',))
+            for result in cursor.stored_results():
+                gender = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('designation',))
+            for result in cursor.stored_results():
+                designation_name = list(result.fetchall())
             if id == "0":
                 if request.method == "GET":
-                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name}
+                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name,'gender':gender ,'company_names':company_names,'state_names':state_names,'designation_name':designation_name}
 
             else:
                 id1 = request.GET.get('id', '')
@@ -581,16 +696,46 @@ def employee_master(request):
                 for result in cursor.stored_results():
                     data = result.fetchall()[0]  
                     context = {
+                        'id':id, 
+                        'employee_status':employee_status, 
                         'site_name':site_name,
+                        'designation_name':designation_name,
+                        'gender':gender ,
+                        'company_names':company_names,
+                        'state_names':state_names,
                         'employee_status':employee_status,
-                        'id':data[0],
-                        'employee_id' : data[1],
-                        'employee_name': data[2],
-                        'mobile_no': data[3],
-                        'site_name_value': data[4],
-                        'employee_status_id': data[5],
-                        'is_active': data[6]
+                        'employee_id' : data[0],
+                        'employee_name': data[1],
+                        'mobile_no': data[2],
+                        'email':data[3], 
+                        'gender_value': data[4],
+                        'state_id_value':data[5],
+                        'city':data[6],
+                        'address':data[7],
+                        'pincode':data[8],
+                        'account_holder_name':data[9],
+                        'account_no':data[10],
+                        'bank_name':data[11],
+                        'branch_name':data[12],
+                        'ifsc_code':data[13],
+                        'pf_no':data[14],
+                        'uan_no':data[15],
+                        'esic':data[16],
+                        'employment_status_id': data[17],
+                        'handicapped_value': data[18],
+                        'is_active': data[19],     
+                        'company_id_value':data[20],
                     }
+                    employee_id = context['employee_id']
+                    designation_list = employee_designation.objects.filter(employee_id=employee_id)
+                    context['selected_designation'] = json.dumps(list(map(str, designation_list.values_list('designation_id', flat=True)))) 
+
+
+                    site_list = employee_site.objects.filter(employee_id=employee_id)
+                    context['selected_site'] = json.dumps(list(map(str,site_list.values_list('site_id', flat=True)))) 
+
+
+
 
         if request.method == "POST" :
             id = request.POST.get('id', '')
@@ -598,16 +743,54 @@ def employee_master(request):
 
                 employeeId = request.POST.get('employee_id', '')
                 employeeName = request.POST.get('employee_name', '')
-                mobileNo = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
-                # employeeStatus = request.POST.get('employee_status_name', '')
+                mobile_no = request.POST.get('mobile_no', '')
+                email= request.POST.get('email', '')
+                gender = request.POST.get('gender', '')
+                handicapped = request.POST.get('handicapped_value', '')
+                address = request.POST.get('address', '')
+                city = request.POST.get('city', '')
+                state1 = request.POST.get('state_id', '')
+                pincode = request.POST.get('pincode', '')
+                company_id1 = request.POST.get('company_id', '')
+                account_holder_name = request.POST.get('account_holder_name', '')
+                account_no = request.POST.get('account_no', '')
+                bank_name = request.POST.get('bank_name', '')
+                branch_name = request.POST.get('branch_name', '')
+                ifsc_code = request.POST.get('ifsc_code', '')
+                pf_no = request.POST.get('pf_no', '')
+                uan_no = request.POST.get('uan_no', '')
+                esic = request.POST.get('esic', '')
+                # employeeStatus = request.POST.get('employee_status_id', '')
                 # activebtn = request.POST.get('status_value', '')
+                designation_list = request.POST.getlist('designation_name', '')
+                site_list = request.POST.getlist('site_name', '')
+                for designation in designation_list:
+                    designation_id = designation_master.objects.get(designation_id=int(designation))
+                    employee_designation.objects.create(employee_id=employeeId,designation_id=designation_id)
+                for site in site_list:
+                    site_id = sit.objects.get(site_id=int(site))
+                    employee_site.objects.create(employee_id=employeeId,site_id=site_id)
 
                 params = [
                     employeeId, 
                     employeeName, 
-                    mobileNo, 
-                    site_name
+                    mobile_no,
+                    email, 
+                    address,
+                    city,
+                    state1,
+                    pincode,
+                    company_id1,
+                    account_holder_name,
+                    account_no,
+                    bank_name,
+                    branch_name,
+                    ifsc_code,
+                    pf_no,
+                    uan_no,
+                    esic,
+                    gender,
+                    handicapped,
                     # employeeStatus,
                     # activebtn
                 ]
@@ -623,19 +806,72 @@ def employee_master(request):
                 employee_id = request.POST.get('employee_id', '')
                 employee_name = request.POST.get('employee_name', '')
                 mobile_no = request.POST.get('mobile_no', '')
-                site_name = request.POST.get('site_name', '')
-                employee_status = request.POST.get('employee_status_name', '')
-                is_active = request.POST.get('status_value', '')  
+                email = request.POST.get('email', '')
+                gender = request.POST.get('gender', '')
+                handicapped = request.POST.get('handicapped_value', '')
+                address = request.POST.get('address', '')
+                city = request.POST.get('city', '')
+                state1 = request.POST.get('state_id', '')
+                pincode = request.POST.get('pincode', '')
+                company_id1 = request.POST.get('company_id', '')
+                account_holder_name = request.POST.get('account_holder_name', '')
+                account_no = request.POST.get('account_no', '')
+                bank_name = request.POST.get('bank_name', '')
+                branch_name = request.POST.get('branch_name', '')
+                ifsc_code = request.POST.get('ifsc_code', '')
+                pf_no = request.POST.get('pf_no', '')
+                uan_no = request.POST.get('uan_no', '')
+                esic = request.POST.get('esic', '')
+                employee_status = request.POST.get('employment_status', '')
+                is_active = 1 if request.POST.get('is_active', '') == 'on' else 0 
+                designation_list = request.POST.getlist('designation_name', '')
+                site_list = request.POST.getlist('site_name', '')
                             
-                params = [id,employee_id,employee_name,mobile_no,site_name,employee_status,is_active]    
-                cursor.callproc("stp_update_employee_master",params) 
-                messages.success(request, "Data successfully Updated!")
+                params = [ id,employee_id, employee_name, mobile_no,email, address,city,state1,pincode,account_holder_name,account_no,bank_name,branch_name,ifsc_code,pf_no,uan_no,esic,gender,handicapped,company_id1,employee_status,is_active]    
+                # cursor.callproc("stp_update_employee_master",params) 
+                # messages.success(request, "Data successfully Updated!")
+
+                 
+                cursor.callproc("stp_update_employee_master", params)
+                for result in cursor.stored_results():
+                        datalist = list(result.fetchall())
+               # Updating designations for the employee
+                        
+                employee_designation.objects.filter(employee_id=employee_id).delete()  # Replace with your actual model
+
+                # Insert new rows with the employee_id and designation_id
+                for designation_idd in designation_list:
+                    # Create a new instance of the model with the employee_id and designation_id
+                    designation_id1 = get_object_or_404(designation_master, designation_id=designation_idd)
+                    new_entry = employee_designation(employee_id=employee_id, designation_id=designation_id1)
+                    new_entry.save()
+
+                # Deleting the existing sites for the employee
+                employee_site.objects.filter(employee_id=employee_id).delete()
+
+                # Updating sites for the employee
+                for site_idd in site_list:
+                    # Fetching the correct site using the 'id' field (or the correct field name)
+                    site_id1 = get_object_or_404(sit, site_id=site_idd)
+                    
+                    # Creating a new employee-site relation
+                    new_entry = employee_site(employee_id=employee_id, site_id=site_id1)
+                    new_entry.save()
+
+                
+                if datalist[0][0] == "success":
+                    messages.success(request, 'Data successfully Updated !')
+                else: messages.error(request, datalist[0][0])
 
     except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         cursor.callproc("stp_error_log", [fun, str(e), user])  
         messages.error(request, 'Oops...! Something went wrong!')
+
+
+    
     finally:
         cursor.close()
         m.commit()
@@ -649,11 +885,17 @@ def employee_master(request):
 @login_required  
 def upload_excel(request):
 
-    if request.method == 'POST' and request.FILES.get('excelFile'):
+     if request.method == 'POST' and request.FILES.get('excelFile'):
         excel_file = request.FILES['excelFile']
         file_name = excel_file.name
+       # Read the Excel file into three separate DataFrames
         df = pd.read_excel(excel_file)
+        
+        # Concatenate the three DataFrames into one
+      
+        # Calculate the total number of rows
         total_rows = len(df)
+
         update_count = error_count = success_count = 0
         checksum_id = None
         r=None
@@ -665,30 +907,149 @@ def upload_excel(request):
             cursor = m.cursor()
             entity = request.POST.get('entity', '')
             type = request.POST.get('type', '')
-            company_id = request.POST.get('company_id', None)
+            company_id = request.POST.get('company_id','')
+            # state_id=request.POST.get('state_id', None)
             cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
             for result in cursor.stored_results():
                 columns = [col[0] for col in result.fetchall()]
-            if not all(col in df.columns for col in columns):
-                messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
-                return redirect(f'/masters?entity={entity}&type={type}')
-            upload_for = {'em': 'employee master','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
+            # if not all(col in df.columns for col in columns):
+            #     messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
+            #     return redirect(f'/masters?entity={entity}&type={type}')
+            upload_for = {'em': 'employee master','um': 'employee master upload','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
             cursor.callproc('stp_insert_checksum', (upload_for,company_id,str(datetime.now().month),str(datetime.now().year),file_name))
             for result in cursor.stored_results():
                 c = list(result.fetchall())
             checksum_id = c[0][0]
-
-            if entity == 'em':
-                for index,row in df.iterrows():
-                    params = tuple(str(row.get(column, '')) for column in columns)
-                    cursor.callproc('stp_insert_employee_master', params)
-                    for result in cursor.stored_results():
+        
+            if entity == 'um':
+                for index, row in df.iterrows():
+                    row_filtered = row.drop(['worksite', 'designation'], errors='ignore')
+                    params = tuple(str(row_filtered.get(column, '')) for column in columns if column not in ['worksite', 'designation'])
+                    # After validation, add company_id to params
+                    params += (str(company_id),)
+                    merged_list = list(zip(columns, params))
+                    
+                    print(merged_list)
+                    
+                    # Loop through each (column, value) pair in the merged_list for custom validation
+                    for column, value in merged_list:
+                        cursor.callproc('stp_employee_validation', [column,value])
+                        for result in cursor.stored_results():
                             r = list(result.fetchall())
-                    if r[0][0] not in ("success", "updated"):
-                        cursor.callproc('stp_insert_error_log', [upload_for, company_id,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
-                    if r[0][0] == "success": success_count += 1 
-                    elif r[0][0] == "updated": update_count += 1  
-                    else: error_count += 1
+                        if r and r[0][0] not in ("", None, " ", "Success"):
+                            cursor.callproc('stp_insert_error_log', [upload_for, company_id, file_name, datetime.now().date(), str(r[0][0]), checksum_id])
+                            error_count += 1
+                            
+                    for result in cursor.stored_results():
+                           cursor.callproc('stp_employeeinsertexcel', params)
+
+                    # Fetch all stored results
+                    for result in cursor.stored_results():
+                        r = list(result.fetchall())
+                       
+                        if r:
+                            # Ensure the result has data and is not empty
+                            if len(r[0]) > 0:
+                                result_value = r[0][0]
+                                print("Processing result:", result_value)
+                                
+                #   this is for designation insert  
+                
+                    print("Columns in DataFrame:", df.columns)
+
+                   
+                print("Original Columns in DataFrame:", df.columns)
+
+                
+                df.columns = df.columns.str.strip()  
+
+
+                if 'Employee Id' in df.columns and 'Designation' in df.columns:
+                    print("Both 'employee id' and 'designation' found in DataFrame.")
+
+                   
+                    df_designations = df[['Employee Id', 'Designation']].dropna(subset=['Designation']).copy()
+                    df_designations['company_id'] = company_id  
+                    
+                    for index, row in df_designations.iterrows():
+                        employee_id = row['Employee Id']
+                        designations = row['Designation'].split(',')  
+
+                       
+                        for designation in designations:
+                            designation = designation.strip()  
+                            
+                            
+                            cursor.callproc('stp_insert_employee_designation', [employee_id, designation, company_id])
+
+                          
+                            for result in cursor.stored_results():
+                                r = list(result.fetchall())
+
+                            if r:
+                                result_value = r[0][0]  
+
+                                if result_value == "success":
+                                    success_count += 1
+                                elif result_value == "updated":
+                                    update_count += 1
+                                elif result_value.startswith("error"):
+                                    # Log the error message in your error log table
+                                    error_message = result_value  # The error message from the procedure
+                                    cursor.callproc('stp_insert_error_log', [
+                                        upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id
+                                    ])
+                                    error_count += 1  # Increment error count for errors
+
+                else:
+                    # In case 'employee id' or 'designation' is missing in df.columns
+                    print("Required columns 'employee id' or 'designation' not found in the DataFrame.")
+
+                       #   this is for worksite insert  
+                if 'Employee Id' in df.columns and 'Worksite' in df.columns:
+                    print("Both 'employee id' and 'worksite' found in DataFrame.")
+
+                    # Create a second DataFrame for 'employee_id', 'designation', and company_id
+                    df_worksite = df[['Employee Id', 'Worksite']].dropna(subset=['Worksite']).copy()
+                    df_worksite['company_id'] = company_id  # Add company_id to df_designations
+
+                    # Loop through each row in the DataFrame
+                    for index, row in df_worksite.iterrows():
+                        employee_id = row['Employee Id']
+                        worksite = row['Worksite'].split(',')  # Assuming multiple designations are comma-separated
+
+                        # Loop through each designation and insert it into the employee_designation table
+                        for worksite in worksite:
+                            worksite = worksite.strip()  # Trim spaces from the designation
+                            
+                            # Call the stored procedure to insert the designation for the employee
+                            cursor.callproc('stp_insert_employee_site', [employee_id, worksite, company_id])
+
+                            # Fetch all stored results to check the response from the procedure
+                            for result in cursor.stored_results():
+                                r = list(result.fetchall())
+
+                            if r:
+                                result_value = r[0][0]  # Fetch the result from the stored procedure
+
+                                if result_value == "success":
+                                    success_count += 1
+                                elif result_value == "updated":
+                                    update_count += 1
+                                elif result_value.startswith("error"):
+                                    # Log the error message in your error log table
+                                    error_message = result_value  # The error message from the procedure
+                                    cursor.callproc('stp_insert_error_log', [
+                                        upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id
+                                    ])
+                                    error_count += 1  # Increment error count for errors
+
+                else:
+                    # In case 'employee id' or 'designation' is missing in df.columns
+                    print("Required columns 'employee id' or 'worksite' not found in the DataFrame.")
+
+
+                          
             elif entity == 'sm':
                 for index,row in df.iterrows():
                     params = tuple(str(row.get(column, '')) for column in columns)
@@ -697,10 +1058,11 @@ def upload_excel(request):
                     for result in cursor.stored_results():
                             r = list(result.fetchall())
                     if r[0][0] not in ("success", "updated"):
-                        cursor.callproc('stp_insert_error_log', [upload_for, company_id,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+                        cursor.callproc('stp_insert_error_log', [upload_for, company_id,file_name,datetime.now().date(),str(r[0][0]),checksum_id])
                     if r[0][0] == "success": success_count += 1 
                     elif r[0][0] == "updated": update_count += 1  
                     else: error_count += 1
+                    
             elif entity == 'cm':
                 for index,row in df.iterrows():
                     params = tuple(str(row.get(column, '')) for column in columns)
@@ -708,11 +1070,11 @@ def upload_excel(request):
                     for result in cursor.stored_results():
                             r = list(result.fetchall())
                     if r[0][0] not in ("success", "updated"):
-                        cursor.callproc('stp_insert_error_log', [upload_for, company_id,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+                        cursor.callproc('stp_insert_error_log', [upload_for, company_id,file_name,datetime.now().date(),str(r[0][0]),checksum_id])
                     if r[0][0] == "success": success_count += 1 
                     elif r[0][0] == "updated": update_count += 1  
                     else: error_count += 1
-            checksum_msg = f"Total Rows Processed: {total_rows}, Successful Entries: {success_count}" f"{f', Updates: {update_count}' if update_count > 0 else ''}" f"{f', Errors: {error_count}' if error_count > 0 else ''}"
+            checksum_msg = f"Total Rows Processed: {total_rows}, Successful Entries: {success_count}" f"{f', Updates Entries: {update_count}' if update_count > 0 else ''}" f"{f', Errors Columnwise: {error_count}' if error_count > 0 else ''}"
             cursor.callproc('stp_update_checksum', (upload_for,company_id,'',str(datetime.now().month),str(datetime.now().year),file_name,checksum_msg,error_count,update_count,checksum_id))
             if error_count == 0 and update_count == 0 and success_count > 0:
                 messages.success(request, f"All data uploaded successfully!.")
@@ -730,7 +1092,10 @@ def upload_excel(request):
             cursor.close()
             m.close()
             Db.closeConnection()
-            return redirect(f'/masters?entity={entity}&type=i')
+            if entity=='um':
+                return redirect(f'/masters?entity=em&type=i')
+            else:
+                return redirect(f'/masters?entity={entity}&type=i')
 
 def get_access_control(request):
     Db.closeConnection()
@@ -806,21 +1171,21 @@ class RosterDataAPIView(APIView):
         current_date = timezone.now().date()
 
         # Step 5: Query sc_roster for the current month and categorize the data
-        slot_alloted = sc_roster.objects.filter(
+        current_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__gte=current_date,
             shift_time__isnull=False
         )
         
-        current_roster_qsser = ScRosterSerializer(slot_alloted, many=True)
+        current_roster_qsser = ScRosterSerializer(current_roster_qs, many=True)
 
-        slot_attended = sc_roster.objects.filter(
+        previous_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
             shift_date__lt=current_date,
             shift_time__isnull=False
             
         )
-        previous_roster_qsser = ScRosterSerializer(slot_attended, many=True)
+        previous_roster_qsser = ScRosterSerializer(previous_roster_qs, many=True)
 
         marked_roster_qs = sc_roster.objects.filter(
             employee_id=employee_id,
@@ -853,7 +1218,7 @@ class RosterDataAPIView(APIView):
             'marked_roster_list': list(marked_roster_qsser.data),  # Using .values() to serialize queryset
             'unmarked_roster_count': unmarked_roster_count,
             'unmarked_roster_list': list(unmarked_roster_qsser.data),  # Using .values() to serialize queryset
-            'slot_list': list(current_roster_qsser.data)  # Same as Current Roster List
+            'roster_list': list(current_roster_qsser.data)  # Same as Current Roster List
         }
     
 class SlotDataAPIView(APIView):
@@ -1314,38 +1679,134 @@ def delete_slot(request):
         cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
 
         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
-    
 
-def deactivate_slot(request):
+def view_employee(request):
     Db.closeConnection()  
     m = Db.get_connection()
     cursor = m.cursor()
     try:
-        if request.method == 'POST':
-            slot_id = request.POST.get('slot_id')
-            slot_idd = decrypt_parameter(slot_id)
-            reason = request.POST.get('reason', '') 
+        if request.method == "GET":
+            id = request.GET.get('id', '')
 
-            slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
-            slot_detail.is_active = 0
-            slot_detail.messege = reason 
-            slot_detail.save()
+            # Initialize context variable before starting to populate it
+            context = {
+                'id': id,
+                'employee_status': [],
+                'employee_status_id': '',
+                'site_name': [],
+                'gender': [],
+                'company_names': [],
+                'state_names': [],
+                'designation_name': [],
+                'employee_id': None,
+                'employee_name': None,
+                'mobile_no': None,
+                'email': None,
+                'gender_value': None,
+                'state_id_value': None,
+                'city': None,
+                'address': None,
+                'pincode': None,
+                'account_holder_name': None,
+                'account_no': None,
+                'bank_name': None,
+                'branch_name': None,
+                'ifsc_code': None,
+                'pf_no': None,
+                'uan_no': None,
+                'esic': None,
+                'employment_status_id': None,
+                'handicapped_value': None,
+                'is_active': None,
+                'company_id_value': None,
+                'selected_designation': [],
+                'selected_site': []
+            }
 
-            return JsonResponse({'message': 'Slot deactivated successfully.'})
-    except SlotDetails.DoesNotExist:
-        return JsonResponse({'message': 'Slot ID not found.'}, status=404)
+            # Populate dropdown values
+            cursor.callproc("stp_get_employee_status")
+            for result in cursor.stored_results():
+                context['employee_status'] = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values", ('site',))
+            for result in cursor.stored_results():
+                context['site_name'] = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values", ('company',))
+            for result in cursor.stored_results():
+                context['company_names'] = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values", ('states',))
+            for result in cursor.stored_results():
+                context['state_names'] = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values", ('gender',))
+            for result in cursor.stored_results():
+                context['gender'] = list(result.fetchall())
+
+            cursor.callproc("stp_get_dropdown_values", ('designation',))
+            for result in cursor.stored_results():
+                context['designation_name'] = list(result.fetchall())
+
+           
+
+            # Otherwise, we are editing an existing employee
+            id1 = request.GET.get('id', '')
+            id = decrypt_parameter(id1)
+
+            cursor.callproc("stp_edit_employee_master", (id,))
+            for result in cursor.stored_results():
+                data = result.fetchall()[0]
+                context.update({
+                    'employee_id': data[0],
+                    'employee_name': data[1],
+                    'mobile_no': data[2],
+                    'email': data[3],
+                    'gender_value': data[4],
+                    'state_id_value': data[5],
+                    'city': data[6],
+                    'address': data[7],
+                    'pincode': data[8],
+                    'account_holder_name': data[9],
+                    'account_no': data[10],
+                    'bank_name': data[11],
+                    'branch_name': data[12],
+                    'ifsc_code': data[13],
+                    'pf_no': data[14],
+                    'uan_no': data[15],
+                    'esic': data[16],
+                    'employment_status_id': data[17],
+                    'handicapped_value': data[18],
+                    'is_active': data[19],
+                    'company_id_value': data[20],
+                })
+
+                # Get the employee's designation and site info
+                employee_id = context['employee_id']
+                designation_list = employee_designation.objects.filter(employee_id=employee_id)
+                context['selected_designation'] = json.dumps(list(map(str, designation_list.values_list('designation_id', flat=True))))
+
+                site_list = employee_site.objects.filter(employee_id=employee_id)
+                context['selected_site'] = json.dumps(list(map(str, site_list.values_list('site_id', flat=True))))
+
     except Exception as e:
+        print(f"Error: {e}")  # Temporary for debugging
         tb = traceback.extract_tb(e.__traceback__)
-        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
-        return JsonResponse({'message': str(e)}, status=500)
-    
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
     finally:
         cursor.close()
         m.commit()
         m.close()
         Db.closeConnection()
 
-# Changes by Palavee
+        if request.method == "GET":
+            return render(request, "Master/employee_view.html", context)
+        elif request.method == "POST":  
+            return redirect(f'/masters?entity=em&type=i')
+        
 
 @login_required        
 def designation_master1(request):
@@ -1367,8 +1828,8 @@ def designation_master1(request):
 
             else:
                 designation_id = request.GET.get('designation_id', '')
-                designation_idd = decrypt_parameter(designation_id)
-                cursor.callproc("stp_designationedit", (designation_idd,))
+                designation_id = decrypt_parameter(designation_id)
+                cursor.callproc("stp_designationedit", (designation_id,))
                 for result in cursor.stored_results():
                     data = result.fetchall()[0]  
                     context = {
@@ -1435,10 +1896,6 @@ def view_designation(request):
                 'is_active': None
             }
 
-            # If ID is "0", meaning we are adding a new employee
-            if designation_id == "0":
-                return render(request, "Master/designation_view.html", context)
-
             # Otherwise, we are editing an existing employee
             designation_id1 = request.GET.get('designation_id', '')
             designation_id = decrypt_parameter(designation_id1)
@@ -1470,14 +1927,235 @@ def view_designation(request):
             return render(request, "Master/designation_view.html", context)
         elif request.method == "POST":  
             return redirect(f'/masters?entity=dm&type=i')
-        
+
+@login_required
+def employee_upload(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    pre_url = request.META.get('HTTP_REFERER')
+    header, data = [], []
+    entity, type, name = '', '', ''
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+         
+        if request.method=="GET":
+            entity = request.GET.get('entity', '')
+            type = request.GET.get('type', '')
+            
+            
+            cursor.callproc("stp_get_masters", [entity, type, 'header',user])
+            for result in cursor.stored_results():
+                header = list(result.fetchall())
+            cursor.callproc("stp_get_masters",[entity,type,'data',user])
+            for result in cursor.stored_results():
+                 data = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['site'])
+            for result in cursor.stored_results():
+                site_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['designation'])
+            for result in cursor.stored_results():
+                designation_name = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['company'])
+            for result in cursor.stored_results():
+                company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",['states'])
+            for result in cursor.stored_results():
+                state_name = []
+                state_name = list(result.fetchall())
+                
+
+        if request.method=="POST":
+            entity = request.POST.get('entity', '')
+            type = request.POST.get('type', '')
+            if entity == 'r' and type == 'ed':
+                ids = request.POST.getlist('ids[]', '')
+                shifts = request.POST.getlist('shifts[]', '')
+                for id,shift in zip(ids, shifts):
+                    cursor.callproc("stp_post_roster",[id,shift])
+                    for result in cursor.stored_results():
+                        datalist = list(result.fetchall())
+                if datalist[0][0] == "success":
+                    messages.success(request, 'Data updated successfully !')
+            if entity == 'urm' and (type == 'acu' or type == 'acr'):
+                
+                created_by = request.session.get('user_id', '')
+                ur = request.POST.get('ur', '')
+                selected_company_ids = list(map(int, request.POST.getlist('company_id')))
+                selected_worksites  = request.POST.getlist('worksite')
+                company_worksite_map = {}
+                
+                if not selected_company_ids or not selected_worksites:
+                    messages.error(request, 'Company or worksite data is missing!')
+                    return redirect(f'/masters?entity={entity}&type=urm')
+                if type not in ['acu', 'acr'] or not ur:
+                    messages.error(request, 'Invalid data received.')
+                    return redirect(f'/masters?entity={entity}&type=urm')
+                
+                cursor.callproc("stp_get_company_worksite",[",".join(request.POST.getlist('company_id'))])
+                for result in cursor.stored_results():
+                    company_worksites  = list(result.fetchall())
+                    
+                for company_id, worksite_name in company_worksites:
+                    if company_id not in company_worksite_map:
+                        company_worksite_map[company_id] = []
+                    company_worksite_map[company_id].append(worksite_name)
+                
+                filtered_combinations = []
+                for company_id in selected_company_ids:
+                    valid_worksites = company_worksite_map.get(company_id, [])
+                    # Filter worksites that were actually selected by the user
+                    selected_valid_worksites = [ws for ws in selected_worksites if ws in valid_worksites]
+                    filtered_combinations.extend([(company_id, ws) for ws in selected_valid_worksites])
+                    
+                cursor.callproc("stp_delete_access_control",[type,ur])
+                r=''
+                for company_id, worksite in filtered_combinations:
+                    cursor.callproc("stp_post_access_control",[type,ur,company_id,worksite,created_by])
+                    for result in cursor.stored_results():
+                            r = list(result.fetchall())
+                type='urm'
+                if r[0][0] == "success":
+                    messages.success(request, 'Data updated successfully !')
+                
+            else : messages.error(request, 'Oops...! Something went wrong!')
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log",[fun,str(e),user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        if request.method=="GET":
+            return render(request,'Master/employee_upload.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'state_name':state_name,'site_name':site_name,'designation_name':designation_name,'data':data,'pre_url':pre_url})
+        elif request.method=="POST":  
+            new_url = f'/masters1?entity={entity}&type={type}'
+            return redirect(new_url)      
+
+
+# class EmployeeData(APIView):
+#     # Ensure the user is authenticated using JWT
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+#     def get(self, request, *args, **kwargs):
+#         # Get parameters from the request
+#         employee_id = request.data['employee_id']
+#         company_id =request.data['company_id']
+
+#         try:
+#             # Fetch the employee using the provided parameters
+#             employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+#             if employee:
+#                 serializer = EmployeeSerializer(employee)
+#                 return Response(serializer.data)
+#             else:
+#                 return Response({"error": "Employee not found"}, status=404)
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)
+
 class EmployeeData(APIView):
-    def get_employee_details(request, employee_id):
+    # Ensure the user is authenticated using JWT
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request, *args, **kwargs):
+        # Get parameters from the request
+        employee_id = request.data['employee_id']
+        company_id = request.data['company_id']
+
         try:
-            employee = sc_employee_master.objects.get(employee_id=employee_id)
-            serializer = EmployeeSerializer(employee)
-            return Response(serializer.data)
-        except sc_employee_master.DoesNotExist:
-            return Response({"error": "Employee not found"}, status=404)
-        
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if employee:
+                serializer = EmployeeSerializer(employee)
+                return Response(serializer.data)
+            else:
+                return Response({"error": "Employee not found"}, status=404)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, *args, **kwargs):
+        # Get employee_id and company_id from the request
+        employee_id = request.data.get('employee_id')
+        company_id = request.data.get('company_id')
+
+        try:
+            # Fetch the employee using the provided parameters
+            employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
+
+            if not employee:
+                return Response({"error": "Employee not found"}, status=404)
+            vv = request.data.get('state_id', employee.state_id)
+            cc = get_object_or_404(StateMaster,  state_id=vv)    
+            # Update only the fields that are provided in the request
+            employee.email = request.data.get('email', employee.email)
+            employee.address = request.data.get('address', employee.address)
+            employee.city = request.data.get('city', employee.city)
+            employee.state_id=cc
+            employee.account_holder_name = request.data.get('account_holder_name', employee.account_holder_name)
+            employee.account_no = request.data.get('account_no', employee.account_no)
+            employee.bank_name = request.data.get('bank_name', employee.bank_name)
+            employee.branch_name = request.data.get('branch_name', employee.branch_name)
+            employee.ifsc_code = request.data.get('ifsc', employee.ifsc_code)
+
+            # Save the updated employee record
+            employee.save()
+
+            return Response({"success": "Employee data updated successfully"}, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+class StateName(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request):
+        try:
+            states = StateMaster.objects.all()  
+            serializer = StateMasterSerializer(states, many=True)  
+            return Response(serializer.data)  
+        except Exception as e:
+            return Response({"error": str(e)},  status=404)
+
+
+
+def deactivate_slot(request):
+    Db.closeConnection()  
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            slot_id = request.POST.get('slot_id')
+            slot_idd = decrypt_parameter(slot_id)
+            reason = request.POST.get('reason', '') 
+
+            slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
+            slot_detail.is_active = 0
+            slot_detail.message = reason 
+            slot_detail.save()
+
+            return JsonResponse({'message': 'Slot deactivated successfully.'})
+    except SlotDetails.DoesNotExist:
+        return JsonResponse({'message': 'Slot ID not found.'}, status=404)
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+        return JsonResponse({'message': str(e)}, status=500)
+    
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+
+
 
