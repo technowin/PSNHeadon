@@ -1231,79 +1231,58 @@ class SlotDataAPIView(APIView):
         user = request.user  # This will get the user from the JWT token
 
         # Call the function to get the roster data
-        roster_data = self.get_roster_data(user.id)
+        roster_data = self.get_slot_data(user.id)
         Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
 
         return Response(roster_data)
 
-    # def get_roster_data(self, user_id):
-    # # Step 1: Get the user by user_id
-    #     user = CustomUser.objects.get(id=user_id)
+    def get_slot_data(self, user_id):
+        # Close any previous connections and get a new one
+        Db.closeConnection()
+        m = Db.get_connection()
+        cursor = m.cursor()
 
-    #     # Step 2: Get the phone number of the user
-    #     phone_number = user.phone
-
-    #     # Step 3: Get the employee_id from sc_employee_master using the phone number
-    #     try:
-    #         employee = sc_employee_master.objects.get(mobile_no=phone_number)
-    #     except sc_employee_master.DoesNotExist:
-    #         return {'error': 'Employee not found'}
-        
-    #     employee_id = employee.employee_id
-    #     company_idd = employee.company_id.company_id
-
-    #     user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id, company_id=company_idd).first()
-
-    #     if user_slot_details:
-    #         slot_idd = user_slot_details.slot_id.slot_id  
-    #         slot_alloted_data = SlotDetails.objects.filter(slot_id=slot_idd)
-    #         serialized_slot_data = SlotDetailsSerializer(slot_alloted_data, many=True)
-    #         slot_alloted_count = len(serialized_slot_data.data)
-
-    #         return {
-    #             'slot_alloted_count': slot_alloted_count,
-    #             'slot_alloted_list': serialized_slot_data.data 
-    #         }
-
-    def get_roster_data(self, user_id):
-        # Step 1: Get the user by user_id
+        # Step 1: Retrieve the user
+        try:
             user = CustomUser.objects.get(id=user_id)
-
-            # Step 2: Get the phone number of the user
             phone_number = user.phone
+        except CustomUser.DoesNotExist:
+            return {'error': 'User not found'}
 
-            # Step 3: Get the employee_id from sc_employee_master using the phone number
-            try:
-                employee = sc_employee_master.objects.get(mobile_no=phone_number)
-            except sc_employee_master.DoesNotExist:
-                return {'error': 'Employee not found'}
-
+        try:
+            employee = sc_employee_master.objects.get(mobile_no=phone_number)
             employee_id = employee.employee_id
             company_idd = employee.company_id.company_id
+        except sc_employee_master.DoesNotExist:
+            return {'error': 'Employee not found'}
 
+        # Step 3: Retrieve all UserSlotDetails entries for the given employee and company
+        try:
             user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id, company_id=company_idd)
+            user_slot_data = UserSlotDetailsSerializer(user_slot_details, many=True).data
 
-            slot_alloted_list = []
-            slot_alloted_count = 0
+            user_alloted_count = len(user_slot_data)
 
-            for slot_detail in user_slot_details:
-                slot_id_sl = slot_detail.slot_id.slot_id  
-                # site_id_sl = slot_detail.site_id.site_id
+            user_attendance_details = slot_attendance_details.objects.filter(employee_id=employee_id, company_id=company_idd)
+            user_attendance_data = UserSlotDetailsSerializer(user_attendance_details, many=True).data
 
-                slot_data = SlotDetails.objects.filter(slot_id=slot_id_sl)
-                serialized_data = SlotDetailsSerializer(slot_data, many=True).data
-
-                slot_alloted_list.extend(serialized_data)
-                slot_alloted_count += len(serialized_data)
+            user_attendance_count = len(user_attendance_data)
 
             return {
-                'slot_alloted_count': slot_alloted_count,
-                'slot_alloted_list': slot_alloted_list
+                'slot_alloted_count': user_alloted_count,
+                'slot_alloted_list': user_slot_data,
+                'user_attendance_count':user_attendance_count,
+                'user_attendance_list':user_attendance_data
             }
+        
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            cursor.callproc("stp_error_log", [tb[0].name, str(e), user_id])
+            print(f"error: {e}")
+            return {'result': 'fail', 'message': 'Something went wrong!'}
 
 
 
-            
 
         
 class confirm_schedule(APIView):
