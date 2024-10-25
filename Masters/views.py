@@ -18,7 +18,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, StateMasterSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SlotDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1239,7 +1239,7 @@ class SlotDataAPIView(APIView):
     def get_roster_data(self, user_id):
         # Step 1: Get the user by user_id
         user = CustomUser.objects.get(id=user_id)
-        
+    
         # Step 2: Get the phone number of the user
         phone_number = user.phone
 
@@ -1247,35 +1247,26 @@ class SlotDataAPIView(APIView):
         try:
             employee = sc_employee_master.objects.get(mobile_no=phone_number)
         except sc_employee_master.DoesNotExist:
-            return {
-                'error': 'Employee not found'
-            }
+            return {'error': 'Employee not found'}
+        
         employee_id = employee.employee_id
+        company_id = employee.company_id
 
-        # Step 4: Get the current date and the first date of the current month
-        current_date = timezone.now().date()
-
-        # Step 5: Query sc_roster for the current month and categorize the data
-        slot_alloted = UserSlotDetails.objects.filter(
-        employee_id=employee_id,
-        confirmation=1
-        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
-
-        # Query for slot attended (confirmation = 0)
-        slot_attended = UserSlotDetails.objects.filter(
+        # Step 4: Retrieve slot details with related fields
+        slot_alotted = UserSlotDetails.objects.filter(
             employee_id=employee_id,
-            confirmation=0
-        ).values('employee_id').annotate(confirmation_count=Count('confirmation'))
+            company_id=company_id
+        )
 
-        # Count the number of records for each category
-        slot_alloted_count = slot_alloted.aggregate(Count('confirmation_count'))['confirmation_count__count']
-        slot_attended_count = slot_attended.aggregate(Count('confirmation_count'))['confirmation_count__count']
+        # Serialize the slot details
+        slot_alotted_data = UserSlotDetailsSerializer(slot_alotted, many=True)
 
+        slot_alloted_count = len(slot_alotted_data.data)
 
-        # Return the counts and the lists
+        # Return the counts and the list
         return {
             'slot_alloted_count': slot_alloted_count,
-            'slot_attended_count': slot_attended_count,
+            'slot_alloted_list': slot_alotted_data.data,  # Use the serialized data directly
         }
     
 class confirm_schedule(APIView):

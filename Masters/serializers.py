@@ -34,3 +34,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = sc_employee_master
         fields = '__all__' 
+
+class SlotDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SlotDetails
+        fields = '__all__'
+
+class UserSlotDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSlotDetails
+        fields = '__all__'
