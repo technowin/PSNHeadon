@@ -119,7 +119,6 @@ class sc_employee_master(models.Model):
     handicapped = models.BooleanField(null=True,blank=True,default=True)
     # state = models.IntegerField(null=True, blank=False)
     state_id = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='employee_relation_state_id',blank=True, null=True,db_column='state_id')
-
     city = models.TextField(null=True,blank=True)
     address = models.TextField(null=True,blank=True)
     pincode  = models.TextField(null=True,blank=True)
@@ -265,21 +264,6 @@ class SlotDetails(models.Model):
     def __str__(self):
         return self.slot_name
 
-class ShiftDetails(models.Model):
-    shift_id = models.AutoField(primary_key=True)
-    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='shift_relation',blank=True, null=True ,db_column='slot_id')
-    shift_date = models.DateField(null=True,blank=True)
-    start_time = models.TextField(null=True,blank=True)
-    end_time = models.TextField(null=True,blank=True)
-    night_shift = models.BooleanField(null=True,blank=True,default=True)
-    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='shift_created',blank=True, null=True,db_column='created_by')
-    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='shift_updated',blank=True, null=True,db_column='updated_by')
-    class Meta:
-        db_table = 'shift_details'
-    def __str__(self):
-        return self.name
 
 
 class SettingMaster(models.Model):
@@ -307,7 +291,7 @@ class UserSlotDetails(models.Model):
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
     class Meta:
-        db_table = 'user_shift_details'
+        db_table = 'user_slot_details'
     def __str__(self):
         return self.name
     
