@@ -1236,39 +1236,76 @@ class SlotDataAPIView(APIView):
 
         return Response(roster_data)
 
+    # def get_roster_data(self, user_id):
+    # # Step 1: Get the user by user_id
+    #     user = CustomUser.objects.get(id=user_id)
+
+    #     # Step 2: Get the phone number of the user
+    #     phone_number = user.phone
+
+    #     # Step 3: Get the employee_id from sc_employee_master using the phone number
+    #     try:
+    #         employee = sc_employee_master.objects.get(mobile_no=phone_number)
+    #     except sc_employee_master.DoesNotExist:
+    #         return {'error': 'Employee not found'}
+        
+    #     employee_id = employee.employee_id
+    #     company_idd = employee.company_id.company_id
+
+    #     user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id, company_id=company_idd).first()
+
+    #     if user_slot_details:
+    #         slot_idd = user_slot_details.slot_id.slot_id  
+    #         slot_alloted_data = SlotDetails.objects.filter(slot_id=slot_idd)
+    #         serialized_slot_data = SlotDetailsSerializer(slot_alloted_data, many=True)
+    #         slot_alloted_count = len(serialized_slot_data.data)
+
+    #         return {
+    #             'slot_alloted_count': slot_alloted_count,
+    #             'slot_alloted_list': serialized_slot_data.data 
+    #         }
+
     def get_roster_data(self, user_id):
         # Step 1: Get the user by user_id
-        user = CustomUser.objects.get(id=user_id)
-    
-        # Step 2: Get the phone number of the user
-        phone_number = user.phone
+            user = CustomUser.objects.get(id=user_id)
 
-        # Step 3: Get the employee_id from sc_employee_master using the phone number
-        try:
-            employee = sc_employee_master.objects.get(mobile_no=phone_number)
-        except sc_employee_master.DoesNotExist:
-            return {'error': 'Employee not found'}
+            # Step 2: Get the phone number of the user
+            phone_number = user.phone
+
+            # Step 3: Get the employee_id from sc_employee_master using the phone number
+            try:
+                employee = sc_employee_master.objects.get(mobile_no=phone_number)
+            except sc_employee_master.DoesNotExist:
+                return {'error': 'Employee not found'}
+
+            employee_id = employee.employee_id
+            company_idd = employee.company_id.company_id
+
+            user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id, company_id=company_idd)
+
+            slot_alloted_list = []
+            slot_alloted_count = 0
+
+            for slot_detail in user_slot_details:
+                slot_id_sl = slot_detail.slot_id.slot_id  
+                # site_id_sl = slot_detail.site_id.site_id
+
+                slot_data = SlotDetails.objects.filter(slot_id=slot_id_sl)
+                serialized_data = SlotDetailsSerializer(slot_data, many=True).data
+
+                slot_alloted_list.extend(serialized_data)
+                slot_alloted_count += len(serialized_data)
+
+            return {
+                'slot_alloted_count': slot_alloted_count,
+                'slot_alloted_list': slot_alloted_list
+            }
+
+
+
+            
+
         
-        employee_id = employee.employee_id
-        company_id = employee.company_id
-
-        # Step 4: Retrieve slot details with related fields
-        slot_alotted = UserSlotDetails.objects.filter(
-            employee_id=employee_id,
-            company_id=company_id
-        )
-
-        # Serialize the slot details
-        slot_alotted_data = UserSlotDetailsSerializer(slot_alotted, many=True)
-
-        slot_alloted_count = len(slot_alotted_data.data)
-
-        # Return the counts and the list
-        return {
-            'slot_alloted_count': slot_alloted_count,
-            'slot_alloted_list': slot_alotted_data.data,  # Use the serialized data directly
-        }
-    
 class confirm_schedule(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]

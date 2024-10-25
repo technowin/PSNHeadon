@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from Masters.models import *
+from Payroll.models import slot_attendance_details
 
  
 class CompanyMasterSerializer(serializers.ModelSerializer):
@@ -27,6 +28,11 @@ class StateMasterSerializer(serializers.ModelSerializer):
         model = StateMaster
         fields = '__all__'
 
+class SiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = site_master
+        fields = '__all__'
+
 class EmployeeSerializer(serializers.ModelSerializer):
     company_id = CompanyMasterSerializer()
     state_id = StateMasterSerializer()
@@ -36,6 +42,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = '__all__' 
 
 class SlotDetailsSerializer(serializers.ModelSerializer):
+    company_id = CompanyMasterSerializer()
+    site_id = SiteSerializer
     class Meta:
         model = SlotDetails
         fields = '__all__'
@@ -43,4 +51,9 @@ class SlotDetailsSerializer(serializers.ModelSerializer):
 class UserSlotDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSlotDetails
+        fields = '__all__'
+
+class UserAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = slot_attendance_details
         fields = '__all__'

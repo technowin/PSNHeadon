@@ -287,8 +287,8 @@ class UserSlotDetails(models.Model):
     id = models.AutoField(primary_key=True) 
     employee_id = models.TextField(null=True,blank=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='UserSlotDetails_company_id',blank=True, null=True,db_column='company_id')
+    site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='UserSlotDetails_site_id',blank=True, null=True,db_column='site_id')
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='UserSlotDetails_slot_id',blank=True, null=True,db_column='slot_id')
-    confirmation = models.BooleanField(null=True,blank=True,default=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
     class Meta:
