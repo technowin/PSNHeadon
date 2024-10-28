@@ -1268,11 +1268,23 @@ class SlotDataAPIView(APIView):
 
             user_attendance_count = len(user_attendance_data)
 
+            designation_ids = employee_designation.objects.filter(employee_id=employee_id).values_list('designation_id', flat=True)
+            site_ids = employee_site.objects.filter(employee_id=employee_id).values_list('site_id', flat=True)
+            slot_details = SlotDetails.objects.filter(
+                designation_id__in=designation_ids,
+                site_id__in=site_ids
+            )
+
+            # Serialize and prepare the response as needed
+            slot_details_list = SlotDetailsSerializer(slot_details, many=True).data
+
+
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
+                'slot_details_list':list(slot_details_list)
             }
         
         except Exception as e:
@@ -2042,27 +2054,6 @@ def employee_upload(request):
             return redirect(new_url)      
 
 
-# class EmployeeData(APIView):
-#     # Ensure the user is authenticated using JWT
-#     permission_classes = [IsAuthenticated]
-#     authentication_classes = [JWTAuthentication]
-#     def get(self, request, *args, **kwargs):
-#         # Get parameters from the request
-#         employee_id = request.data['employee_id']
-#         company_id =request.data['company_id']
-
-#         try:
-#             # Fetch the employee using the provided parameters
-#             employee = sc_employee_master.objects.filter(employee_id=employee_id, company_id=company_id).first()
-
-#             if employee:
-#                 serializer = EmployeeSerializer(employee)
-#                 return Response(serializer.data)
-#             else:
-#                 return Response({"error": "Employee not found"}, status=404)
-
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
 
 class EmployeeData(APIView):
     # Ensure the user is authenticated using JWT
@@ -2136,6 +2127,8 @@ def deactivate_slot(request):
     Db.closeConnection()  
     m = Db.get_connection()
     cursor = m.cursor()
+    user_id  = request.session.get('user_id', '')
+    user_idd = CustomUser.objects.get(id=user_id)
     try:
         if request.method == 'POST':
             slot_id = request.POST.get('slot_id')
@@ -2145,6 +2138,7 @@ def deactivate_slot(request):
             slot_detail = SlotDetails.objects.get(slot_id=slot_idd)  
             slot_detail.is_active = 0
             slot_detail.message = reason 
+            slot_detail.updated_by = user_idd
             slot_detail.save()
 
             return JsonResponse({'message': 'Slot deactivated successfully.'})
