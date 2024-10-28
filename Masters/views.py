@@ -18,7 +18,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SlotDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1276,7 +1276,7 @@ class SlotDataAPIView(APIView):
             )
 
             # Serialize and prepare the response as needed
-            slot_details_list = SlotDetailsSerializer(slot_details, many=True).data
+            slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
 
 
             return {
