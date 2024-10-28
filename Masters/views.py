@@ -1270,9 +1270,9 @@ class SlotDataAPIView(APIView):
 
             return {
                 'slot_alloted_count': user_alloted_count,
-                'slot_alloted_list': user_slot_data,
+                'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
-                'user_attendance_list':user_attendance_data
+                'user_attendance_list':list(user_attendance_data),
             }
         
         except Exception as e:
@@ -1280,8 +1280,6 @@ class SlotDataAPIView(APIView):
             cursor.callproc("stp_error_log", [tb[0].name, str(e), user_id])
             print(f"error: {e}")
             return {'result': 'fail', 'message': 'Something went wrong!'}
-
-
 
 
         
