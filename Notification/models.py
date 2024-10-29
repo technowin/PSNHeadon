@@ -1,13 +1,13 @@
 from django.db import models
 
 from Account.models import CustomUser
-from Masters.models import parameter_master, sc_roster
+from Masters.models import SlotDetails, parameter_master, sc_roster
 
 # Create your models here.
 
 class notification_log(models.Model):
     id = models.AutoField(primary_key=True)
-    sc_roster_id = models.ForeignKey(sc_roster, on_delete=models.CASCADE,related_name='sc_roster_id',blank=True, null=True,db_column='sc_roster_id')
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='slot_notification_id',blank=True, null=True,db_column='slot_id')
     notification_sent = models.DateTimeField(null=True,blank=True)
     notification_received = models.DateTimeField(null=True,blank=True)
     notification_opened = models.DateTimeField(null=True,blank=True)

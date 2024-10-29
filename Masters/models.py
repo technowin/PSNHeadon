@@ -75,9 +75,10 @@ class CityMaster(models.Model):
     city_name = models.TextField(null=True,blank=True) 
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.TextField(null=True, blank=True)
+    state_id = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='state_city_id',blank=True, null=True,db_column='state_id')
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     updated_by = models.TextField(null=True, blank=True)
-    state_status = models.BooleanField(null=True,blank=True,default=True)
+    city_status = models.BooleanField(null=True,blank=True,default=True)
     class Meta:
         db_table = 'tbl_city_master'
     def __str__(self):
