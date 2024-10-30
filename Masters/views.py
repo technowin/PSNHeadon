@@ -18,7 +18,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1277,6 +1277,10 @@ class SlotDataAPIView(APIView):
 
             # Serialize and prepare the response as needed
             slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
+            slot_ids = slot_details.values_list('slot_id', flat=True)
+
+            setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
+            setting_master_data = SettingMasterSerializer(setting_master_details, many=True).data
 
 
             return {
@@ -1284,7 +1288,8 @@ class SlotDataAPIView(APIView):
                 'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
-                'slot_details_list':list(slot_details_list)
+                'slot_details_list':list(slot_details_list),
+                'setting_master_data':list(setting_master_data)
             }
         
         except Exception as e:
