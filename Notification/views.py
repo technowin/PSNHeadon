@@ -1,9 +1,11 @@
+import traceback
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.utils.timezone import now
 from datetime import timedelta
 
 from Masters.models import *
+from django.db.models import Q
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
@@ -43,8 +45,8 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from rest_framework import status
 
-from Masters.serializers import ScRosterSerializer
-from Notification.models import notification_log
+from Masters.serializers import ScRosterSerializer, SlotDetailsSerializer
+from Notification.models import notification_log, user_notification_log
 from datetime import datetime, timedelta
 class check_and_notify_user(APIView):
     permission_classes = [IsAuthenticated]
@@ -78,121 +80,110 @@ class check_and_notify_all_users(APIView):
         current_time = timezone.now()
         errors = []
         success = []
-        for user in users:
-            employee = sc_employee_master.objects.filter(mobile_no=user.phone).first()
+        
 
+        for user in users:
+            # Step 1: Fetch employee based on user's phone number
+            employee = sc_employee_master.objects.filter(mobile_no=user.phone).first()
             if not employee:
                 continue
-            current_date = datetime.now().date()
-            next_day = current_date + timedelta(days=1)
-            shifts = sc_roster.objects.filter(employee_id=employee.employee_id,confirmation__isnull=True,  shift_date__in=[current_date, next_day] ) # Filters for today or tomorrow )
-            
-            filtered_shifts = []
 
-            # Current datetime
-            if shifts.exists():
+            # Step 3: Get designation IDs and site IDs for the employee
+            designation_ids = employee_designation.objects.filter(
+                employee_id=employee.employee_id
+            ).values_list('designation_id', flat=True)
             
-                current_datetime = datetime.now()
-                ser =  ScRosterSerializer(shifts,many=True)
-                for shift in shifts:
-                    # shift = shifts.first() 
-                    if '-' in shift.shift_time:
-                        # Split 'shift_time' by '-'
-                        start_time_str, end_time_str = shift.shift_time.split('-')
-                        # Trim the whitespace from both parts
-                        start_time_str = start_time_str.strip()
-                        end_time_str = end_time_str.strip()
+            site_ids = employee_site.objects.filter(
+                employee_id=employee.employee_id
+            ).values_list('site_id', flat=True)
 
-                        # Combine the shift_date and start_time to create a datetime object
-                        shift_datetime_str = f"{shift.shift_date} {start_time_str}"
-                        shift_datetime = datetime.strptime(shift_datetime_str, '%Y-%m-%d %H:%M')
-                        shift_datetime_minus_4_hours = shift_datetime - timedelta(hours=4)
-                        shift_datetime_minus_8_hours = shift_datetime - timedelta(hours=8)
-                        # Check if the shift_datetime is within the next 24 hours from the current datetime
-                        if current_datetime <= shift_datetime <= current_datetime + timedelta(hours=24) and current_datetime <= shift_datetime_minus_4_hours:
-                            # Add to the filtered_shifts list if it meets the condition
-                            filtered_shifts.append(shift)
-                            
-                            
-                            serializer = ScRosterSerializer(shift)
-                            
-                            shift_data = serializer.data
-                            parameter_type = parameter_master.objects.get(parameter_id=11)
-                            notification_entry = notification_log.objects.create(
-                                sc_roster_id=shift,
-                                notification_sent=current_time,
-                                notification_message="Notification for shift confirmation",
-                                created_at=current_time,
-                                type=parameter_type ,
-                                created_by=user,  # assuming the current user is the creator
-                                updated_at=current_time,
-                                updated_by=user  # assuming the current user is the updater
-                            )
-                            notification_log_id = notification_entry.id
-                            a = send_push_notification(user,shift_data,notification_log_id)
-                            if(a!= "success"):
-                                c = a.split("--")
-                                if(len(c) == 2):
-                                    if(c[1] == "Requested entity was not found."):
-                                        notification_entry.notification_message = "App Is Not Installed"  # Update with the error message
-                                        notification_entry.save()     
-                                    elif(c[1] == "The registration token is not a valid FCM registration token")  :
-                                        notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."  # Update with the error message
-                                        notification_entry.save()     
-                                        
-                                    
-                                else:
-                                    notification_entry.notification_message = a  # Update with the error message
-                                    notification_entry.save()
-                                errors.append(f"Error sending notification to {user.full_name} - {a}")
-                            else :
-                                notification_entry.notification_received = timezone.now()
-                                notification_entry.save()
-                                success.append(f"successfully sent notification to {user.full_name} - {a}")
-                        if current_datetime <= shift_datetime_minus_4_hours  and shift_datetime_minus_8_hours <= current_datetime :
-                                # Add to the filtered_shifts list if it meets the condition
-                                filtered_shifts.append(shift)
-                                serializer = ScRosterSerializer(shift)
-                                shift_data = serializer.data
-                                parameter_type = parameter_master.objects.get(parameter_id=12)
-                                notification_entry = notification_log.objects.create(
-                                    sc_roster_id=shift,
-                                    notification_sent=current_time,
-                                    notification_message="Final Notification for shift confirmation",
-                                    created_at=current_time,
-                                    type=parameter_type ,
-                                    created_by=user,  # assuming the current user is the creator
-                                    updated_at=current_time,
-                                    updated_by=user  # assuming the current user is the updater
-                                )
-                                notification_log_id = notification_entry.id
-                                a = send_push_notification(user,shift_data,notification_log_id)
-                                if(a!= "success"):
-                                    c = a.split("--")
-                                    if(len(c) == 2):
-                                        if(c[1] == "Requested entity was not found."):
-                                            notification_entry.notification_message = "App Is Not Installed"  # Update with the error message
-                                            notification_entry.save()     
-                                        elif(c[1] == "The registration token is not a valid FCM registration token")  :
-                                            notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."  # Update with the error message
-                                            notification_entry.save()     
-                                            
-                                        
-                                    else:
-                                        notification_entry.notification_message = a  # Update with the error message
-                                        notification_entry.save()
-                                    errors.append(f"Error sending notification to {user.full_name} - {a}")
-                                else :
-                                    notification_entry.notification_received = timezone.now()
-                                    notification_entry.save()
-                                    success.append(f"successfully sent notification to {user.full_name} - {a}")
+            # Step 4: Get slot IDs that match the designation and site IDs
+            slot_ids = SlotDetails.objects.filter(
+                Q(designation_id__in=designation_ids) & Q(site_id__in=site_ids)
+            ).values_list('slot_id', flat=True)
+
+            # Step 5: Get notification settings for each slot ID from SettingMaster
+            notification_settings = SettingMaster.objects.filter(
+                slot_id__in=slot_ids
+            ).values('slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification')
+
+            # Process or utilize `notification_settings` as needed
+            for setting in notification_settings:
+                slot_id = setting['slot_id']
+                noti_start_time = setting['noti_start_time']
+                noti_end_time = setting['noti_end_time']
+                interval = setting['interval'] 
+                no_of_notification = int(setting['no_of_notification'])  # Ensure no_of_notification is an integer
+
+                current_notification_time = noti_start_time
+                notifications_sent = 0
+
+                # Send notifications in intervals
+                while notifications_sent < no_of_notification and current_notification_time <= noti_end_time:
+                    # Serialize shift data (replace SlotDetailsSerializer with your actual serializer)
+                    slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
+                    shift_data = SlotDetailsSerializer(slot_instance).data 
+                    # Log the notification in `user_notification_log`
+                    parameter_type = parameter_master.objects.get(parameter_id=11)
+    
+                    # Set current time
+                    current_time = timezone.now()
+                    
+                    try:
+                        notification_entry = user_notification_log.objects.create(
+                            slot_id = get_object_or_404(SlotDetails, slot_id=slot_id),
+                            # slot_id=slot_id,  # Make sure slot_id is an instance of SlotDetails
+                            noti_send_time=current_time,
+                            notification_message="Notification for shift confirmation",
+                            type_id=11,  # Ensure type_id is a parameter_master instance
+                            created_by=user,  # Ensure user is a CustomUser instance
+                            employee_id= get_object_or_404(sc_employee_master, employee_id= employee.employee_id),  # Ensure employee_id matches ForeignKey model
+                        )
+                        
+                        # Retrieve the created entry ID
+                        notification_log_id = notification_entry.id
+                    except Exception as e:
+                        tb = traceback.format_exc()  # Get the full traceback as a string
+                        print(f"error: {e}")
+
+                    # Send push notification and handle response
+                    result = send_push_notification(user, shift_data, notification_log_id)
+                    
+                    if result != "success":
+                        response_message = result.split("--")
+                        if len(response_message) == 2:
+                            error_detail = response_message[1]
+                            if error_detail == "Requested entity was not found.":
+                                notification_entry.notification_message = "App Is Not Installed"
+                            elif error_detail == "The registration token is not a valid FCM registration token":
+                                notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."
+                            else:
+                                notification_entry.notification_message = result
+                        else:
+                            notification_entry.notification_message = result
+                        
+                        notification_entry.save()
+                        errors.append(f"Error sending notification to {user.full_name} - {result}")
+                    
+                    else:
+                        notification_entry.notification_received = timezone.now()
+                        notification_entry.save()
+
+                    # Increment notifications sent and set the next notification time
+                    notifications_sent += 1
+                    current_notification_time += interval
+
+                    # Ensure we do not exceed noti_end_time
+                    if current_notification_time > noti_end_time:
+                        break
                                      
             
         if len(errors)>0:
             return Response({'error':errors,'success':success}, status=status.HTTP_200_OK)
         else:
             return Response({'success':success}, status=status.HTTP_200_OK)
-            
+        
+
 
 class check_and_notify_default_users(APIView):
     def get(self, request):
@@ -229,7 +220,7 @@ class check_and_notify_default_users(APIView):
             if user:
                 for shift in employee_roster_records:
                     # Send each roster record and user to the function
-                    serializer = ScRosterSerializer(shift)
+                    serializer = SlotDetailsSerializer(shift)
                     shift_data = serializer.data
                     parameter_type = parameter_master.objects.get(parameter_id=13)
                     current_time = timezone.now()
