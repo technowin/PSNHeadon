@@ -1231,10 +1231,10 @@ class SlotDataAPIView(APIView):
         user = request.user  # This will get the user from the JWT token
 
         # Call the function to get the roster data
-        roster_data = self.get_slot_data(user.id)
+        slot_data = self.get_slot_data(user.id)
         Log.objects.create(log_text=f"Fetched user by ID: {user.id}")
 
-        return Response(roster_data)
+        return Response(slot_data)
 
     def get_slot_data(self, user_id):
         # Close any previous connections and get a new one
@@ -1260,7 +1260,7 @@ class SlotDataAPIView(APIView):
         try:
             user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id, company_id=company_idd)
             user_slot_data = UserSlotDetailsSerializer(user_slot_details, many=True).data
-
+ 
             user_alloted_count = len(user_slot_data)
 
             user_attendance_details = slot_attendance_details.objects.filter(employee_id=employee_id, company_id=company_idd)
@@ -1276,11 +1276,11 @@ class SlotDataAPIView(APIView):
             )
 
             # Serialize and prepare the response as needed
-            slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
+            slot_details_list1 = SlotListDetailsSerializer(slot_details, many=True).data
             slot_ids = slot_details.values_list('slot_id', flat=True)
 
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
-            setting_master_data = SettingMasterSerializer(setting_master_details, many=True).data
+            slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
 
             return {
@@ -1289,7 +1289,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
-                'setting_master_data':list(setting_master_data)
+                # 'setting_master_data':list(setting_master_data)
             }
         
         except Exception as e:

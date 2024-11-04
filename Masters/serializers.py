@@ -67,6 +67,7 @@ class UserAttendanceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SettingMasterSerializer(serializers.ModelSerializer):
+    slot_id = SlotListDetailsSerializer()
     class Meta:
         model=SettingMaster
         fields = '__all__'
