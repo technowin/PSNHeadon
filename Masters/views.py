@@ -4,12 +4,14 @@ from django.contrib import messages
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth import authenticate, login ,logout,get_user_model
+from grpc import Status
 from Account.forms import RegistrationForm
 from Account.models import *
 from Masters.models import *
 from datetime import date
 from Masters.models import site_master as sit
 from Masters.models import SlotDetails as slot
+from Masters.models import company_master as com
 from Payroll.models import * 
 import Db 
 import re
@@ -2159,6 +2161,39 @@ def deactivate_slot(request):
         m.commit()
         m.close()
         Db.closeConnection()
+
+
+class post_user_slot(APIView):
+    
+    def post(self, request):
+        Db.closeConnection()  
+        m = Db.get_connection()
+        cursor = m.cursor()
+        # Extracting the user id from the session
+        try:
+        
+            # Extracting data from the request
+            employee_id = request.data.get('employee_id')
+            slot = request.data.get('slot_id')
+            site_id1 = request.data.get('site_id')
+            slot_id = get_object_or_404(SlotDetails, slot_id=slot)
+            company = get_object_or_404(com, company_id=request.data.get('company_id'))
+            site = get_object_or_404(sit, site_id=site_id1)
+
+                # Creating a new instance of UserSlotDetails and saving it to the database
+            user_slot = UserSlotDetails(
+                employee_id=employee_id,
+                slot_id=slot_id,
+                company_id=company,
+                site_id=site,
+            )
+            user_slot.save()
+            return Response({"message": "User slot details created successfully."}, status=200)
+        
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+            return JsonResponse({'message': str(e)}, status=500)
 
 
 
