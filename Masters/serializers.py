@@ -60,6 +60,11 @@ class UserSlotDetailsSerializer(serializers.ModelSerializer):
         model = UserSlotDetails
         fields = '__all__'
 
+class UserSlotlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSlotDetails
+        fields = '__all__'
+
 class UserAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = slot_attendance_details

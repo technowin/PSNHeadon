@@ -20,7 +20,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotlistSerializer
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1283,6 +1283,9 @@ class SlotDataAPIView(APIView):
 
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
+           
+            user_slot_details = UserSlotDetails.objects.all()  # Correct way to get all records
+            user_slot_detail_list = UserSlotlistSerializer(user_slot_details, many=True).data
 
 
             return {
@@ -1291,6 +1294,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
+                'user_slot_detail_list':user_slot_detail_list
                 # 'setting_master_data':list(setting_master_data)
             }
         
@@ -2175,10 +2179,10 @@ class post_user_slot(APIView):
             # Extracting data from the request
             employee_id = request.data.get('employee_id')
             slot = request.data.get('slot_id')
-            site_id1 = request.data.get('site_id')
+            site = request.data.get('site_id')
             slot_id = get_object_or_404(SlotDetails, slot_id=slot)
             company = get_object_or_404(com, company_id=request.data.get('company_id'))
-            site = get_object_or_404(sit, site_id=site_id1)
+            site = get_object_or_404(sit, site_id=site)
 
                 # Creating a new instance of UserSlotDetails and saving it to the database
             user_slot = UserSlotDetails(
