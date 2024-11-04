@@ -1284,8 +1284,11 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
            
-            user_slot_details = UserSlotDetails.objects.all()  # Correct way to get all records
+            # user_slot_details = UserSlotDetails.objects.all()  # Correct way to get all records
+            # user_slot_detail_list = UserSlotlistSerializer(user_slot_details, many=True).data
+            user_slot_details = UserSlotDetails.objects.filter(slot_id__in=slot_ids, employee_id=employee_id)
             user_slot_detail_list = UserSlotlistSerializer(user_slot_details, many=True).data
+            user_slot_detail_count =len(user_slot_detail_list)
 
 
             return {
@@ -1294,7 +1297,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
-                'user_slot_detail_list':user_slot_detail_list
+                'user_slot_detail_count':user_slot_detail_count
                 # 'setting_master_data':list(setting_master_data)
             }
         
