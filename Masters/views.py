@@ -1284,23 +1284,8 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
-            # user_slot_counts = (
-            #     UserSlotDetails.objects
-            #     .filter(slot_id__in=slot_ids, employee_id=employee_id)
-            #     .values('slot_id')
-            #     .annotate(count=Count('id'))
-            # )
-
-            # # Convert the result to a list of dictionaries
-            # slot_count_list = [{"slot_id": item["slot_id"], "count": item["count"]} for item in user_slot_counts]
-
-            # # If you want to include slot IDs with zero counts (not present in UserSlotDetails)
-            # for slot_id in slot_ids:
-            #     if not any(d['slot_id'] == slot_id for d in slot_count_list):
-            #         slot_count_list.append({"slot_id": slot_id, "count": 0})
-
-            # # slot_count_list now contains the slot IDs and their counts
-            # print(slot_count_list)
+            user_slot_details_queryset = UserSlotDetails.objects.all()
+            user_slot_details = UserSlotlistSerializer(user_slot_details_queryset, many=True).data
 
             return {
                 'slot_alloted_count': user_alloted_count,
@@ -1308,8 +1293,8 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
+                'user_slot_details':user_slot_details,
                 'employee_id':employee_id,
-                # 'slot_count_list':list(slot_count_list)
             }
         
         except Exception as e:
