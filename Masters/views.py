@@ -1283,14 +1283,25 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
-            slot_ids = slot_details.values_list('slot_id', flat=True)
-
             slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=slot_ids).values('slot_id').annotate(count=Count('id'))
 
-            slot_count_dict = {slot_id: 0 for slot_id in slot_ids}  
+            # Step 3: Initialize a list to hold the results
+            slot_count_list = []
 
+            # Step 4: Populate the list with counts
+            # Create a dictionary with slot_id and count initialized to 0
+            slot_count_dict = {slot_id: 0 for slot_id in slot_ids}
+
+            # Update counts based on the query results
             for item in slot_id_counts:
                 slot_count_dict[item['slot_id']] = item['count']
+
+            # Create the final list of dictionaries
+            for slot_id, count in slot_count_dict.items():
+                slot_count_list.append({'slotId': slot_id, 'count': count})
+
+            # Now slot_count_list contains the slotId and its count
+            print(slot_count_list)
 
             return {
                 'slot_alloted_count': user_alloted_count,
@@ -1298,7 +1309,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
-                'slot_count_dict':slot_count_dict,
+                'slot_count_list':slot_count_list,
                 'employee_id':employee_id,
             }
         
