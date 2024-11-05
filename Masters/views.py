@@ -1284,8 +1284,13 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
-            user_slot_details_queryset = UserSlotDetails.objects.all()
-            user_slot_details = UserSlotlistSerializer(user_slot_details_queryset, many=True).data
+            user_slot_details_queryset = UserSlotDetails.objects.filter(slot_id__in=slot_ids).values('slot_id').annotate(count=Count('id'))
+
+            # Serialize the annotated data
+            user_slot_details = [{'slot_id': slot['slot_id'], 'count': slot['count']} for slot in user_slot_details_queryset]
+
+            # user_slot_details_queryset = UserSlotDetails.objects.all()
+            # user_slot_details = UserSlotlistSerializer(user_slot_details_queryset, many=True).data
 
             return {
                 'slot_alloted_count': user_alloted_count,
