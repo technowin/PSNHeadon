@@ -1284,35 +1284,23 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
-            # user_slot_status = []
+            # user_slot_counts = (
+            #     UserSlotDetails.objects
+            #     .filter(slot_id__in=slot_ids, employee_id=employee_id)
+            #     .values('slot_id')
+            #     .annotate(count=Count('id'))
+            # )
+
+            # # Convert the result to a list of dictionaries
+            # slot_count_list = [{"slot_id": item["slot_id"], "count": item["count"]} for item in user_slot_counts]
+
+            # # If you want to include slot IDs with zero counts (not present in UserSlotDetails)
             # for slot_id in slot_ids:
-            #     exists = UserSlotDetails.objects.filter(
-            #         Q(slot_id=slot_id) & Q(employee_id=employee_id)
-            #     ).exists()
-            #     user_slot_status.append({
-            #         "slot_id": slot_id,
-            #         "status": 1 if exists else 0  # 1 if present, 0 if not
-            #     })
+            #     if not any(d['slot_id'] == slot_id for d in slot_count_list):
+            #         slot_count_list.append({"slot_id": slot_id, "count": 0})
 
-            # # `user_slot_status` now contains the slot IDs with their statuses
-            # print(user_slot_status)
-            user_slot_counts = (
-                UserSlotDetails.objects
-                .filter(slot_id__in=slot_ids, employee_id=employee_id)
-                .values('slot_id')
-                .annotate(count=Count('id'))
-            )
-
-            # Convert the result to a list of dictionaries
-            slot_count_list = [{"slot_id": item["slot_id"], "count": item["count"]} for item in user_slot_counts]
-
-            # If you want to include slot IDs with zero counts (not present in UserSlotDetails)
-            for slot_id in slot_ids:
-                if not any(d['slot_id'] == slot_id for d in slot_count_list):
-                    slot_count_list.append({"slot_id": slot_id, "count": 0})
-
-            # slot_count_list now contains the slot IDs and their counts
-            print(slot_count_list)
+            # # slot_count_list now contains the slot IDs and their counts
+            # print(slot_count_list)
 
             return {
                 'slot_alloted_count': user_alloted_count,
@@ -1320,7 +1308,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
-                'slot_count_list':list(slot_count_list)
+                # 'slot_count_list':list(slot_count_list)
             }
         
         except Exception as e:
