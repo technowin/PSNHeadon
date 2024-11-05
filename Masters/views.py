@@ -1311,17 +1311,12 @@ class SlotDataAPIView(APIView):
             setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
             slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
 
-            # Step 3: Filter slot_ids to include only those present in setting_master_details
             matched_slot_ids = setting_master_details.values_list('slot_id', flat=True)
 
-            # Step 4: Get counts from UserSlotDetails only for matched slot_ids
             slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id').annotate(count=Count('id'))
 
-            # Step 5: Initialize a list to hold the results
             slot_count_list = []
 
-            # Step 6: Populate the list with counts
-            # Create a dictionary with slot_id and count initialized to 0
             slot_count_dict = {slot_id: 0 for slot_id in matched_slot_ids}
 
             # Update counts based on the query results
@@ -1330,7 +1325,7 @@ class SlotDataAPIView(APIView):
 
             # Create the final list of dictionaries
             for slot_id, count in slot_count_dict.items():
-                slot_count_list.append({'slotId': slot_id, 'count': count})
+                slot_count_list.append({'employeeId':employee_id,'slotId': slot_id, 'count': count})
 
             # Now slot_count_list contains the slotId and its count
             print(slot_count_list)
