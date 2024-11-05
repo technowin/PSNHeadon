@@ -1308,6 +1308,7 @@ class SlotDataAPIView(APIView):
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
                 'slot_details_list':list(slot_details_list),
+                'employee_id':employee_id,
                 # 'slot_count_list':list(slot_count_list)
             }
         
