@@ -1292,7 +1292,6 @@ class SlotDataAPIView(APIView):
             for item in slot_id_counts:
                 slot_count_dict[item['slot_id']] = item['count']
 
-
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
