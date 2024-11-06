@@ -2239,6 +2239,9 @@ def deactivate_slot(request):
 
 
 class post_user_slot(APIView):
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     
     def post(self, request):
         Db.closeConnection()  
@@ -2270,20 +2273,31 @@ class post_user_slot(APIView):
         
 class delete_user_slot(APIView):
 
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def delete(self, request):
         Db.closeConnection()  
         m = Db.get_connection()
         cursor = m.cursor()
         
         try:
-            employee_id = request.data.get('employee_id')
+            employeeId = request.data.get('employee_id')
             slot = request.data.get('slot_id')
-            slot_id = get_object_or_404(SlotDetails, slot_id=slot)
+            record_id = request.data.get('id')
+            slot_instance = get_object_or_404(SlotDetails, slot_id=slot)
 
+
+            delete_user_slot = get_object_or_404(UserSlotDetails, employee_id = employeeId,slot_id= slot_instance,id=record_id)
+            delete_user_slot.delete()
+            
+            return JsonResponse({'message': 'Record deleted successfully'}, status=200)
+    
         except Exception as e:
-                tb = traceback.extract_tb(e.__traceback__)
-                cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
-                return JsonResponse({'message': str(e)}, status=500)
+            # Log the error using a stored procedure
+            tb = traceback.extract_tb(e.__traceback__)
+            cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+            return JsonResponse({'message': str(e)}, status=500)
         
 
 
