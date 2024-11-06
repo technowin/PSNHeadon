@@ -45,6 +45,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = sc_employee_master
         fields = '__all__' 
 
+class EmployeelistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = sc_employee_master
+        fields = '__all__' 
+
 class SlotDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SlotDetails
@@ -62,6 +67,7 @@ class UserSlotDetailsSerializer(serializers.ModelSerializer):
     slot_id = SlotDetailsSerializer()
     company_id = CompanyMasterSerializer()
     site_id = SiteSerializer()
+    emp_id = EmployeelistSerializer()
     class Meta:
         model = UserSlotDetails
         fields = '__all__'

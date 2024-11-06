@@ -287,6 +287,7 @@ class SettingMaster(models.Model):
     
 class UserSlotDetails(models.Model):
     id = models.AutoField(primary_key=True) 
+    emp_id =  models.ForeignKey(sc_employee_master, on_delete=models.CASCADE,related_name='UserSlotDetails_emp_id',blank=True, null=True,db_column='emp_id')
     employee_id = models.TextField(null=True,blank=True)
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='UserSlotDetails_company_id',blank=True, null=True,db_column='company_id')
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='UserSlotDetails_site_id',blank=True, null=True,db_column='site_id')
