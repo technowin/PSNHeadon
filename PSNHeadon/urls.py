@@ -44,6 +44,7 @@ urlpatterns = [
     path('check_and_notify_all_users', check_and_notify_all_users.as_view(), name='check_and_notify_all_users'),
     path('check_and_notify_default_users', check_and_notify_default_users.as_view(), name='check_and_notify_default_users'),
     path('post_user_slot', post_user_slot.as_view(), name='post_user_slot'),
+    path('delete_user_slot', delete_user_slot.as_view(), name='delete_user_slot'),
     path('DefaultRecords', DefaultRecords.as_view(), name='DefaultRecords'),
     
     # Dashboard
