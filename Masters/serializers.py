@@ -9,6 +9,11 @@ class CompanyMasterSerializer(serializers.ModelSerializer):
         model = company_master
         fields = '__all__'  # Include all fields, or specify specific fields as needed
 
+class SettingMasterListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=SettingMaster
+        fields = '__all__'
+
 class ParameterMasterSerializer(serializers.ModelSerializer):  # Corrected serializer class name
     class Meta:
         model = parameter_master  # Assuming the model name is in PascalCase, adjust if necessary
@@ -48,6 +53,7 @@ class SlotDetailsSerializer(serializers.ModelSerializer):
 class SlotListDetailsSerializer(serializers.ModelSerializer):
     company = CompanyMasterSerializer()
     site_id = SiteSerializer()
+    setting_id = SettingMasterListSerializer() 
     class Meta:
         model = SlotDetails
         fields = '__all__'
@@ -75,3 +81,5 @@ class SettingMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model=SettingMaster
         fields = '__all__'
+
+

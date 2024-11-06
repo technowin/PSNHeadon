@@ -246,6 +246,7 @@ class SlotDetails(models.Model):
     slot_id = models.AutoField(primary_key=True)
     company = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='slot_relation',blank=True, null=True)
     # worksite = models.TextField(null=True,blank=True)
+    setting_id  = models.ForeignKey('Masters.SettingMaster', on_delete=models.CASCADE,related_name='SlotDetails_setting_id',blank=True, null=True,db_column="setting_id")
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='SlotDetails_site_id',blank=True, null=True,db_column="site_id")
     designation_id = models.ForeignKey('Payroll.designation_master', on_delete=models.CASCADE,related_name='SlotDetails_designation_id',blank=True, null=True,db_column="designation_id")
     slot_name = models.TextField(null=True,blank=True)

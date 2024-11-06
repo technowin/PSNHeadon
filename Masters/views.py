@@ -1270,92 +1270,46 @@ class SlotDataAPIView(APIView):
 
             user_attendance_count = len(user_attendance_data)
 
+
             designation_ids = employee_designation.objects.filter(employee_id=employee_id).values_list('designation_id', flat=True)
             site_ids = employee_site.objects.filter(employee_id=employee_id).values_list('site_id', flat=True)
+
             slot_details = SlotDetails.objects.filter(
                 designation_id__in=designation_ids,
                 site_id__in=site_ids
             )
-
-            # slot_details_list1 = SlotListDetailsSerializer(slot_details, many=True).data
-            # slot_ids = slot_details.values_list('slot_id', flat=True)
-
-            # setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
-            # slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
-
-            # slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=slot_ids).values('slot_id').annotate(count=Count('id'))
-
-            # # Step 3: Initialize a list to hold the results
-            # slot_count_list = []
-
-            # # Step 4: Populate the list with counts
-            # # Create a dictionary with slot_id and count initialized to 0
-            # slot_count_dict = {slot_id: 0 for slot_id in slot_ids}
-
-            # # Update counts based on the query results
-            # for item in slot_id_counts:
-            #     slot_count_dict[item['slot_id']] = item['count']
-
-            # # Create the final list of dictionaries
-            # for slot_id, count in slot_count_dict.items():
-            #     slot_count_list.append({'slotId': slot_id, 'count': count})
-
-            # # Now slot_count_list contains the slotId and its count
-            # print(slot_count_list)
-
-            # Step 1: Serialize the slot details
-            slot_details_list1 = SlotListDetailsSerializer(slot_details, many=True).data
+            slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
             slot_ids = slot_details.values_list('slot_id', flat=True)
 
-            # Step 2: Retrieve SettingMaster details
-            setting_master_details = SettingMaster.objects.filter(slot_id__in=slot_ids)
-            slot_details_list = SettingMasterSerializer(setting_master_details, many=True).data
+            slot_id_counts = UserSlotDetails.objects.filter(
+                slot_id__in=slot_ids,
+                employee_id=employee_id
+            ).values('slot_id').annotate(
+                count=Count('id')
+            ).values('slot_id', 'id', 'employee_id', 'count')
 
-            matched_slot_ids = setting_master_details.values_list('slot_id', flat=True)
+            slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in slot_ids}
 
-            # slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id').annotate(count=Count('id'))
-
-            # slot_count_list = []
-
-            # slot_count_dict = {slot_id: 0 for slot_id in matched_slot_ids}
-
-            # # Update counts based on the query results
-            # for item in slot_id_counts:
-            #     slot_count_dict[item['slot_id']] = item['count']
-
-            # # Create the final list of dictionaries
-            # for slot_id, count in slot_count_dict.items():
-            #     slot_count_list.append({'employeeId':employee_id,'slotId': slot_id, 'count': count})
-
-            # # Now slot_count_list contains the slotId and its count
-            # print(slot_count_list)
-            slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id', 'id', 'employee_id').annotate(count=Count('id'))
-
-            slot_count_list = []
-
-            # Initialize a dictionary with all matched_slot_ids to ensure every slot_id has an entry
-            slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in matched_slot_ids}
-
-            # Update counts and additional fields based on the query results
+            # Update counts based on slot_id_counts
             for item in slot_id_counts:
-                if item['slot_id'] in slot_count_dict and item['employee_id'] == employee_id:
-                    # Set count to 1 if the combination of slot_id and employee_id is present
-                    slot_count_dict[item['slot_id']] = {
-                        'count': 1,
-                        'id': item['id'] if item['id'] is not None else 0,
+                slot_id = item['slot_id']
+                if slot_id in slot_count_dict:
+                    slot_count_dict[slot_id] = {
+                        'count': item['count'],
+                        'id': item['id'],
                         'employee_id': item['employee_id']
                     }
 
-            # Create the final list of dictionaries
-            for slot_id, data in slot_count_dict.items():
-                slot_count_list.append({
+            slot_count_list = [
+                {
                     'employeeId': data['employee_id'],
                     'slotId': slot_id,
                     'id': data['id'],
                     'count': data['count']
-                })
+                }
+                for slot_id, data in slot_count_dict.items()
+            ]
 
-            # Now slot_count_list contains slotId, id, employeeId, and count
             print(slot_count_list)
 
 
