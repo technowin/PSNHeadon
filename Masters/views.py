@@ -1702,36 +1702,72 @@ def edit_slot_details(request):
             return redirect(new_url) 
         
 
+# def delete_slot(request):
+#     Db.closeConnection()  
+#     m = Db.get_connection()
+#     cursor = m.cursor()
+
+#     try:
+#         slot_id = request.POST.get('slot_id')
+#         slot_idd = decrypt_parameter(slot_id)
+
+#         slots_to_delete = SlotDetails.objects.filter(slot_id=slot_idd)
+#         setting = get_object_or_404(SettingMaster, slot_id=slot_idd)
+#         noti_start_time = setting.noti_start_time 
+
+#         current_date = date.today()
+
+#         if current_date >= noti_start_time:  
+#             return JsonResponse({'success': False, 'message': 'Slot Cannot be deleted,Because Notification time has begun!'})
+
+#         if slots_to_delete.exists():
+#             slots_to_delete.delete()
+#             setting.delete()
+#             return JsonResponse({'success': True, 'message': 'Slot  and its setttings successfully deleted!'})
+#         else:
+#             return JsonResponse({'success': False, 'message': 'No slots found with the specified slot_id.'})
+
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
+
+#         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
+
 def delete_slot(request):
     Db.closeConnection()  
     m = Db.get_connection()
     cursor = m.cursor()
 
     try:
+        # Decrypt slot_id from POST request
         slot_id = request.POST.get('slot_id')
         slot_idd = decrypt_parameter(slot_id)
 
-        slots_to_delete = SlotDetails.objects.filter(slot_id=slot_idd)
+        # Fetch the slot to delete and check its settings
+        slot_to_delete = get_object_or_404(SlotDetails, slot_id=slot_idd)
         setting = get_object_or_404(SettingMaster, slot_id=slot_idd)
-        noti_start_time = setting.noti_start_time  
-
+        
+        noti_start_time = setting.noti_start_time  # Get notification start time from settings
         current_date = date.today()
 
-        if current_date >= noti_start_time:  
-            return JsonResponse({'success': False, 'message': 'Slot Cannot be deleted,Because Notification time has begun!'})
+        # If notification has already started, do not delete the slot
+        if current_date >= noti_start_time:
+            return JsonResponse({'success': False, 'message': 'Slot cannot be deleted, because notification time has begun!'})
 
-        if slots_to_delete.exists():
-            slots_to_delete.delete()
-            setting.delete()
-            return JsonResponse({'success': True, 'message': 'Slot  and its setttings successfully deleted!'})
-        else:
-            return JsonResponse({'success': False, 'message': 'No slots found with the specified slot_id.'})
+        # Delete the specific slot and setting if it exists and notification time has not started
+        slot_to_delete.delete()
+        setting.delete()
+
+        return JsonResponse({'success': True, 'message': 'Slot and its settings successfully deleted!'})
 
     except Exception as e:
+        # Log the error if any occurs
         tb = traceback.extract_tb(e.__traceback__)
         cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])  
 
         return JsonResponse({'success': False, 'message': 'An error occurred while deleting the slot.'})
+
+
 
 def view_employee(request):
     Db.closeConnection()  
