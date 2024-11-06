@@ -1313,21 +1313,47 @@ class SlotDataAPIView(APIView):
 
             matched_slot_ids = setting_master_details.values_list('slot_id', flat=True)
 
-            slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id').annotate(count=Count('id'))
+            # slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id').annotate(count=Count('id'))
+
+            # slot_count_list = []
+
+            # slot_count_dict = {slot_id: 0 for slot_id in matched_slot_ids}
+
+            # # Update counts based on the query results
+            # for item in slot_id_counts:
+            #     slot_count_dict[item['slot_id']] = item['count']
+
+            # # Create the final list of dictionaries
+            # for slot_id, count in slot_count_dict.items():
+            #     slot_count_list.append({'employeeId':employee_id,'slotId': slot_id, 'count': count})
+
+            # # Now slot_count_list contains the slotId and its count
+            # print(slot_count_list)
+            slot_id_counts = UserSlotDetails.objects.filter(slot_id__in=matched_slot_ids).values('slot_id', 'id', 'employee_id').annotate(count=Count('id'))
 
             slot_count_list = []
 
-            slot_count_dict = {slot_id: 0 for slot_id in matched_slot_ids}
+            # Initialize a dictionary with all matched_slot_ids to ensure every slot_id has an entry
+            slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in matched_slot_ids}
 
-            # Update counts based on the query results
+            # Update counts and additional fields based on the query results
             for item in slot_id_counts:
-                slot_count_dict[item['slot_id']] = item['count']
+                slot_count_dict[item['slot_id']] = {
+                    'count': item['count'],
+                    'id': item['id'] if item['id'] is not None else 0,
+                    'employee_id': item['employee_id']
+                }
 
             # Create the final list of dictionaries
-            for slot_id, count in slot_count_dict.items():
-                slot_count_list.append({'employeeId':employee_id,'slotId': slot_id, 'count': count})
+            for slot_id, data in slot_count_dict.items():
+                slot_count_list.append({
+                    'employeeId': data['employee_id'],
+                    'slotId': slot_id,
+                    'id': data['id'],
+                    'count': data['count']
+                })
 
-            # Now slot_count_list contains the slotId and its count
+            # Now slot_count_list contains slotId, id, employeeId, and count
             print(slot_count_list)
 
 
@@ -2218,8 +2244,6 @@ class post_user_slot(APIView):
         cursor = m.cursor()
         # Extracting the user id from the session
         try:
-        
-            # Extracting data from the request
             employee_id = request.data.get('employee_id')
             slot = request.data.get('slot_id')
             site = request.data.get('site_id')
@@ -2241,6 +2265,25 @@ class post_user_slot(APIView):
             tb = traceback.extract_tb(e.__traceback__)
             cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
             return JsonResponse({'message': str(e)}, status=500)
+        
+class delete_user_slot(APIView):
+
+    def delete(self, request):
+        Db.closeConnection()  
+        m = Db.get_connection()
+        cursor = m.cursor()
+        
+        try:
+            employee_id = request.data.get('employee_id')
+            slot = request.data.get('slot_id')
+            slot_id = get_object_or_404(SlotDetails, slot_id=slot)
+
+        except Exception as e:
+                tb = traceback.extract_tb(e.__traceback__)
+                cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+                return JsonResponse({'message': str(e)}, status=500)
+        
+
 
 
 
