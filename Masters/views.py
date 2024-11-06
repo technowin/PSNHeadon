@@ -1596,8 +1596,14 @@ def setting_master(request):
                 created_by=user_idd
                 )
                 notification.save()
+                new_setting_id = notification.id
 
-                messages.success(request, "Slot Settings successfully Saved!")
+                # Update SlotDetails with the new SettingMaster ID where slot_id matches
+                slot_id = decrypt_parameter(request.POST.get('slot_id', ''))
+                SlotDetails.objects.filter(slot_id=slot_id).update(setting_id=new_setting_id)
+
+                messages.success(request, "Slot Settings successfully saved and SlotDetails updated!")
+
 
 
 

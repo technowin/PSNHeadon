@@ -45,9 +45,11 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from rest_framework import status
 
-from Masters.serializers import ScRosterSerializer, SlotDetailsSerializer
+from Masters.serializers import ScRosterSerializer, SlotDetailsSerializer, UserSlotlistSerializer
 from Notification.models import notification_log, user_notification_log
 from datetime import datetime, timedelta
+
+from Payroll.models import slot_attendance_details
 class check_and_notify_user(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -341,6 +343,56 @@ def process_notification(user, roster_record):
     # Example: processing each roster record and sending notification
     # send_notification(user, f"Attendance reminder for employee: {roster_record.employee_id} on date: {roster_record.shift_date}")
 
+# class DefaultRecords(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def get(self, request):
+#         try:
+#             # Step 1: Extract user from JWT token
+#             user = request.user  # This gets the user from the JWT token if authenticated
+
+#             # Step 2: Fetch the corresponding user from the CustomUser model
+#             custom_user = get_object_or_404(CustomUser, id=user.id)
+
+#             # Step 3: Fetch the employee_id from sc_employee_master using custom_user
+#             try:
+#                 employee_record = sc_employee_master.objects.filter(mobile_no=custom_user.phone).first()
+#             except sc_employee_master.DoesNotExist:
+#                 return Response(
+#                     {"error": "Employee record not found for the current user."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 4: Using the employee_id, fetch the sc_roster records with specified conditions
+#             employee_id = employee_record.employee_id
+#             roster_records = sc_roster.objects.filter(
+#                 employee_id=employee_id,
+#                 attendance_date__isnull=False,  # attendance_date is not null
+#                 confirmation=True,  # confirmation is true
+#                 attendance_in__isnull=True  # attendance_in is null
+#             )
+
+#             # Step 5: Check if roster_records exist
+#             if not roster_records.exists():
+#                 return Response(
+#                     {"message": "No matching sc_roster records found for the employee."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 6: Serialize the data
+#             data = ScRosterSerializer(roster_records, many=True)
+
+#             # Step 7: Return a success response
+#             return Response(data.data, status=status.HTTP_200_OK)
+
+#         except Exception as e:
+#             # Step 8: Return a generic error response for any unhandled exceptions
+#             return Response(
+#                 {"error": f"An error occurred: {str(e)}"},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
 class DefaultRecords(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -362,30 +414,45 @@ class DefaultRecords(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Step 4: Using the employee_id, fetch the sc_roster records with specified conditions
+            # Step 4: Using the employee_id, fetch UserSlotDetails records
             employee_id = employee_record.employee_id
-            roster_records = sc_roster.objects.filter(
-                employee_id=employee_id,
-                attendance_date__isnull=False,  # attendance_date is not null
-                confirmation=True,  # confirmation is true
-                attendance_in__isnull=True  # attendance_in is null
-            )
+            user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id)
 
-            # Step 5: Check if roster_records exist
-            if not roster_records.exists():
+            # Step 5: Check if UserSlotDetails exist
+            if not user_slot_details.exists():
                 return Response(
-                    {"message": "No matching sc_roster records found for the employee."},
+                    {"message": "No matching UserSlotDetails records found for the employee."},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Step 6: Serialize the data
-            data = ScRosterSerializer(roster_records, many=True)
+            # Step 6: Filter UserSlotDetails records where corresponding data does not exist in UserAttendanceDetails
+            filtered_data = []
+            for slot in user_slot_details:
+                slot_id = slot.slot_id
+                # Check if there is no entry in UserAttendanceDetails for this employee_id and slot_id
+                attendance_exists = slot_attendance_details.objects.filter(
+                    employee_id=employee_id,
+                    slot_id=slot_id
+                ).exists()
 
-            # Step 7: Return a success response
+                if not attendance_exists:
+                    filtered_data.append(slot)
+
+            # Step 7: If no matching data, return not found message
+            if not filtered_data:
+                return Response(
+                    {"message": "No UserSlotDetails records found without corresponding attendance details."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Step 8: Serialize the filtered UserSlotDetails data
+            data = UserSlotlistSerializer(filtered_data, many=True)
+
+            # Step 9: Return a success response with the serialized data
             return Response(data.data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Step 8: Return a generic error response for any unhandled exceptions
+            # Step 10: Return a generic error response for any unhandled exceptions
             return Response(
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
