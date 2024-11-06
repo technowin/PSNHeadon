@@ -45,7 +45,7 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from rest_framework import status
 
-from Masters.serializers import ScRosterSerializer, SlotDetailsSerializer, UserSlotlistSerializer
+from Masters.serializers import ScRosterSerializer, SlotDetailsSerializer, UserSlotDetailsSerializer, UserSlotlistSerializer
 from Notification.models import notification_log, user_notification_log
 from datetime import datetime, timedelta
 
@@ -446,7 +446,7 @@ class DefaultRecords(APIView):
                 )
 
             # Step 8: Serialize the filtered UserSlotDetails data
-            data = UserSlotlistSerializer(filtered_data, many=True)
+            data = UserSlotDetailsSerializer(filtered_data, many=True)
 
             # Step 9: Return a success response with the serialized data
             return Response(data.data, status=status.HTTP_200_OK)
