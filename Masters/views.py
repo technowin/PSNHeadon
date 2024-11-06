@@ -1338,11 +1338,13 @@ class SlotDataAPIView(APIView):
 
             # Update counts and additional fields based on the query results
             for item in slot_id_counts:
-                slot_count_dict[item['slot_id']] = {
-                    'count': item['count'],
-                    'id': item['id'] if item['id'] is not None else 0,
-                    'employee_id': item['employee_id']
-                }
+                if item['slot_id'] in slot_count_dict and item['employee_id'] == employee_id:
+                    # Set count to 1 if the combination of slot_id and employee_id is present
+                    slot_count_dict[item['slot_id']] = {
+                        'count': 1,
+                        'id': item['id'] if item['id'] is not None else 0,
+                        'employee_id': item['employee_id']
+                    }
 
             # Create the final list of dictionaries
             for slot_id, data in slot_count_dict.items():
