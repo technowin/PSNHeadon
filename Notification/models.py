@@ -29,7 +29,7 @@ class user_notification_log(models.Model):
     employee_id = models.TextField(null=True,blank=True)
     noti_send_time = models.DateTimeField(null=True,blank=True)
     noti_receive_time = models.DateTimeField(null=True,blank=True)
-    noti_opened_time = models.DateTimeField(null=True,blank=True)
+    noti_click_time = models.DateTimeField(null=True,blank=True)
     notification_message = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_noti_created_by',blank=True, null=True,db_column='created_by')
