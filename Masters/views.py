@@ -2253,11 +2253,13 @@ class post_user_slot(APIView):
         # Extracting the user id from the session
         try:
             mobileNum = request.data.get('mobileNum')
-            user = CustomUser.objects.filter(mobile_no=mobileNum).first()
+            user = CustomUser.objects.filter(phone=mobileNum).first()
+
             if user:
-                user_id = user.id  # Get the id of the user
+                user_id = user.id  # Access the 'id' of the user
             else:
-                user_id = None
+                user_id = None  # If no user is found, set user_id to None
+
             employee_id = request.data.get('employee_id')
             slot = request.data.get('slot_id')
             site = request.data.get('site_id')
