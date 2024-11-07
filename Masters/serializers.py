@@ -88,4 +88,13 @@ class SettingMasterSerializer(serializers.ModelSerializer):
         model=SettingMaster
         fields = '__all__'
 
+class UserSlotDetailsSerializer1(serializers.ModelSerializer):
+    slot_id = SlotDetailsSerializer()
+    company_id = CompanyMasterSerializer()
+    site_id = SiteSerializer()
+    emp_id = EmployeelistSerializer()
+    class Meta:
+        model = UserSlotDetails
+        fields = '__all__'
+
 
