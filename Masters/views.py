@@ -2252,12 +2252,15 @@ class post_user_slot(APIView):
             company = get_object_or_404(com, company_id=request.data.get('company_id'))
             site = get_object_or_404(sit, site_id=site)
 
+            emp_id1 = get_object_or_404(sc_employee_master, employee_id=employee_id)
+
                 # Creating a new instance of UserSlotDetails and saving it to the database
             user_slot = UserSlotDetails(
                 employee_id=employee_id,
                 slot_id=slot_id,
                 company_id=company,
                 site_id=site,
+                emp_id = emp_id1
             )
             user_slot.save()
             return Response({"message": "User slot details created successfully."}, status=200)
