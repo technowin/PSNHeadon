@@ -2307,8 +2307,6 @@ class delete_user_slot(APIView):
             slot = request.data.get('slot_id')
             record_id = request.data.get('id')
             slot_instance = get_object_or_404(SlotDetails, slot_id=slot)
-
-
             delete_user_slot = get_object_or_404(UserSlotDetails, employee_id = employeeId,slot_id= slot_instance,id=record_id)
             delete_user_slot.delete()
             

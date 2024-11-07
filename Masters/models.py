@@ -228,19 +228,6 @@ class Log(models.Model):
     class Meta:
         db_table = 'logs'
 
-class PoolDetails(models.Model):
-    pool_id = models.AutoField(primary_key=True)
-    pool_name = models.CharField(max_length=100, null=True, blank=True)
-    pool_description =  models.CharField(max_length=200, null=True, blank=True)
-    pool_status = models.BooleanField(null=True,blank=True,default=True)
-    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pool_created',blank=True, null=True,db_column='created_by')
-    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pool_updated',blank=True, null=True,db_column='updated_by')
-    class Meta:
-        db_table = 'pool_details'
-    def __str__(self):
-        return self.name
     
 class SlotDetails(models.Model):
     slot_id = models.AutoField(primary_key=True)
@@ -327,5 +314,20 @@ class employee_site(models.Model):
     state_status = models.BooleanField(null=True,blank=True,default=True)
     class Meta:
         db_table = 'employee_site'
+    def __str__(self):
+        return self.name
+    
+
+class HistUserSlotDetails(models.Model):
+    id = models.AutoField(primary_key=True) 
+    emp_id =  models.ForeignKey(sc_employee_master, on_delete=models.CASCADE,related_name='HistUserSlotDetails_emp_id',blank=True, null=True,db_column='emp_id')
+    employee_id = models.TextField(null=True,blank=True)
+    company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='HistUserSlotDetails_company_id',blank=True, null=True,db_column='company_id')
+    site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='HistUserSlotDetails_site_id',blank=True, null=True,db_column='site_id')
+    slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='HistUserSlotDetails_slot_id',blank=True, null=True,db_column='slot_id')
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='Hist_user_shit_created',blank=True, null=True,db_column='created_by') 
+    class Meta:
+        db_table = 'hist_user_slot_details'
     def __str__(self):
         return self.name
