@@ -1276,7 +1276,6 @@ class SlotDataAPIView(APIView):
 
             user_attendance_count = len(user_attendance_data)
 
-
             designation_ids = employee_designation.objects.filter(employee_id=employee_id).values_list('designation_id', flat=True)
             site_ids = employee_site.objects.filter(employee_id=employee_id).values_list('site_id', flat=True)
 
@@ -1284,8 +1283,14 @@ class SlotDataAPIView(APIView):
                 designation_id__in=designation_ids,
                 site_id__in=site_ids
             )
-            slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
-            slot_ids = slot_details.values_list('slot_id', flat=True)
+            current_date = timezone.now().date()
+            filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
+
+            # Serialize the filtered data
+            slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
+            slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
+            # slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
+            # slot_ids = slot_details.values_list('slot_id', flat=True)
 
             slot_id_counts = UserSlotDetails.objects.filter(
                 slot_id__in=slot_ids,
