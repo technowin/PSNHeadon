@@ -2252,13 +2252,19 @@ class post_user_slot(APIView):
         cursor = m.cursor()
         # Extracting the user id from the session
         try:
-            
+            mobileNum = request.data.get('mobileNum')
+            user = CustomUser.objects.filter(mobile_no=mobileNum).first()
+            if user:
+                user_id = user.id  # Get the id of the user
+            else:
+                user_id = None
             employee_id = request.data.get('employee_id')
             slot = request.data.get('slot_id')
             site = request.data.get('site_id')
             slot_id = get_object_or_404(SlotDetails, slot_id=slot)
             company = get_object_or_404(com, company_id=request.data.get('company_id'))
             site = get_object_or_404(sit, site_id=site)
+            user = get_object_or_404(CustomUser, id = user_id)
 
             emp_id1 = get_object_or_404(sc_employee_master, employee_id=employee_id)
 
@@ -2268,7 +2274,8 @@ class post_user_slot(APIView):
                 slot_id=slot_id,
                 company_id=company,
                 site_id=site,
-                emp_id = emp_id1
+                emp_id = emp_id1,
+                created_by = user
             )
             user_slot.save()
             return Response({"message": "User slot details created successfully."}, status=200)
