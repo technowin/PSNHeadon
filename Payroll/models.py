@@ -114,7 +114,7 @@ class slot_attendance_details(models.Model):
         db_table = 'slot_attendance_details'  
 
     
-class slot_employee_details(models.Model)     :
+class slot_employee_details(models.Model):
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE,related_name='employee_slot_id',blank=True, null=True,db_column='slot_id')
     employee_id = models.TextField(max_length=250,null=True,blank=True)
