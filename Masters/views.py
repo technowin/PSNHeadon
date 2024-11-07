@@ -20,7 +20,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer
+from Masters.serializers import ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotDetailsSerializer1
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1262,6 +1262,12 @@ class SlotDataAPIView(APIView):
         try:
             user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id)
             user_slot_data = UserSlotDetailsSerializer(user_slot_details, many=True).data
+
+            employee_data = sc_employee_master.objects.filter(employee_id=employee_id).first()
+            if employee_data:
+                mobile_no = employee_data.mobile_no
+            else:
+                mobile_no = None 
  
             user_alloted_count = len(user_slot_data)
 
@@ -1321,6 +1327,7 @@ class SlotDataAPIView(APIView):
                 'slot_details_list':list(slot_details_list),
                 'slot_count_list':slot_count_list,
                 'employee_id':employee_id,
+                'mobile_no':mobile_no,
             }
         
         except Exception as e:
@@ -2245,6 +2252,13 @@ class post_user_slot(APIView):
         cursor = m.cursor()
         # Extracting the user id from the session
         try:
+            user = CustomUser.objects.filter(mobile_no=user.phone).first()
+            if user:
+                user_id = user.id
+            else:
+                user_id = None 
+
+            userId = get_object_or_404(CustomUser, id = user_id)
             employee_id = request.data.get('employee_id')
             slot = request.data.get('slot_id')
             site = request.data.get('site_id')
@@ -2260,7 +2274,8 @@ class post_user_slot(APIView):
                 slot_id=slot_id,
                 company_id=company,
                 site_id=site,
-                emp_id = emp_id1
+                emp_id = emp_id1,
+                created_by = userId
             )
             user_slot.save()
             return Response({"message": "User slot details created successfully."}, status=200)
