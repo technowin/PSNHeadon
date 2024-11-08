@@ -1283,11 +1283,22 @@ class SlotDataAPIView(APIView):
                 designation_id__in=designation_ids,
                 site_id__in=site_ids
             )
+            # current_date = timezone.now().date()
+            # filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
+
+            # # Serialize the filtered data
+            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
+            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
+
             current_date = timezone.now().date()
-            filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
+
+# Filter slot details where shift_date is greater than the current date and order by shift_date
+            filtered_slot_details = slot_details.filter(shift_date__gt=current_date).order_by('shift_date')
 
             # Serialize the filtered data
             slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
+
+            # Get the list of slot_ids
             slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
 
             slot_id_counts = UserSlotDetails.objects.filter(
