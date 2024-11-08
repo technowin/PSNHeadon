@@ -1321,47 +1321,39 @@ class SlotDataAPIView(APIView):
 
             # print(slot_count_list)
 
+            # Serialize the slot details and extract slot IDs
             slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
             slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
 
-            # Get counts of slot_ids in one query and build slot_count_list directly
-            slot_count_list = [
-                {
-                    'employeeId': employee_id,
-                    'slotId': item['slot_id'],
-                    'id': item['id'],
-                    'count': item['count']
-                }
+            # Get counts for each slot and store in a dictionary for quick lookup
+            slot_id_counts = {
+                item['slot_id']: {'count': item['count'], 'id': item['id']}
                 for item in UserSlotDetails.objects.filter(
                     slot_id__in=slot_ids,
                     employee_id=employee_id
-                ).values('slot_id').annotate(
-                    count=Count('id')
-                ).values('slot_id', 'id', 'count')
-            ]
+                ).values('slot_id').annotate(count=Count('id')).values('slot_id', 'id', 'count')
+            }
 
-            # Fill in slots with a count of 0 if they are missing from the queryset result
-            slot_count_list += [
+            # Build a combined list with slot details and count information
+            combined_slot_list = [
                 {
+                    **slot_detail,  # Include all details from slot_details_list
                     'employeeId': employee_id,
-                    'slotId': slot_id,
-                    'id': 0,
-                    'count': 0
+                    'count': slot_id_counts.get(slot_detail['slot_id'], {}).get('count', 0),
+                    'id': slot_id_counts.get(slot_detail['slot_id'], {}).get('id', 0)
                 }
-                for slot_id in slot_ids if slot_id not in [item['slotId'] for item in slot_count_list]
+                for slot_detail in slot_details_list
             ]
 
-            print(slot_count_list)
-
-
+            # print(combined_slot_list)
 
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
-                'slot_details_list':list(slot_details_list),
-                'slot_count_list':slot_count_list,
+                # 'slot_details_list':list(slot_details_list),
+                'combined_slot_list':combined_slot_list,
                 'employee_id':employee_id,
                 'mobile_no':mobile_no,
             }
