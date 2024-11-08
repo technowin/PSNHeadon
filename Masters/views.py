@@ -1287,63 +1287,63 @@ class SlotDataAPIView(APIView):
             filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
 
             # Serialize the filtered data
-            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
-            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
-
-            # slot_id_counts = UserSlotDetails.objects.filter(
-            #     slot_id__in=slot_ids,
-            #     employee_id=employee_id
-            # ).values('slot_id').annotate(
-            #     count=Count('id')
-            # ).values('slot_id', 'id', 'employee_id', 'count')
-
-            # slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in slot_ids}
-
-            # # Update counts based on slot_id_counts
-            # for item in slot_id_counts:
-            #     slot_id = item['slot_id']
-            #     if slot_id in slot_count_dict:
-            #         slot_count_dict[slot_id] = {
-            #             'count': item['count'],
-            #             'id': item['id'],
-            #             'employee_id': item['employee_id']
-            #         }
-
-            # slot_count_list = [
-            #     {
-            #         'employeeId': data['employee_id'],
-            #         'slotId': slot_id,
-            #         'id': data['id'],
-            #         'count': data['count']
-            #     }
-            #     for slot_id, data in slot_count_dict.items()
-            # ]
-
-            # print(slot_count_list)
-
-            # Serialize the slot details and extract slot IDs
             slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
             slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
 
-            # Get counts for each slot and store in a dictionary for quick lookup
-            slot_id_counts = {
-                item['slot_id']: {'count': item['count'], 'id': item['id']}
-                for item in UserSlotDetails.objects.filter(
-                    slot_id__in=slot_ids,
-                    employee_id=employee_id
-                ).values('slot_id').annotate(count=Count('id')).values('slot_id', 'id', 'count')
-            }
+            slot_id_counts = UserSlotDetails.objects.filter(
+                slot_id__in=slot_ids,
+                employee_id=employee_id
+            ).values('slot_id').annotate(
+                count=Count('id')
+            ).values('slot_id', 'id', 'employee_id', 'count')
 
-            # Build a combined list with slot details and count information
-            combined_slot_list = [
+            slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in slot_ids}
+
+            # Update counts based on slot_id_counts
+            for item in slot_id_counts:
+                slot_id = item['slot_id']
+                if slot_id in slot_count_dict:
+                    slot_count_dict[slot_id] = {
+                        'count': item['count'],
+                        'id': item['id'],
+                        'employee_id': item['employee_id']
+                    }
+
+            slot_count_list = [
                 {
-                    **slot_detail,  # Include all details from slot_details_list
-                    'employeeId': employee_id,
-                    'count': slot_id_counts.get(slot_detail['slot_id'], {}).get('count', 0),
-                    'id': slot_id_counts.get(slot_detail['slot_id'], {}).get('id', 0)
+                    'employeeId': data['employee_id'],
+                    'slotId': slot_id,
+                    'id': data['id'],
+                    'count': data['count']
                 }
-                for slot_detail in slot_details_list
+                for slot_id, data in slot_count_dict.items()
             ]
+
+            print(slot_count_list)
+
+            # Serialize the slot details and extract slot IDs
+            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
+            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
+
+            # # Get counts for each slot and store in a dictionary for quick lookup
+            # slot_id_counts = {
+            #     item['slot_id']: {'count': item['count'], 'id': item['id']}
+            #     for item in UserSlotDetails.objects.filter(
+            #         slot_id__in=slot_ids,
+            #         employee_id=employee_id
+            #     ).values('slot_id').annotate(count=Count('id')).values('slot_id', 'id', 'count')
+            # }
+
+            # # Build a combined list with slot details and count information
+            # combined_slot_list = [
+            #     {
+            #         **slot_detail,  # Include all details from slot_details_list
+            #         'employeeId': employee_id,
+            #         'count': slot_id_counts.get(slot_detail['slot_id'], {}).get('count', 0),
+            #         'id': slot_id_counts.get(slot_detail['slot_id'], {}).get('id', 0)
+            #     }
+            #     for slot_detail in slot_details_list
+            # ]
 
             # print(combined_slot_list)
 
@@ -1352,8 +1352,7 @@ class SlotDataAPIView(APIView):
                 'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
                 'user_attendance_list':list(user_attendance_data),
-                # 'slot_details_list':list(slot_details_list),
-                'combined_slot_list':combined_slot_list,
+                'slot_details_list':list(slot_details_list),
                 'employee_id':employee_id,
                 'mobile_no':mobile_no,
             }
