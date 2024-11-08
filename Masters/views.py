@@ -1287,41 +1287,72 @@ class SlotDataAPIView(APIView):
             filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
 
             # Serialize the filtered data
+            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
+            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
+
+            # slot_id_counts = UserSlotDetails.objects.filter(
+            #     slot_id__in=slot_ids,
+            #     employee_id=employee_id
+            # ).values('slot_id').annotate(
+            #     count=Count('id')
+            # ).values('slot_id', 'id', 'employee_id', 'count')
+
+            # slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in slot_ids}
+
+            # # Update counts based on slot_id_counts
+            # for item in slot_id_counts:
+            #     slot_id = item['slot_id']
+            #     if slot_id in slot_count_dict:
+            #         slot_count_dict[slot_id] = {
+            #             'count': item['count'],
+            #             'id': item['id'],
+            #             'employee_id': item['employee_id']
+            #         }
+
+            # slot_count_list = [
+            #     {
+            #         'employeeId': data['employee_id'],
+            #         'slotId': slot_id,
+            #         'id': data['id'],
+            #         'count': data['count']
+            #     }
+            #     for slot_id, data in slot_count_dict.items()
+            # ]
+
+            # print(slot_count_list)
+
             slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
             slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
-            # slot_details_list = SlotListDetailsSerializer(slot_details, many=True).data
-            # slot_ids = slot_details.values_list('slot_id', flat=True)
 
-            slot_id_counts = UserSlotDetails.objects.filter(
-                slot_id__in=slot_ids,
-                employee_id=employee_id
-            ).values('slot_id').annotate(
-                count=Count('id')
-            ).values('slot_id', 'id', 'employee_id', 'count')
-
-            slot_count_dict = {slot_id: {'count': 0, 'id': 0, 'employee_id': employee_id} for slot_id in slot_ids}
-
-            # Update counts based on slot_id_counts
-            for item in slot_id_counts:
-                slot_id = item['slot_id']
-                if slot_id in slot_count_dict:
-                    slot_count_dict[slot_id] = {
-                        'count': item['count'],
-                        'id': item['id'],
-                        'employee_id': item['employee_id']
-                    }
-
+            # Get counts of slot_ids in one query and build slot_count_list directly
             slot_count_list = [
                 {
-                    'employeeId': data['employee_id'],
-                    'slotId': slot_id,
-                    'id': data['id'],
-                    'count': data['count']
+                    'employeeId': employee_id,
+                    'slotId': item['slot_id'],
+                    'id': item['id'],
+                    'count': item['count']
                 }
-                for slot_id, data in slot_count_dict.items()
+                for item in UserSlotDetails.objects.filter(
+                    slot_id__in=slot_ids,
+                    employee_id=employee_id
+                ).values('slot_id').annotate(
+                    count=Count('id')
+                ).values('slot_id', 'id', 'count')
+            ]
+
+            # Fill in slots with a count of 0 if they are missing from the queryset result
+            slot_count_list += [
+                {
+                    'employeeId': employee_id,
+                    'slotId': slot_id,
+                    'id': 0,
+                    'count': 0
+                }
+                for slot_id in slot_ids if slot_id not in [item['slotId'] for item in slot_count_list]
             ]
 
             print(slot_count_list)
+
 
 
             return {

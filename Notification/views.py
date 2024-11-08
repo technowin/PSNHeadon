@@ -155,7 +155,7 @@ class check_and_notify_all_users(APIView):
                             notification_entry.save()
                             errors.append(f"Error sending notification to {user.full_name} - {result}")
                         else:
-                            notification_entry.notification_received = timezone.now()
+                            notification_entry.noti_receive_time = timezone.now()
                             notification_entry.save()
 
                         interval_minutes = int(interval) 
