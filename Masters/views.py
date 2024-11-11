@@ -1283,22 +1283,13 @@ class SlotDataAPIView(APIView):
                 designation_id__in=designation_ids,
                 site_id__in=site_ids
             )
-            # current_date = timezone.now().date()
-            # filtered_slot_details = slot_details.filter(shift_date__gt=current_date)
-
-            # # Serialize the filtered data
-            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
-            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
 
             current_date = timezone.now().date()
 
-# Filter slot details where shift_date is greater than the current date and order by shift_date
             filtered_slot_details = slot_details.filter(shift_date__gt=current_date).order_by('shift_date')
 
-            # Serialize the filtered data
             slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
 
-            # Get the list of slot_ids
             slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
 
             slot_id_counts = UserSlotDetails.objects.filter(
@@ -1331,32 +1322,6 @@ class SlotDataAPIView(APIView):
             ]
 
             print(slot_count_list)
-
-            # Serialize the slot details and extract slot IDs
-            # slot_details_list = SlotListDetailsSerializer(filtered_slot_details, many=True).data
-            # slot_ids = filtered_slot_details.values_list('slot_id', flat=True)
-
-            # # Get counts for each slot and store in a dictionary for quick lookup
-            # slot_id_counts = {
-            #     item['slot_id']: {'count': item['count'], 'id': item['id']}
-            #     for item in UserSlotDetails.objects.filter(
-            #         slot_id__in=slot_ids,
-            #         employee_id=employee_id
-            #     ).values('slot_id').annotate(count=Count('id')).values('slot_id', 'id', 'count')
-            # }
-
-            # # Build a combined list with slot details and count information
-            # combined_slot_list = [
-            #     {
-            #         **slot_detail,  # Include all details from slot_details_list
-            #         'employeeId': employee_id,
-            #         'count': slot_id_counts.get(slot_detail['slot_id'], {}).get('count', 0),
-            #         'id': slot_id_counts.get(slot_detail['slot_id'], {}).get('id', 0)
-            #     }
-            #     for slot_detail in slot_details_list
-            # ]
-
-            # print(combined_slot_list)
 
             return {
                 'slot_alloted_count': user_alloted_count,
@@ -2335,16 +2300,37 @@ class delete_user_slot(APIView):
         Db.closeConnection()  
         m = Db.get_connection()
         cursor = m.cursor()
-        
+
         try:
-            employeeId = request.data.get('employee_id')
-            slot = request.data.get('slot_id')
+            # Get the employee_id, slot_id, and record_id from the request
+            employee_id = request.data.get('employee_id')
+            slot_id = request.data.get('slot_id')
             record_id = request.data.get('id')
-            slot_instance = get_object_or_404(SlotDetails, slot_id=slot)
-            delete_user_slot = get_object_or_404(UserSlotDetails, employee_id = employeeId,slot_id= slot_instance,id=record_id)
+
+
+            # Step 1: Retrieve the UserSlotDetails instance by id
+            user_slot_instance = get_object_or_404(UserSlotDetails, id=record_id)
+
+            # Step 2: Prepare the data for inserting into the historical table
+            historical_data = {
+                'employee_id': user_slot_instance.employee_id,
+                'slot_id': user_slot_instance.slot_id,
+                'site_id': user_slot_instance.site_id,  # Adjust according to your fields
+                'company_id': user_slot_instance.company_id,      # Adjust according to your fields
+                'created_by': user_slot_instance.created_by,
+                'emp_id':user_slot_instance.emp_id,
+                # Add any other necessary fields
+            }
+
+            # Step 3: Insert the data into HistUserSlotDetails (historical table)
+            hist_instance = HistUserSlotDetails(**historical_data)
+            hist_instance.save()
+
+            # Step 4: Now, delete the record from UserSlotDetails
+            delete_user_slot = get_object_or_404(UserSlotDetails, employee_id = employee_id,slot_id= slot_id,id=record_id)
             delete_user_slot.delete()
-            
-            return JsonResponse({'message': 'Record deleted successfully'}, status=200)
+
+            return JsonResponse({'message': 'Record archived and deleted successfully'}, status=200)
     
         except Exception as e:
             # Log the error using a stored procedure
