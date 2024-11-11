@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.utils.timezone import now
 from datetime import time, timedelta
+from django.utils.timezone import make_aware
 
 from Masters.models import *
 from django.db.models import Q
@@ -591,9 +592,14 @@ class DefaultRecords(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Step 4: Using the employee_id, fetch UserSlotDetails records
+            # Step 4: Using the employee_id, fetch UserSlotDetails records where shift_date from related Slot model is before current_date
             employee_id = employee_record.employee_id
-            user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id)
+            current_date = make_aware(datetime.now())  # Current date and time in the correct timezone
+
+            # Filter based on shift_date from the related Slot model using select_related for efficient querying
+            user_slot_details = UserSlotDetails.objects.filter(
+                employee_id=employee_id,
+            ).select_related('slot_id').filter(slot_id__shift_date__lt=current_date)
 
             # Step 5: Check if UserSlotDetails exist
             if not user_slot_details.exists():
@@ -603,7 +609,6 @@ class DefaultRecords(APIView):
                 )
 
             # Step 6: Create a list to hold the serialized results with attendance check
-            results = []
             serialized_data = UserSlotDetailsSerializer1(user_slot_details, many=True)
 
             # Step 7: Check for attendance in UserAttendanceDetails for each UserSlotDetails record
@@ -617,9 +622,12 @@ class DefaultRecords(APIView):
 
                 # Append the attendance check result (1 or 0)
                 serialized_data.data[index]['attendance_check'] = 1 if not attendance_exists else 0
+                # Add shift_date to the serialized data
+                serialized_data.data[index]['shift_date'] = slot.slot_id.shift_date
 
             # Step 8: Return the results with both serialized data and attendance check
             return Response(serialized_data.data, status=status.HTTP_200_OK)
+
 
         except Exception as e:
             # Step 9: Return a generic error response for any unhandled exceptions
