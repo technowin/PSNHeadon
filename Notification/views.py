@@ -2,7 +2,7 @@ import traceback
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import time, timedelta
 
 from Masters.models import *
 from django.db.models import Q
@@ -505,6 +505,71 @@ def process_notification(user, roster_record):
 #                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
 #             )
 
+# class DefaultRecords(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def get(self, request):
+#         try:
+#             # Step 1: Extract user from JWT token
+#             user = request.user  # This gets the user from the JWT token if authenticated
+
+#             # Step 2: Fetch the corresponding user from the CustomUser model
+#             custom_user = get_object_or_404(CustomUser, id=user.id)
+
+#             # Step 3: Fetch the employee_id from sc_employee_master using custom_user
+#             try:
+#                 employee_record = sc_employee_master.objects.filter(mobile_no=custom_user.phone).first()
+#             except sc_employee_master.DoesNotExist:
+#                 return Response(
+#                     {"error": "Employee record not found for the current user."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 4: Using the employee_id, fetch UserSlotDetails records
+#             employee_id = employee_record.employee_id
+#             user_slot_details = UserSlotDetails.objects.filter(employee_id=employee_id)
+
+#             # Step 5: Check if UserSlotDetails exist
+#             if not user_slot_details.exists():
+#                 return Response(
+#                     {"message": "No matching UserSlotDetails records found for the employee."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 6: Filter UserSlotDetails records where corresponding data does not exist in UserAttendanceDetails
+#             filtered_data = []
+#             for slot in user_slot_details:
+#                 slot_id = slot.slot_id
+#                 # Check if there is no entry in UserAttendanceDetails for this employee_id and slot_id
+#                 attendance_exists = slot_attendance_details.objects.filter(
+#                     employee_id=employee_id,
+#                     slot_id=slot_id
+#                 ).exists()
+
+#                 if not attendance_exists:
+#                     filtered_data.append(slot)
+
+#             # Step 7: If no matching data, return not found message
+#             if not filtered_data:
+#                 return Response(
+#                     {"message": "No UserSlotDetails records found without corresponding attendance details."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 8: Serialize the filtered UserSlotDetails data
+#             data = UserSlotDetailsSerializer1(filtered_data, many=True)
+
+#             # Step 9: Return a success response with the serialized data
+#             return Response(data.data, status=status.HTTP_200_OK)
+
+#         except Exception as e:
+#             # Step 10: Return a generic error response for any unhandled exceptions
+#             return Response(
+#                 {"error": f"An error occurred: {str(e)}"},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
 class DefaultRecords(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -537,9 +602,12 @@ class DefaultRecords(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Step 6: Filter UserSlotDetails records where corresponding data does not exist in UserAttendanceDetails
-            filtered_data = []
-            for slot in user_slot_details:
+            # Step 6: Create a list to hold the serialized results with attendance check
+            results = []
+            serialized_data = UserSlotDetailsSerializer1(user_slot_details, many=True)
+
+            # Step 7: Check for attendance in UserAttendanceDetails for each UserSlotDetails record
+            for index, slot in enumerate(user_slot_details):
                 slot_id = slot.slot_id
                 # Check if there is no entry in UserAttendanceDetails for this employee_id and slot_id
                 attendance_exists = slot_attendance_details.objects.filter(
@@ -547,25 +615,19 @@ class DefaultRecords(APIView):
                     slot_id=slot_id
                 ).exists()
 
-                if not attendance_exists:
-                    filtered_data.append(slot)
+                # Append the attendance check result (1 or 0)
+                serialized_data.data[index]['attendance_check'] = 1 if not attendance_exists else 0
 
-            # Step 7: If no matching data, return not found message
-            if not filtered_data:
-                return Response(
-                    {"message": "No UserSlotDetails records found without corresponding attendance details."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # Step 8: Serialize the filtered UserSlotDetails data
-            data = UserSlotDetailsSerializer1(filtered_data, many=True)
-
-            # Step 9: Return a success response with the serialized data
-            return Response(data.data, status=status.HTTP_200_OK)
+            # Step 8: Return the results with both serialized data and attendance check
+            return Response(serialized_data.data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Step 10: Return a generic error response for any unhandled exceptions
+            # Step 9: Return a generic error response for any unhandled exceptions
             return Response(
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+
