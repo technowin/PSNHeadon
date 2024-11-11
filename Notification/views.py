@@ -2,7 +2,7 @@ import traceback
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.utils.timezone import now
-from datetime import time, timedelta
+from datetime import timedelta
 
 from Masters.models import *
 from django.db.models import Q
