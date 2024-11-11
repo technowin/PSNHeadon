@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
-from Masters.models import SlotDetails, UserSlotDetails, sc_employee_master
+from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
@@ -70,6 +70,7 @@ def view(request, pk):
 def rate_card_index(request):
     rate_cards = rate_card_master.objects.all()
     return render(request, 'Payroll/RateCard/index.html', {'rate_cards': rate_cards})
+
 @login_required
 def rate_card_create(request):
     if request.method == "POST":
@@ -205,7 +206,7 @@ def rate_card_view(request, card_id):
         'salary_elements': salary_elements,
     })
 
- 
+
 @login_required
 def site_card_relation_index(request):
     site_card_relations = site_card_relation.objects.all()
