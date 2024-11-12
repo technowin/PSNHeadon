@@ -457,10 +457,13 @@ def site_master(request):
             cursor.callproc("stp_get_company_names")
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
+            cursor.callproc("stp_get_dropdown_values",('states',))
+            for result in cursor.stored_results():
+                state_names = list(result.fetchall())
             site_id = request.GET.get('site_id', '')
             if site_id == "0":
                 if request.method == "GET":
-                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id}
+                    context = {'company_names': company_names, 'roster_type': roster_types,'site_id':site_id,'state_names':state_names}
 
             else:
                 site_id1 = request.GET.get('site_id', '')

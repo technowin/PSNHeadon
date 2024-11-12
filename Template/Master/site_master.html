@@ -87,13 +87,13 @@
                             <label for="state_id" class="form-label">States<span style="color:red;"> *</span> :</label>
                             <select name="state_id" id="dropdown" class="form-control" required>
                                 {% if id == '0' %}
-                                    <option value="" selected disabled>Select</option>
-                                    {% for item in state_name %}
+                                    <option value="" selected>Select</option>
+                                    {% for item in state_names %}
                                         <option value="{{ item.0 }}">{{ item.1 }}</option>
                                     {% endfor %}
                                 {% else %}
                                     <option value="" disabled>Select</option>
-                                    {% for item in state_name %}
+                                    {% for item in state_names %}
                                         <option value="{{ item.0 }}" {% if item.0 == state_id_value %}selected{% endif %}>{{ item.1 }}</option>
                                     {% endfor %}
                                 {% endif %}
