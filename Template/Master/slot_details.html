@@ -376,7 +376,7 @@
             var end_time = $('#end_time').val(); 
             var night_shift = $('#nightShiftCheckbox').is(':checked') ? 1 : 0; 
             
-            if (!company_id || !site_id || !slot_name || !description || !shift_date || !start_time || !end_time) {
+            if (!company_id || !site_id || !slot_name || !description || !shift_date || !start_time || !end_time || !designation) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Missing Fields',
