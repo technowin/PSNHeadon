@@ -37,6 +37,11 @@ class SiteSerializer(serializers.ModelSerializer):
         model = site_master
         fields = '__all__'
 
+class DesignationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = designation_master
+        fields = '__all__'
+
 class EmployeeSerializer(serializers.ModelSerializer):
     company_id = CompanyMasterSerializer()
     state_id = StateMasterSerializer()

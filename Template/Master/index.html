@@ -278,6 +278,13 @@
                 </a>
                    </div> 
                {% endif %}
+               {% if entity == 'sm' %}
+                   <div style="justify-content: center">
+                    <a href="/worksite_upload" style="text-decoration: none;">
+                      <button type="submit" class="Btn"><div class="sign">&#x2191;</div> <div class="text">Launch</div></button>
+                </a>
+                   </div> 
+               {% endif %}
                    {% if entity == 'r'%}
                     <div class="col-sm-2">
                       <form method="GET" action="/masters">

@@ -8,6 +8,7 @@
  <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
  <link href="{% static 'css/activebtn.css' %}" rel="stylesheet" type="text/css" >
  
+ 
  <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
  <!-- Include DataTables CSS -->
  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
@@ -83,29 +84,76 @@
                             <input type="text" value="{{ site_address }}" name="siteAddress" class="form-control" id="site_address" placeholder="Enter Address">
                         </div>
                    
-                        <div class="col-md-3">
-                            <label for="state_id" class="form-label">States<span style="color:red;"> *</span> :</label>
+
+                        {% comment %} <div class="col-md-3">
+                            <label for="state_id" class="form-label">State <span style="color:red;"> *</span> :</label>
                             <select name="state_id" id="dropdown" class="form-control" required>
-                                {% if id == '0' %}
-                                    <option value="" selected>Select</option>
+                                {% if site_id == '0' %}
+                                    <!-- For adding a new entry -->
+                                    <option value="" selected disabled>Select</option>
                                     {% for item in state_names %}
                                         <option value="{{ item.0 }}">{{ item.1 }}</option>
                                     {% endfor %}
                                 {% else %}
-                                    <option value="" disabled>Select</option>
+                                    <!-- For editing an existing entry -->
+                                    <option disabled>Select</option>
                                     {% for item in state_names %}
-                                        <option value="{{ item.0 }}" {% if item.0 == state_id_value %}selected{% endif %}>{{ item.1 }}</option>
+                                        <option value="{{ item.0 }}" {% if item.0 == state_id %}selected{% endif %}>
+                                            {{ item.1 }}
+                                        </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                         {% endcomment %}
+                        
+                         <div class="col-md-3">
+                            <label for="state_id" class="form-label">State <span style="color:red;"> *</span> :</label>
+                            <select name="state_id" id="dropdown" class="form-control" required>
+                                {% if site_id == '0' %}
+                                    <!-- For adding a new entry -->
+                                    <option value="" selected disabled>Select</option>
+                                    {% for item in state_names %}
+                                        <option value="{{ item.0 }}">{{ item.1 }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <!-- For editing an existing entry with pre-selected state -->
+                                    <option disabled>Select</option>
+                                    {% for item in state_names %}
+                                        <option value="{{ item.0 }}" {% if item.0 == state_id %}selected{% endif %}>
+                                            {{ item.1 }}
+                                        </option>
                                     {% endfor %}
                                 {% endif %}
                             </select>
                         </div>
                         
-                </div> 
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label for="city" class="form-label">City<span style="color:red;"> *</span> :</label>
-                        <input type="text" value="{{ city }}" name="city" class="form-control" id="city" placeholder="Enter Your City">
                     </div>
+                        
+                        <div class="row mb-3">
+
+                        <div class="col-md-3">
+                            <label for="city_id" class="form-label">City <span style="color:red;"> *</span> :</label>
+                            <select name="city_id" id="dropdown" class="form-control" required>
+                                {% if site_id == '0' %}
+                                    <!-- For adding a new entry -->
+                                    <option value="" selected disabled>Select</option>
+                                    {% for item in city_names %}
+                                        <option value="{{ item.0 }}">{{ item.1 }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <!-- For editing an existing entry -->
+                                    <option disabled>Select</option>
+                                    {% for item in city_names %}
+                                        <option value="{{ item.0 }}" {% if item.0 == city %}selected{% endif %}>
+                                            {{ item.1 }}
+                                        </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+            
+                
                     <div class="col-md-3">
                         <label for="pincode" class="form-label">Pincode<span style="color:red;"> *</span> :</label>
                         <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="pincode" placeholder="Enter Pincode">

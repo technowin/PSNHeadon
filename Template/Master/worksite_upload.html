@@ -1,0 +1,283 @@
+{% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+{% block content %}
+{% load static %}
+{% comment %} {% csrf_token %} {% endcomment %}
+
+ <!-- Custom styles for this html-->
+ <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/activebtn.css' %}" rel="stylesheet" type="text/css" >
+ 
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+ <!-- Include DataTables CSS -->
+ <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+ <!-- Include DataTables JS -->
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<!-- Selectize css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js"></script>
+<style>
+    /* More specific selector to ensure override */
+    .swal2-container .swal2-popup.small-swal-popup {
+        width: 500px !important; /* Force the width */
+        height: 400px !important;
+        max-width: 70% !important; /* Ensure the width adapts if the screen is smaller */
+        padding: 0px 2px 5px 1px  !important; /* Adjust padding as needed */
+        font-size: 12px !important; /* Adjust font size to match smaller size */
+    }
+
+    /* Optional: You can adjust the text area or inner elements if needed */
+    .swal2-html-container {
+        text-align: left !important;
+    }
+</style>
+
+
+ <body>
+    <div class="container mt-5" style="max-width: 1800px;">
+        <!-- Large Card for Worksite Master Upload -->
+        <div class="card">
+            <div class="card-body">
+                <div class="row col-lg-12">
+                    <div class="col-md-5">
+                        <h2 class="text-left" style="color:#B12121;">
+                            <b><u> Worksite Master Upload</u></b>
+                        </h2>
+                    </div>
+                    <div class="col-md-1">
+                        <a href="{% url 'sample_xlsx' %}?entity=sm&type={{ request.META.HTTP_REFERER }}" class="Btn1" hover-tooltip="Download Sample" tooltip-position="top" type="button">
+                            <svg class="svgIcon" viewBox="0 0 384 512" height="1em" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path>
+                            </svg>
+                            <span class="icon2"></span>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <!-- Ensure this is set to the correct modal for worksite upload -->
+                        <button type="button" id="Btn3" class="btn btn-primary" data-toggle="modal" data-target="#upload_model_id">Upload</button>
+                    </div>
+                    <div class="col-md-3">
+                        <!-- Form to send entity and type as hidden inputs -->
+                        <form method="GET" action="/masters">
+                            <input type="hidden" name="entity" value="sm">
+                            <input type="hidden" name="type" value="err">
+                            <button class="btn_err">
+                                <div class="sign_err">
+                                    <svg viewBox="0 0 512 512">
+                                        <path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 392c-17.67 0-32-14.33-32-32 0-17.67 14.33-32 32-32s32 14.33 32 32c0 17.67-14.33 32-32 32zm32-128c0 17.67-14.33 32-32 32s-32-14.33-32-32V176c0-17.67 14.33-32 32-32s32 14.33 32 32v96z" />
+                                    </svg>
+                                </div>
+                                <div class="text_err">Error Logs</div>
+                            </button> 
+                        </form>
+                    </div>
+                </div>  
+                <br>
+                <br>
+              
+            
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-center" style="color:#B12121;">
+                    <b>Employee City and State</b>
+                </h5>
+                <br>
+                <!-- Combined City and State Table -->
+                <table id="cityStateTable" class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sr No</th>       <!-- City ID Column -->
+                            <th>State Name</th>   
+                            <th>City Name</th>    
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in city_state_data %}
+                        <tr>
+                            <td>{{ item.0 }}</td> 
+                            <td>{{ item.1 }}</td> 
+                            <td>{{ item.2 }}
+                            </td> 
+                           
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+</div>
+        
+</div> <!-- End of Row -->
+</div>
+
+</div>
+
+
+<!-- Employee Modal -->
+<!-- Employee Upload Modal -->
+<div class="modal fade" id="upload_model_id">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color:black">Worksite Master Upload </h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            
+            <div class="modal-body">
+                <form class="formupl" id="upload_form" method="POST" enctype="multipart/form-data" action="{% url 'upload_excel' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="entity" value="sm">  <!-- Ensure this is correct -->
+                    <input type="hidden" name="type" value="upload_excel">  <!-- Ensure this is correct -->
+                    
+                    <div class="row d-flex justify-content-center align-items-center">
+                        <!-- Company Dropdown -->
+                        <div class="col-md-6 mb-3">
+                            <label for="company_id" class="form-label" style="font-weight: bold;">Company</label>
+                            <select id="company_id" name="company_id" class="form-control" required>
+                                <option value="" selected>Select</option>
+                                {% for item in company_names %}
+                                    <option value="{{ item.0 }}">{{ item.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                  
+                    <span class="formupl-title">Upload your file</span>
+                    <p class="formupl-paragraph"><b>File should be an Excel</b></p>
+                    
+                    <label for="file-input" class="drop-container">
+                        <span class="drop-title">Drop files here</span>
+                        or
+                        <input type="file" id="file-input" name="excelFile" accept=".xlsx, .xls" required>
+                    </label>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" id="helpBtn">Help</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" form="upload_form">Upload</button>  <!-- This should work -->
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+// Initialize DataTable for cityStateTable
+$('#cityStateTable').DataTable({
+"paging": true,              // Enables pagination
+"pageLength": 5,             // Number of rows per page
+"lengthChange": true,        // Option to change number of rows per page
+"lengthMenu": [5, 10, 25, 50, 100], // Customizes the "Show entries" dropdown options
+"info": true,                // Display page info (e.g., "Showing 1 to 5 of 20 entries")
+"responsive": true           // Makes the table responsive on smaller screens
+});
+</script>
+
+<script>
+    // Initialize DataTable for stateTable
+    $('#stateTable').DataTable({
+        "paging": true,              // Enables pagination
+        "pageLength": 5,              // Number of rows per page
+        "lengthChange": true,         // Option to change number of rows per page
+        "lengthMenu": [5, 10, 25, 50, 100], // Customizes the "Show entries" dropdown options
+        "info": true,                 // Display page info (e.g., "Showing 1 to 5 of 20 entries")
+        "responsive": true            // Makes the table responsive on smaller screens
+    });
+</script>
+
+<script>
+    // Initialize DataTable for cityTable
+    $('#cityTable').DataTable({
+        "paging": true,              // Enables pagination
+        "pageLength": 5,              // Number of rows per page
+        "lengthChange": true,         // Option to change number of rows per page
+        "lengthMenu": [5, 10, 25, 50, 100], // Customizes the "Show entries" dropdown options
+        "info": true,                 // Display page info (e.g., "Showing 1 to 5 of 20 entries")
+        "responsive": true            // Makes the table responsive on smaller screens
+    });
+</script>
+
+<script>
+    // Search function for stateTable
+    function searchTable() {
+        // Declare variables
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("searchInput");
+        filter = input.value.toLowerCase();
+        table = document.getElementById("stateTable");
+        tr = table.getElementsByTagName("tr");
+
+        // Loop through all table rows, and hide those that don't match the search query
+        for (i = 1; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[1]; // Searching by State Name (second column)
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+
+
+
+<script>
+    // JavaScript to handle form submission and redirect
+    document.getElementById('errorButton').addEventListener('click', function() {
+        // Optionally, you can validate inputs or do other actions here before submission.
+        document.getElementById('errorForm').submit(); // Submit the form
+    });
+</script>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Add event listener to the Help button
+    document.getElementById("helpBtn").addEventListener("click", function() {
+        // Use SweetAlert2 to show the Help information with a smaller size
+        Swal.fire({
+            title: 'Help Information',
+            html: `
+                <p><b>Here you can add detailed instructions on how to use the file upload form. For example:</p></b>
+                <ol>
+                    <li><b>Make sure the Excel file follows the required structure.</b></li>
+                    <li><b>To add multiple designations and worksites in a concise way, you can structure it like this:</b>
+                        <ul>
+                            <li><b>Worksites: site1, site2</b></li>
+                            <li><b>Designations: designation1, designation2</b></li>
+                        </ul>
+                    </li>
+                    <li><b>File must be either .xls or .xlsx format.</b></li>
+                </ol>
+            `,
+            icon: 'info',
+            customClass: {
+                popup: 'small-swal-popup'  // Add custom class for small size
+            },
+            confirmButtonText: 'Close',
+            confirmButtonColor: 'grey',
+        });
+    });
+</script>
+
+
+ {% endblock %} 

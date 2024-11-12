@@ -78,6 +78,7 @@ class site_card_relation(models.Model):
     class Meta:
         unique_together=['site_id','card_id','designation_id']
         db_table = 'site_card_relation'
+        
 class employee_rate_card_details(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.TextField(null=True,blank=True)
