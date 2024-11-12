@@ -686,8 +686,7 @@ def employee_master(request):
     cursor=m.cursor()
     global user
     
-    # user_id = request.session.get('user_id', '')
-    # user = CustomUser.objects.get(id=user_id)
+    user = request.session.get('user_id', '')
     try:
         
         if request.method == "GET":
@@ -697,10 +696,10 @@ def employee_master(request):
             cursor.callproc("stp_get_employee_status")
             for result in cursor.stored_results():
                 employee_status = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('site',))
+            cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",('company',))
+            cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values",('states',))
