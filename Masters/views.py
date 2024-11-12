@@ -2184,7 +2184,7 @@ class EmployeeData(APIView):
             employee.email = request.data.get('email', employee.email)
             employee.address = request.data.get('address', employee.address)
             employee.city = request.data.get('city', employee.city)
-            employee.pincode = request.data.get('city', employee.pincode)
+            employee.pincode = request.data.get('pincode', employee.pincode)
             employee.state_id=cc
             employee.account_holder_name = request.data.get('account_holder_name', employee.account_holder_name)
             employee.account_no = request.data.get('account_no', employee.account_no)
