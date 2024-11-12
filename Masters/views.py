@@ -454,7 +454,7 @@ def site_master(request):
             # for result in cursor.stored_results():
             #     roster_types = list(result.fetchall())
                 # Call stored procedure to get company names
-            cursor.callproc("get_userwise_dropdown", [user,'company'])
+            cursor.callproc("stp_get_userwise_dropdown", [user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
             cursor.callproc("stp_get_state_names")
@@ -1546,11 +1546,11 @@ def slot_details(request):
             slot_id = request.GET.get('slot_id', '')
             type = request.GET.get('type', '')
 
-            cursor.callproc("get_userwise_dropdown", [user_id,'company'])
+            cursor.callproc("stp_get_userwise_dropdown", [user_id,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
 
-            cursor.callproc("get_userwise_dropdown", [user_id,'site'])
+            cursor.callproc("stp_get_userwise_dropdown", [user_id,'site'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
             
@@ -2335,7 +2335,7 @@ def employee_upload(request):
             cursor.callproc("stp_get_dropdown_values",['designation'])
             for result in cursor.stored_results():
                 designation_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['company'])
+            cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values",['states'])
@@ -2443,7 +2443,7 @@ def worksite_upload(request):
             cursor.callproc("stp_get_dropdown_values",['designation'])
             for result in cursor.stored_results():
                 designation_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['company'])
+            cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
                   # Fetching combined city and state data using stp_city_state
