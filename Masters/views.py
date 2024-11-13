@@ -583,7 +583,7 @@ def site_master(request):
         Db.closeConnection()
             
         if request.method=="GET":
-            return render(request, "Master/site_master.html", context)
+            return render(request, "Master/master/site_master.html", context)
         elif request.method=="POST":  
             return redirect( f'/masters?entity=sm&type=i')
         
@@ -675,7 +675,7 @@ def company_master(request):
         encrypted_id = encrypt_parameter(company_id)
             
         if request.method=="GET":
-            return render(request, "Master/company_master.html", context)
+            return render(request, "Master/master/company_master.html", context)
         elif request.method == "POST":
             return redirect(f'/masters?entity=cm&type=i')
 
@@ -904,7 +904,7 @@ def employee_master(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request, "Master/employee_master.html", context)
+            return render(request, "Master/master/employee_master.html", context)
         elif request.method=="POST":  
             return redirect(f'/masters?entity=em&type=i')
 
@@ -2180,7 +2180,7 @@ def view_employee(request):
         Db.closeConnection()
 
         if request.method == "GET":
-            return render(request, "Master/employee_view.html", context)
+            return render(request, "Master/master/employee_view.html", context)
         elif request.method == "POST":  
             return redirect(f'/masters?entity=em&type=i')
         
@@ -2254,7 +2254,7 @@ def designation_master1(request):
         Db.closeConnection()
 
         if request.method == "GET":
-            return render(request, "Master/designation_master.html", context)
+            return render(request, "Master/master/designation_master.html", context)
         elif request.method == "POST":  
             return redirect(f'/masters?entity=dm&type=i')
 
@@ -2301,7 +2301,7 @@ def view_designation(request):
         Db.closeConnection()
 
         if request.method == "GET":
-            return render(request, "Master/designation_view.html", context)
+            return render(request, "Master/master/designation_view.html", context)
         elif request.method == "POST":  
             return redirect(f'/masters?entity=dm&type=i')
 
