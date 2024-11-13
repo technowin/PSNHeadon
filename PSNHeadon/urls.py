@@ -160,5 +160,6 @@ urlpatterns = [
     path('attendance/create', upload_attendance, name='create_attendance'),
     path('get_sites', get_sites, name='get_sites'),
     path('get_slots', get_slots, name='get_slots'),
+    path('handle_card_name_change', handle_card_name_change, name='handle_card_name_change'),
 
 ]

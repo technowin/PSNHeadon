@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-    <h1>Salary Element Master</h1>
+    {% comment %} <h1>Salary Element Master</h1>
     <div class="right-align">
         <a href="{% url 'salary_element_create' %}" class="btn btn-primary">Create New Salary Element</a>
     </div>
@@ -59,7 +59,42 @@
             </tr>
             {% endfor %}
         </tbody>
-    </table>
+    </table> {% endcomment %}
+    
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Salary Elements</h2>
+            <a href="{% url 'salary_element_create' %}" class="btn btn-primary">Create New Salary Element</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Pay Type</th>
+                    <th>Basis</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for element in salary_elements %}
+                <tr>
+                    <td>{{ element.item_name }}</td>
+                    <td>{{ element.pay_type }}</td>
+                    <td>{{ element.classification }}</td>
+                    <td>
+                        <a href="{% url 'salary_element_view' element.pk %}" class="btn btn-link p-0">View</a> |
+                        <a href="{% url 'salary_element_edit' element.pk %}" class="btn btn-link p-0">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 
 </body>
 

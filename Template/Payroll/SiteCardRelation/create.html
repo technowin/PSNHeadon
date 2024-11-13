@@ -6,12 +6,20 @@
 <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
 <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-
-<h1>Create Site Card Relation</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Create</button>
-    <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
-</form>
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card" >
+        <div class="card-header">
+            <h1>Create Site Card Relation</h1>
+        </div>
+        <br>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

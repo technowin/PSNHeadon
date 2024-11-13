@@ -15,36 +15,42 @@
     <title>Rate Card</title>
 </head>
 <body>
-    <h1>Rate Card</h1>
-    <div class="right-align">
-        <a href="{% url 'rate_card_create' %}" class="btn btn-primary">Create New Rate Card</a>
+
+    <div>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h2 class="mb-0">Rate Card</h1>
+                <a href="{% url 'rate_card_create' %}" class="btn btn-primary">Create New Rate Card</a>
+            </div>
+            
+            <br>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Card Name</th>
+                        <th>Item Name</th>
+                        <th>Four Amount</th>
+                        <th>Nine Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in rate_cards %}
+                    <tr>
+                        <td>{{ card.card_name }}</td>
+                        <td>{{ card.item_id.item_name }}</td>
+                        <td>{{ card.four_hour_amount }}</td>
+                        <td>{{ card.nine_hour_amount }}</td>
+                        <td>
+                            <a href="{% url 'rate_card_view' card.pk %}">View</a> |
+                            <a href="{% url 'rate_card_edit' card.pk %}">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    <br>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Card Name</th>
-                <th>Item Name</th>
-                <th>Four Amount</th>
-                <th>Nine Amount</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for card in rate_cards %}
-            <tr>
-                <td>{{ card.card_name }}</td>
-                <td>{{ card.item_id.item_name }}</td>
-                <td>{{ card.four_hour_amount }}</td>
-                <td>{{ card.nine_hour_amount }}</td>
-                <td>
-                    <a href="{% url 'rate_card_view' card.pk %}">View</a> |
-                    <a href="{% url 'rate_card_edit' card.pk %}">Edit</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
     
 </body>

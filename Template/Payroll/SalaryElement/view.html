@@ -27,28 +27,37 @@
     <title>View Salary Element</title>
 </head>
 <body>
-    <h1>View Salary Element</h1>
-    <br>
-    <br>
-
-    <div class="row">
-        <div class="col-md-6">
-            <p style="font-weight: bold;"><strong>Item Name:</strong> {{ salary_element.item_name }}</p>
-        </div>
-        <div class="col-md-6">
-            <p style="font-weight: bold;"><strong>Pay Type:</strong> {{ salary_element.pay_type }}</p>
-        </div>
-        <br>
-        <br>
-        <div class="col-md-6">
-            <p style="font-weight: bold;"><strong>Basis:</strong> {{ salary_element.classification }}</p>
-        </div>
-        <div class="col-md-6">
-            <p style="font-weight: bold;"><strong>Is Active:</strong> {{ salary_element.is_active }}</p>
+    <div class="container mt-5" style="max-width: 700px;">
+        <div class="card">
+            <div class="card-header">
+                <h1>View Salary Element</h1>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Item Name:</strong> {{ salary_element.item_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Pay Type:</strong> {{ salary_element.pay_type }}</p>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Basis:</strong> {{ salary_element.classification }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Is Active:</strong> {{ salary_element.is_active }}</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'salary_element_index' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
         </div>
     </div>
+    
 
-    <a href="{% url 'salary_element_index' %}" class="btn btn-secondary">Back to List</a>
+
 </body>
 </html>
 {% endblock %}

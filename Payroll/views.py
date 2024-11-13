@@ -1,4 +1,5 @@
 # views.py
+import json
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -638,6 +639,28 @@ def user_slot_details_list(request, slot_id):
         'user_slot_details': user_slot_details,
     }
     return render(request, 'Payroll/Slot/user_slot_details.html', context)
+
+@login_required
+def handle_card_name_change(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Safely parse JSON data
+            card_name = data.get('card_name')
+            
+            if not card_name:
+                return JsonResponse({"error": "Card name is required."}, status=400)
+
+            # Check if the card_name already exists in the database
+            if rate_card_master.objects.filter(card_name=card_name).exists():
+                return JsonResponse({"error": "Card name already exists!"}, status=400)
+            else:
+                # You can perform further actions here if needed (e.g., saving the card name)
+                return JsonResponse({"message": "Card name is available."})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data."}, status=400)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 

@@ -7,11 +7,24 @@
 <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
 
-<h1>View Site Card Relation</h1>
-<p><strong>Relation Name:</strong> {{ site_card_relation.relation_name }}</p>
-<p><strong>Site ID:</strong> {{ site_card_relation.site_id }}</p>
-<p><strong>Card ID:</strong> {{ site_card_relation.card_id }}</p>
 
-<a href="{% url 'site_card_relation_edit' site_card_relation.pk %}" class="btn btn-primary">Edit</a>
-<a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card" >
+        <div class="card-header">
+            <h1>View Site Card Relation</h1>
+        </div>
+        <br>
+        <br>
+            <p><strong>Relation Name:</strong> {{ site_card_relation.relation_name }}</p>
+            <p><strong>Site ID:</strong> {{ site_card_relation.site_id }}</p>
+            <p><strong>Card ID:</strong> {{ site_card_relation.card_id }}</p>
+            <br>
+        <div class="text-center">
+            <a href="{% url 'site_card_relation_edit' site_card_relation.pk %}" class="btn btn-primary">Edit Card</a>
+            <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

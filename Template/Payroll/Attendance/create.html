@@ -25,7 +25,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <h1 >Upload Attendance</h1>
+    {% comment %} <h1 >Upload Attendance</h1>
     <br>
     <br>
     <br>
@@ -67,7 +67,50 @@
     <button type="submit" class="btn btn-primary">UPLOAD</button>
 
 </div>
-    </form>
+    </form> {% endcomment %}
+
+    <div class="container mt-5" style="max-width: 800px;">
+        <div class="card">
+            <div class="card-header">
+                <h2>Upload Attendance</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ excel_form.as_p }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="company_id">Company:</label>
+                            <select class="form-control" id="company_id" name="company_id">
+                                <option value="">Select Company</option>
+                                {% for company in companies %}
+                                <option value="{{ company.company_id }}">{{ company.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="site_id">Site:</label>
+                            <select id="site_id" class="form-control" name="site_id">
+                                <option value="">Select Site</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="slot_id">Slot:</label>
+                            <select id="slot_id" name="slot_id" class="form-control">
+                                <option value="">Select Slot</option>
+                            </select>
+                        </div>
+                    </div>
+    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">UPLOAD</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
 
     <script>
         $(document).ready(function() {

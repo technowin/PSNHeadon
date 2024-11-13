@@ -22,7 +22,7 @@
     </style>
 </head>
 <body>
-  <h1>Attendance Records</h1>
+ <h1>Attendance Records</h1>
   <div class="right-align">
     <a href="{% url 'create_attendance' %}" class="btn btn-primary">Upload Attendance</a>
 
@@ -41,6 +41,17 @@
           <th>Out</th>
           <th>Action</th>
       </tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      <tr>
+      </tr>
       {% for record in attendance_records %}
       <tr>
           <td>{{ record.id }}</td>
@@ -56,8 +67,12 @@
         </td>
       </tr>
       {% endfor %}
-  </table>
+  </table> 
+
+  
+ 
 </body>
+
 
 
 {% load static %}

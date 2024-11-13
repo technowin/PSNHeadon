@@ -6,12 +6,22 @@
 <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
 <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card" >
+        <div class="card-header">
+            <h1>Edit Site Card Relation</h1>
+        </div>
+        <br>
 
-<h1>Edit Site Card Relation</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
-</form>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <br>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'site_card_relation_index' %}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
