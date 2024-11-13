@@ -397,7 +397,7 @@ def calculate_daily_salary(request,slot_id):
 
     # Step 2: Get the slot details
     slot = SlotDetails.objects.get(slot_id=slot_id)
-    employees = UserSlotDetails.objects.filter(slot_id=slot_id)
+    employees = slot_employee_details.objects.filter(slot_id=slot_id)
     print(employees)
     generated_logs = salary_generated_log.objects.filter(
     slot_id=slot_id,

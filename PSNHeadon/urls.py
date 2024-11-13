@@ -46,6 +46,8 @@ urlpatterns = [
     path('post_user_slot', post_user_slot.as_view(), name='post_user_slot'),
     path('delete_user_slot', delete_user_slot.as_view(), name='delete_user_slot'),
     path('DefaultRecords', DefaultRecords.as_view(), name='DefaultRecords'),
+    path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
+    path('StateName', StateName.as_view(), name='StateName'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),
@@ -90,8 +92,8 @@ urlpatterns = [
     path("designation_master1",designation_master1, name="designation_master1"),
     # path("view_employee",view_employee, name="view_employee"),
     path("view_designation",view_designation, name="view_designation"),
-    path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
-    path('StateName', StateName.as_view(), name='StateName'),
+    path("get_worksites",get_worksites, name="get_worksites"),
+    
 
     #Reports 
     path('common_html', common_html, name='common_html'),

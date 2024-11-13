@@ -283,8 +283,6 @@ class UserSlotDetails(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
     class Meta:
         db_table = 'user_slot_details'
-    def __str__(self):
-        return self.name
     
 class employee_designation(models.Model):
     id =  models.AutoField(primary_key=True)

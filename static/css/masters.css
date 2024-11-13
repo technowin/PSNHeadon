@@ -497,7 +497,7 @@ select[name="company_id"]:focus,select[name="roster_type"]:focus {
 
 
 
-#dropdown,#designation,#fa-icons-dropdown,#MenuDropdown{
+#dropdown,#designation,#fa-icons-dropdown,#MenuDropdown,#worksiteDropdown{
   border-radius: 10px; 
   border: 1px solid #ccc; 
   color: #000;
@@ -508,7 +508,7 @@ select[name="company_id"]:focus,select[name="roster_type"]:focus {
   border-color: black;
 }
 
-#dropdown:focus,#fa-icons-dropdown:focus,#MenuDropdown:focus,#designation:focus {
+#dropdown:focus,#fa-icons-dropdown:focus,#MenuDropdown:focus,#designation:focus ,#worksiteDropdown:focus{
   border-color: #8b0000; 
   outline: none; 
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); 

@@ -2322,13 +2322,13 @@ def employee_upload(request):
             type = request.GET.get('type', '')
             
             
-            cursor.callproc("stp_get_masters", [entity, type, 'header',user])
-            for result in cursor.stored_results():
-                header = list(result.fetchall())
-            cursor.callproc("stp_get_masters",[entity,type,'data',user])
-            for result in cursor.stored_results():
-                 data = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['site'])
+            # cursor.callproc("stp_get_masters", [entity, type, 'header',user])
+            # for result in cursor.stored_results():
+            #     header = list(result.fetchall())
+            # cursor.callproc("stp_get_masters",[entity,type,'data',user])
+            # for result in cursor.stored_results():
+            #      data = list(result.fetchall())
+            cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values",['designation'])
@@ -2408,7 +2408,7 @@ def employee_upload(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/employee_upload.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'state_name':state_name,'site_name':site_name,'designation_name':designation_name,'data':data,'pre_url':pre_url})
+            return render(request,'Master/employee_upload.html', {'entity':entity,'type':type,'name':name,'company_names':company_names,'state_name':state_name,'site_name':site_name,'designation_name':designation_name,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters1?entity={entity}&type={type}'
             return redirect(new_url)      
@@ -2722,8 +2722,34 @@ class delete_user_slot(APIView):
             tb = traceback.extract_tb(e.__traceback__)
             cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
             return JsonResponse({'message': str(e)}, status=500)
-        
 
+@login_required   
+def get_worksites(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    
+    try:
+        user_id = request.session.get('user_id', '')
+        selectedCompany = request.POST.get('selectedCompany','')
+        cursor.callproc("stp_get_company_wise_site_names", [user_id,selectedCompany])
+        for result in cursor.stored_results():
+            companywise_site_names = list(result.fetchall())
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), request.user.id])
+        print(f"error: {e}")
+        return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
+    
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+    
+    return JsonResponse({'companywise_site_names': companywise_site_names}, status=200)
 
 
 
