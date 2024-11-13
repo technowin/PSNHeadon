@@ -404,7 +404,7 @@ def menu_admin(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/menu_admin.html', {'entity':entity,'type':type,'name':name,'header':header,'data':data,'pre_url':pre_url})
+            return render(request,'Master/menu/menu_admin.html', {'entity':entity,'type':type,'name':name,'header':header,'data':data,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters?entity={entity}&type={type}'
             return redirect(new_url) 
@@ -543,7 +543,7 @@ def menu_master(request):
         m.close()
         Db.closeConnection()
         if request.method == "GET":
-            return render(request, 'Master/menu_master.html', {'menu': menu,'type': type,'roles': roles, 'users': users,'menu_id': menu_id,'order': 'order' if type == 'order' else None,'menus': menus if menu_id != '0' else None})
+            return render(request, 'Master/menu/menu_master.html', {'menu': menu,'type': type,'roles': roles, 'users': users,'menu_id': menu_id,'order': 'order' if type == 'order' else None,'menus': menus if menu_id != '0' else None})
         elif request.method == "POST":
             return redirect('/menu_admin?entity=menu&type=i')
 @login_required

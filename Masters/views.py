@@ -1587,7 +1587,7 @@ def slot_details(request):
         m.commit()
         m.close()
         Db.closeConnection()
-        return render(request, 'Master/slot_details.html', context)
+        return render(request, 'Master/slot/slot_details.html', context)
 
 
 # @login_required 
@@ -1900,7 +1900,7 @@ def setting_master(request):
         m.close()
         Db.closeConnection()
         if request.method == 'GET':
-            return render(request, 'Master/slot_details.html', context)
+            return render(request, 'Master/slot/slot_details.html', context)
         elif request.method == 'POST':
             new_url = f'/masters?entity=sd&type=i'
             return redirect(new_url) 
@@ -1984,7 +1984,7 @@ def edit_slot_details(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request, 'Master/edit_slot_details.html', context)
+            return render(request, 'Master/slot/edit_slot_details.html', context)
         if request.method=="POST":
             new_url = f'/masters?entity=sd&type=i'
             return redirect(new_url) 
