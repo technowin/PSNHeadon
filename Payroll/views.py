@@ -1,6 +1,6 @@
 # views.py
 import json
-from tkinter import font
+# from tkinter import font
 import traceback
 from colorama import Cursor
 from django.http import JsonResponse
@@ -20,7 +20,7 @@ from django.db.models import Case, When
 import io
 from django.http import HttpResponse
 from openpyxl import Workbook
-from openpyxl.styles import Font
+# from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
 def index(request):
@@ -669,75 +669,75 @@ def handle_card_name_change(request):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
-@login_required
-def download_sample(request):
-    user = request.session.get('user_id', '')
+# @login_required
+# def download_sample(request):
+#     user = request.session.get('user_id', '')
 
-    try:
-        # Create a workbook and a sheet
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Sample Data"
+#     try:
+#         # Create a workbook and a sheet
+#         wb = Workbook()
+#         ws = wb.active
+#         ws.title = "Sample Data"
 
-        # Define bold and larger font for headers
-        bold_font = Font(bold=True, size=14)
+#         # Define bold and larger font for headers
+#         bold_font = Font(bold=True, size=14)
 
-        # Define a smaller font for the data rows
-        normal_font = Font(size=10)
+#         # Define a smaller font for the data rows
+#         normal_font = Font(size=10)
 
-        # First row: Column headers (Company Name, Site Name, Slot Name)
-        header_row_1 = ["Company Name", "Site Name", "Slot Name"]
-        ws.append(header_row_1)
+#         # First row: Column headers (Company Name, Site Name, Slot Name)
+#         header_row_1 = ["Company Name", "Site Name", "Slot Name"]
+#         ws.append(header_row_1)
 
-        # Apply bold font and increase the font size for the first header row
-        for cell in ws[1]:  # Row 1 is the first header row
-            cell.font = bold_font
+#         # Apply bold font and increase the font size for the first header row
+#         for cell in ws[1]:  # Row 1 is the first header row
+#             cell.font = bold_font
 
-        # Second row: Sample values for Company Name, Site Name, Slot Name
-        ws.append(["Example Company", "Example Site", "Your Slot Name"])
+#         # Second row: Sample values for Company Name, Site Name, Slot Name
+#         ws.append(["Example Company", "Example Site", "Your Slot Name"])
 
-        # Third row: Attendance headers
-        header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
-        ws.append(header_row_2)
+#         # Third row: Attendance headers
+#         header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
+#         ws.append(header_row_2)
 
-        # Apply bold font and increase the font size for the third header row
-        for cell in ws[3]:  # Row 3 is the third header row
-            cell.font = bold_font
+#         # Apply bold font and increase the font size for the third header row
+#         for cell in ws[3]:  # Row 3 is the third header row
+#             cell.font = bold_font
 
-        # Fourth row: Sample data for Attendance Date, Employee ID, Attendance In, Attendance Out
-        # Use 24-hour time format for Attendance In and Out (No AM/PM)
-        time_format = "%H:%M"  # 24-hour format without AM/PM
+#         # Fourth row: Sample data for Attendance Date, Employee ID, Attendance In, Attendance Out
+#         # Use 24-hour time format for Attendance In and Out (No AM/PM)
+#         time_format = "%H:%M"  # 24-hour format without AM/PM
 
-        attendance_data = [
-            ["2024-11-15", "EMP001", datetime.strptime("09:00", "%H:%M").strftime(time_format), 
-             datetime.strptime("17:00", "%H:%M").strftime(time_format)],
-            ["2024-11-15", "EMP002", datetime.strptime("09:30", "%H:%M").strftime(time_format), 
-             datetime.strptime("17:30", "%H:%M").strftime(time_format)],
-        ]
+#         attendance_data = [
+#             ["2024-11-15", "EMP001", datetime.strptime("09:00", "%H:%M").strftime(time_format), 
+#              datetime.strptime("17:00", "%H:%M").strftime(time_format)],
+#             ["2024-11-15", "EMP002", datetime.strptime("09:30", "%H:%M").strftime(time_format), 
+#              datetime.strptime("17:30", "%H:%M").strftime(time_format)],
+#         ]
 
-        # Add sample data rows (they will be normal font)
-        for row in attendance_data:
-            ws.append(row)
+#         # Add sample data rows (they will be normal font)
+#         for row in attendance_data:
+#             ws.append(row)
 
-        # Apply the normal font size to the data rows (starting from the 4th row, which is row index 4)
-        for row in range(4, len(ws['A']) + 1):  # Starting from the 4th row (index 3)
-            for cell in ws[row]:
-                cell.font = normal_font
+#         # Apply the normal font size to the data rows (starting from the 4th row, which is row index 4)
+#         for row in range(4, len(ws['A']) + 1):  # Starting from the 4th row (index 3)
+#             for cell in ws[row]:
+#                 cell.font = normal_font
 
-        # Create a response object
-        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = "attachment; filename=sample_data.xlsx"
+#         # Create a response object
+#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+#         response["Content-Disposition"] = "attachment; filename=sample_data.xlsx"
 
-        # Save the workbook to the response
-        wb.save(response)
+#         # Save the workbook to the response
+#         wb.save(response)
 
-        return response
+#         return response
 
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
-        Cursor.callproc("stp_error_log", [fun, str(e), user])
-        messages.error(request, 'Oops...! Something went wrong!')
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         Cursor.callproc("stp_error_log", [fun, str(e), user])
+#         messages.error(request, 'Oops...! Something went wrong!')
 
 
 
