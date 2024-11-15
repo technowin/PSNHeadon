@@ -347,20 +347,50 @@ class check_and_notify_all_users(APIView):
                 no_of_notification = int(setting['no_of_notification'])
 
                 # Initial notification time at 00:00 AM on noti_start_time
-                current_notification_time = timezone.make_aware(
-                    datetime.combine(noti_start_time, datetime.min.time())
-                )
+                slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
 
+                try:
+                    if isinstance(slot_instance.start_time, str):
+                        start_time = datetime.strptime(slot_instance.start_time, "%H:%M").time()
+                  
+                    current_notification_time = timezone.make_aware(
+                        datetime.combine(noti_start_time, start_time)  # Combine noti_start_time (date) with start_time (time)
+                    )
+                except Exception as e:
+                    # Log the exception for debugging purposes
+                    print(f"An error occurred while setting current_notification_time: {e}")
+                    # Optionally, re-raise the exception if you want it to propagate further
+                    raise
                 # Set end time to 4 hours before the noti_end_time
-                last_notification_time = timezone.make_aware(
-                    datetime.combine(noti_end_time, datetime.min.time())
-                ) - timedelta(hours=4)
+                try:
+                # Ensure end_time is a datetime.time object (convert if it's a string)
+                    if isinstance(slot_instance.end_time, str):
+                        end_time = datetime.strptime(slot_instance.end_time, "%H:%M:%S").time()
+                    else:
+                        end_time = slot_instance.end_time
 
-                # Check for the last sent notification time for this slot
-                last_sent_notification = user_notification_log.objects.filter(
-                    slot_id=slot_id,
-                    employee_id=employee_id
-                ).order_by('-noti_send_time').first()
+                    # Combine the date part of noti_end_time with the end_time (time) to set the last_notification_time
+                    last_notification_time = timezone.make_aware(
+                        datetime.combine(noti_end_time, end_time)  # Combine noti_end_time (date) with end_time (time)
+                    ) - timedelta(hours=4)
+
+                    # Check for the last sent notification time for this slot
+                    last_sent_notification = user_notification_log.objects.filter(
+                        slot_id=slot_id,
+                        employee_id=employee_id
+                    ).order_by('-noti_send_time').first()
+
+                    # Logic to handle notification sending...
+                    if last_sent_notification:
+                        # Handle the logic for the next notification based on last sent notification
+                        pass
+
+                except Exception as e:
+                    # Log the exception for debugging purposes
+                    print(f"An error occurred while calculating last_notification_time: {e}")
+                    # Optionally, re-raise the exception if you want it to propagate further
+                    raise
+
 
                 # If a previous notification exists, calculate the next allowed notification time
                 if last_sent_notification:

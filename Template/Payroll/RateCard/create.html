@@ -75,11 +75,11 @@
             {% csrf_token %}
             <div class="mb-3">
                 <label for="card_name" class="form-label">Card Name:</label>
-                {{ form.card_name }}
+                {{ form.card_name }} 
             </div>
             <div class="mb-3">
                 <h4>Select Salary Elements:</h4>
-                {% for item in form.item_ids.field.queryset %}
+                {% comment %} {% for item in form.item_ids.field.queryset %}
                     <div class="row mb-3">
                         <div class="col-md-3 text-center" style="border:1px solid black; padding:10px; margin:10px;">
                             <input type="checkbox" name="item_ids" class="form-control" value="{{ item.pk }}" style="font-size: 1rem;">
@@ -95,7 +95,32 @@
                             <input type="number" name="nine_hour_amount_{{ item.pk }}" class="form-control amount-field" placeholder="9-Hour Amount" min="0" style="width: 90%;">
                         </div>
                     </div>
-                {% endfor %}
+                {% endfor %} {% endcomment %}
+
+                {% for item in form.item_ids.field.queryset %}
+                <div class="row mb-3">
+                    <div class="col-md-3 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                        <input type="checkbox" name="item_ids" class="form-control" value="{{ item.pk }}" 
+                            onclick="toggleAmountFields(this, '{{ item.pk }}', '{{ item.classification }}')" 
+                            style="font-size: 1rem;">
+                        <br>
+                        <label>{{ item.item_name }}</label>
+                    </div>
+                    <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                        <label for="four_hour_amount_{{ item.pk }}" class="form-label">Four Hour Amount</label>
+                        <input type="number" name="four_hour_amount_{{ item.pk }}" 
+                            class="form-control amount-field" placeholder="4-Hour Amount" min="0" 
+                            id="four_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
+                    </div>
+                    <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                        <label for="nine_hour_amount_{{ item.pk }}" class="form-label">Nine Hour Amount</label>
+                        <input type="number" name="nine_hour_amount_{{ item.pk }}" 
+                            class="form-control amount-field" placeholder="9-Hour Amount" min="0" 
+                            id="nine_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
+                    </div>
+                    
+                </div>
+            {% endfor %}
             </div>
             <div class="text-center">
                 <button type="submit" id="id_card_name_button" class="btn btn-primary">Create</button>
@@ -166,6 +191,25 @@
             console.error('Error:', error);
         });
     });
+    </script>
+
+    <script>
+        function toggleAmountFields(checkbox, itemId, classification) {
+            var fourHourInput = document.getElementById("four_hour_amount_" + itemId);
+            var nineHourInput = document.getElementById("nine_hour_amount_" + itemId);
+    
+            // Enable or disable input fields based on checkbox
+            if (checkbox.checked) {
+                fourHourInput.disabled = false;
+                nineHourInput.disabled = false;
+    
+                // Set default value for Calculative classification
+                 
+                fourHourInput.value = 0;
+                 nineHourInput.value = 0;
+            }
+           
+        }
     </script>
     
 {% endblock %}

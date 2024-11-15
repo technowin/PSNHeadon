@@ -1,16 +1,20 @@
 # forms.py
 from django import forms
+
+from Masters.models import parameter_master
 from .models import *
 
 class SalaryElementMasterForm(forms.ModelForm):
     class Meta:
         model = salary_element_master
-        fields = ['item_name', 'pay_type', 'classification']
+        fields = ['item_name', 'pay_type', 'basis']
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'pay_type': forms.TextInput(attrs={'class': 'form-control'}),
-            'classification': forms.TextInput(attrs={'class': 'form-control'}),
+            'pay_type': forms.Select(attrs={'class': 'form-control'}),
+            'basis': forms.Select(attrs={'class': 'form-control'}),
         }
+
+
 class RateCardMasterForm(forms.ModelForm):
     item_ids = forms.ModelMultipleChoiceField(
         queryset=salary_element_master.objects.all(),

@@ -58,20 +58,13 @@
     <div class="card-body">
         <form method="post">
             {% csrf_token %}
+              
             {{ form.as_p }}
             <br>
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Create Element</button>
                 <a href="{% url 'salary_element_index' %}" class="btn btn-secondary">Back to List</a>
             </div>
-            {% comment %} <div class="row">
-                <div class="col-md-6">
-                    <button type="submit" class="btn btn-primary">Create</button>
-                </div>
-                <div class="col-md-6">
-                    <a href="{% url 'salary_element_index' %}" class="btn btn-secondary">Back to List</a>
-                </div>
-            </div> {% endcomment %}
         </form>
     </div>
 </div>

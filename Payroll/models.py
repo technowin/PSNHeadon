@@ -7,9 +7,8 @@ from Account.models import CustomUser
 class salary_element_master(models.Model):
     item_id = models.AutoField(primary_key=True)
     item_name = models.TextField(null=True,blank=True)
-    pay_type = models.TextField(null=True,blank=True)
-    classification = models.TextField(null=True,blank=True)
-    
+    pay_type = models.ForeignKey('Payroll.pay_type', on_delete=models.CASCADE,related_name='salary_pay_relation',blank=True, null=True,db_column='pay_type')
+    basis = models.ForeignKey('Payroll.basis_type', on_delete=models.CASCADE,related_name='salary_basis_relation',blank=True, null=True,db_column='basis')
     is_active =models.BooleanField(null=True,blank=True,default=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='salary_item_created_by',blank=True, null=True,db_column='created_by')
@@ -18,7 +17,32 @@ class salary_element_master(models.Model):
     class Meta:
         db_table = 'salary_element_master'
     def __str__(self):
-        return f"{self.item_name} - {self.pay_type} - {self.classification}"
+        return f"{self.item_name} - {self.pay_type} - {self.basis}"
+    
+
+class pay_type(models.Model):
+    pay_id = models.AutoField(primary_key=True)
+    name = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pay_created_by',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='pay_updated_by',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'pay_type'
+    def __str__(self):
+        return self.name
+
+class basis_type(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='basis_created_by',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='basis_updated_by',blank=True, null=True,db_column='updated_by')
+    class Meta:
+        db_table = 'basis_type'
+    def __str__(self):
+        return self.name
     
 class rate_card_master(models.Model):
     card_id = models.AutoField(primary_key=True)
