@@ -165,7 +165,7 @@ def rate_card_edit(request, card_id):
                     salary_element=item,
                     item_name=item.item_name,
                     pay_type=item.pay_type,
-                    classification=item.classification,
+                    classification=item.basis,
                     four_hour_amount=four_hour_amount,
                     nine_hour_amount=nine_hour_amount
                 )

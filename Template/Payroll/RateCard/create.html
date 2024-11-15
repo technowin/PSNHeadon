@@ -26,6 +26,10 @@
             width: 80px;
             margin-left: 10px;
         }
+        #id_card_name {
+            width: 40%; 
+        }
+        
     </style>
 </head>
 <body>
@@ -68,68 +72,54 @@
         <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
     </form> {% endcomment %}
 
-    <h1>Create Rate Card</h1>
-<div class="card">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="card_name" class="form-label">Card Name:</label>
-                {{ form.card_name }} 
+
+    <div class="card">
+        <div class="card-body">
+            <div class="card-header">
+                <h1>Create Rate Card</h1>
             </div>
-            <div class="mb-3">
-                <h4>Select Salary Elements:</h4>
-                {% comment %} {% for item in form.item_ids.field.queryset %}
+            <br>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="card_name" class="form-label">Card Name:</label>
+                    {{ form.card_name }} 
+                </div>
+                <div class="mb-3">
+                    <h4>Select Salary Elements:</h4>
+    
+                    {% for item in form.item_ids.field.queryset %}
                     <div class="row mb-3">
                         <div class="col-md-3 text-center" style="border:1px solid black; padding:10px; margin:10px;">
-                            <input type="checkbox" name="item_ids" class="form-control" value="{{ item.pk }}" style="font-size: 1rem;">
+                            <input type="checkbox" name="item_ids" class="form-control" value="{{ item.pk }}" 
+                                onclick="toggleAmountFields(this, '{{ item.pk }}')" 
+                                style="font-size: 1rem;">
                             <br>
                             <label>{{ item.item_name }}</label>
                         </div>
                         <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
                             <label for="four_hour_amount_{{ item.pk }}" class="form-label">Four Hour Amount</label>
-                            <input type="number" name="four_hour_amount_{{ item.pk }}" class="form-control amount-field" placeholder="4-Hour Amount" min="0" style="width: 90%;">
+                            <input type="number" name="four_hour_amount_{{ item.pk }}" 
+                                class="form-control amount-field" placeholder="4-Hour Amount" min="0" 
+                                id="four_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
                         </div>
                         <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
                             <label for="nine_hour_amount_{{ item.pk }}" class="form-label">Nine Hour Amount</label>
-                            <input type="number" name="nine_hour_amount_{{ item.pk }}" class="form-control amount-field" placeholder="9-Hour Amount" min="0" style="width: 90%;">
+                            <input type="number" name="nine_hour_amount_{{ item.pk }}" 
+                                class="form-control amount-field" placeholder="9-Hour Amount" min="0" 
+                                id="nine_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
                         </div>
                     </div>
-                {% endfor %} {% endcomment %}
-
-                {% for item in form.item_ids.field.queryset %}
-                <div class="row mb-3">
-                    <div class="col-md-3 text-center" style="border:1px solid black; padding:10px; margin:10px;">
-                        <input type="checkbox" name="item_ids" class="form-control" value="{{ item.pk }}" 
-                            onclick="toggleAmountFields(this, '{{ item.pk }}', '{{ item.classification }}')" 
-                            style="font-size: 1rem;">
-                        <br>
-                        <label>{{ item.item_name }}</label>
-                    </div>
-                    <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
-                        <label for="four_hour_amount_{{ item.pk }}" class="form-label">Four Hour Amount</label>
-                        <input type="number" name="four_hour_amount_{{ item.pk }}" 
-                            class="form-control amount-field" placeholder="4-Hour Amount" min="0" 
-                            id="four_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
-                    </div>
-                    <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
-                        <label for="nine_hour_amount_{{ item.pk }}" class="form-label">Nine Hour Amount</label>
-                        <input type="number" name="nine_hour_amount_{{ item.pk }}" 
-                            class="form-control amount-field" placeholder="9-Hour Amount" min="0" 
-                            id="nine_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
-                    </div>
-                    
+                    {% endfor %}
                 </div>
-            {% endfor %}
-            </div>
-            <div class="text-center">
-                <button type="submit" id="id_card_name_button" class="btn btn-primary">Create</button>
-                <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
-            </div>
-        </form>
+                <div class="text-center">
+                    <button type="submit" id="id_card_name_button" class="btn btn-primary">Create</button>
+                    <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-
 </body>
 </html>
 
@@ -139,12 +129,9 @@
         var cardName = this.value.trim();  // Remove leading/trailing whitespace from card name
         var submitButton = document.getElementById("id_card_name_button");
     
-        // Disable the submit button initially
         submitButton.disabled = true;
     
-        // Check if the card name is empty after trimming spaces
         if (cardName === "") {
-            // If the card name is empty, re-enable the button and exit
             submitButton.disabled = false;
             return;
         }
@@ -175,15 +162,6 @@
                 submitButton.disabled = true;
             }
             else {
-                // If the card name is available, show SweetAlert success
-             //   Swal.fire({
-             //       icon: 'success',
-             //       title: 'Card Name Available',
-              //      text: 'You can use this card name.',
-              //      confirmButtonText: 'OK'
-              //  });
-    
-                // Enable the submit button since the card name is available
                 submitButton.disabled = false;
             }
         })
@@ -194,21 +172,23 @@
     </script>
 
     <script>
-        function toggleAmountFields(checkbox, itemId, classification) {
+        function toggleAmountFields(checkbox, itemId) {
             var fourHourInput = document.getElementById("four_hour_amount_" + itemId);
             var nineHourInput = document.getElementById("nine_hour_amount_" + itemId);
     
-            // Enable or disable input fields based on checkbox
             if (checkbox.checked) {
+                // Enable input fields and set default value to 0
                 fourHourInput.disabled = false;
                 nineHourInput.disabled = false;
-    
-                // Set default value for Calculative classification
-                 
                 fourHourInput.value = 0;
-                 nineHourInput.value = 0;
+                nineHourInput.value = 0;
+            } else {
+                // Disable input fields and clear values
+                fourHourInput.disabled = true;
+                nineHourInput.disabled = true;
+                fourHourInput.value = "";
+                nineHourInput.value = "";
             }
-           
         }
     </script>
     

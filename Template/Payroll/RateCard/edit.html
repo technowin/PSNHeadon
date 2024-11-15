@@ -20,10 +20,13 @@
             width: 80px;
             margin-left: 10px;
         }
+        #id_card_name {
+            width: 40%; 
+        }
     </style>
 </head>
 <body>
-    <h1>Edit Rate Card</h1>
+    {% comment %} <h1>Edit Rate Card</h1>
     <form method="post">
         {% csrf_token %}
         <div>
@@ -77,7 +80,119 @@
         
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
-    </form>
+    </form> {% endcomment %}
+
+    <div>
+        <div class="card" >
+            <div class="card-body">
+                <div class="card-header">
+                <h1 class="card-title">Edit Rate Card</h1>
+                </div>
+                <br>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Card Name Section -->
+                    <div>
+                        <label for="card_name">Card Name:</label>
+                        {{ form.card_name }} 
+                    </div>
+                    
+                    <br>
+                    
+                    
+                    <!-- Salary Elements Section -->
+                    <div>
+                        <h4>Select Salary Elements:</h4>
+                        {% for item in form.item_ids.field.queryset %}
+                            <div class="checkbox-container row">
+                                <!-- Checkbox -->
+                                <div class="col-md-3 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                                    <input type="checkbox" 
+                                           id="checkbox_{{ item.pk }}"
+                                           name="item_ids" 
+                                           class="form-check-input salary-checkbox" 
+                                           value="{{ item.pk }}" 
+                                           style="font-size: 1rem;"
+                                           {% if item.pk in selected_item_ids %} checked {% endif %}>
+                                    <br>
+                                    <label class="form-label">{{ item.item_name }}</label>
+                                </div>
+                                
+                                <!-- Four Hour Amount -->
+                                <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                                    <label for="four_hour_amount_{{ item.pk }}" class="form-label">Four Hour Amount</label>
+                                    <input type="number" 
+                                           name="four_hour_amount_{{ item.pk }}" 
+                                           class="amount-field form-control four-hour-input" 
+                                           placeholder="4-Hour Amount" 
+                                           min="0" 
+                                           step="0.01" 
+                                           style="width: 90%;"
+                                           {% if item.pk in selected_item_ids %} 
+                                               value="{% if prefilled_data|get_item:item.pk %}{% with prefilled_data|get_item:item.pk as data %}{{ data.four_hour_amount }}{% endwith %}{% else %}0.00{% endif %}" 
+                                           {% else %} 
+                                               disabled value="" 
+                                           {% endif %}>
+                                </div>
+                                
+                                <!-- Nine Hour Amount -->
+                                <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                                    <label for="nine_hour_amount_{{ item.pk }}" class="form-label">Nine Hour Amount</label>
+                                    <input type="number" 
+                                           name="nine_hour_amount_{{ item.pk }}" 
+                                           class="amount-field form-control nine-hour-input" 
+                                           placeholder="9-Hour Amount" 
+                                           min="0" 
+                                           step="0.01" 
+                                           style="width: 90%;"
+                                           {% if item.pk in selected_item_ids %} 
+                                               value="{% if prefilled_data|get_item:item.pk %}{% with prefilled_data|get_item:item.pk as data %}{{ data.nine_hour_amount }}{% endwith %}{% else %}0.00{% endif %}" 
+                                           {% else %} 
+                                               disabled value="" 
+                                           {% endif %}>
+                                </div>
+                                
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Submit and Back Buttons -->
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-primary">Update</button>
+                        <a href="{% url 'rate_card_index' %}" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
 </body>
+
+<script>
+    // Function to handle enabling/disabling inputs based on checkbox state
+    document.querySelectorAll('.salary-checkbox').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            const fourHourInput = this.closest('.checkbox-container').querySelector('.four-hour-input');
+            const nineHourInput = this.closest('.checkbox-container').querySelector('.nine-hour-input');
+
+            if (this.checked) {
+                // Enable inputs and set default value to 0
+                fourHourInput.disabled = false;
+                nineHourInput.disabled = false;
+
+                if (!fourHourInput.value) fourHourInput.value = 0;
+                if (!nineHourInput.value) nineHourInput.value = 0;
+            } else {
+                // Disable inputs and clear value
+                fourHourInput.disabled = true;
+                nineHourInput.disabled = true;
+
+                fourHourInput.value = '';
+                nineHourInput.value = '';
+            }
+        });
+    });
+</script>
 </html>
 {% endblock %}
