@@ -2,15 +2,28 @@
 {% block content %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+<link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ 
 
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
 <!-- Include DataTables CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 <!-- Include DataTables JS -->
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<!-- Selectize css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js"></script>
+<!-- Include DataTables CSS -->
+{% comment %} <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+<!-- Include DataTables JS -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> {% endcomment %}
 <head>
     <title>Employee Rate Card Details</title>
     <style>
@@ -19,63 +32,127 @@
             text-align: right;
             margin-bottom: 10px;
         }
+       
     </style>
 </head>
+
 <body>
- <h1>Attendance Records</h1>
-  <div class="right-align">
-    <a href="{% url 'create_attendance' %}" class="btn btn-primary">Upload Attendance</a>
 
-</div>
-<br>
-<br>
-  <table id="dataTable">
-      <tr>
-          <th>ID</th>
-          <th>Employee ID</th>
-          <th>Company</th>
-          <th>Site</th>
-          <th>Slot</th>
-          <th>Date</th>
-          <th>In</th>
-          <th>Out</th>
-          <th>Action</th>
-      </tr>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-      <tr>
-      </tr>
-      {% for record in attendance_records %}
-      <tr>
-          <td>{{ record.id }}</td>
-          <td>{{ record.employee_id }}</td>
-          <td>{{ record.company_id }}</td>
-          <td>{{ record.site_id }}</td>
-          <td>{{ record.slot_id }}</td>
-          <td>{{ record.attendance_date }}</td>
-          <td>{{ record.attendance_in }}</td>
-          <td>{{ record.attendance_out }}</td>
-          <td>
-          
-        </td>
-      </tr>
-      {% endfor %}
+  {% if type == "index"%}
+  <div>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h1 class="mb-0">Attendance Records</h1>
+        <form method="GET" action="/attendance_error">
+          <input type="hidden" name="entity" value="{{ entity }}">
+          <input type="hidden" name="type" value="err">
+          <button class="btn_err">
+           <div class="sign_err">
+             <svg viewBox="0 0 512 512"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 392c-17.67 0-32-14.33-32-32 0-17.67 14.33-32 32-32s32 14.33 32 32c0 17.67-14.33 32-32 32zm32-128c0 17.67-14.33 32-32 32s-32-14.33-32-32V176c0-17.67 14.33-32 32-32s32 14.33 32 32v96z"/></svg>
+           </div>
+           <div class="text_err">Error Logs</div>
+          </button> 
+        </form>
+        <a href="{% url 'create_attendance' %}" class="btn btn-primary">Upload Attendance</a>
+    </div>
+    
+      <br>
+      <br>
+      <div class="table-responsive">
+      <table style="width: 100%;" class="table" id="dataTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Employee ID</th>
+                <th>Company</th>
+                <th>Site</th>
+                <th>Slot</th>
+                <th>Date</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Action</th>
+            </tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+          </tr>
+        </thead>
+          <tbody>
+            {% for record in attendance_records %}
+            <tr>
+                <td>{{ record.id }}</td>
+                <td>{{ record.employee_id }}</td>
+                <td>{{ record.company_id }}</td>
+                <td>{{ record.site_id }}</td>
+                <td>{{ record.slot_id }}</td>
+                <td>{{ record.attendance_date }}</td>
+                <td>{{ record.attendance_in }}</td>
+                <td>{{ record.attendance_out }}</td>
+                <td>
+                
+              </td>
+            </tr>
+            {% endfor %}
+    </tbody>
   </table> 
+</div>
+</div>
+  </div>
+  {% elif type == "err"%}
+  <div class="card mb-4" style="zoom:85%" >
+    <div class="card-body">
+       <h1 style="color:#B12121;font-weight:bold">
+        <u> Error Logs</u>
+      </h2>
+     
+      <div class="table-responsive">
+         <table style="width: 100%;"  class="table"  id="dataTable">   
+            <thead>
+             <tr>
+               {% for col in header %}
+                       <th style="font-weight: bold; color: black; {% if col.1 != "" %} width: {{ col.1 }};{% endif %}">{{ col.0 }}</th>
+               {% endfor %}
+           </tr>
+           <tr>
+               {% for col in header %}
+                       <th> </th>
+               {% endfor %}
+           </tr>
+            </thead>
+            <tbody>
+             {% for row in data %}
+                 <tr style="color:black">
+                     <td>{{ forloop.counter }}</td>
+                     {% for cell in row %}
+                       <td>
+                         {% if 'Employee' in cell or 'Worksite' in cell or 'The employee with ID' in cell or 'The worksite' in cell or 'The company' in cell%}
+                             <span class="badge badge-danger" style="font-size: 16px;">{{ cell }}</span>
+                         {% elif 'Total' in cell %}
+                             <span class="badge badge-dark" style="font-size: 16px;">{{ cell }}</span>
+                         {% else %}
+                             {{ cell }}
+                         {% endif %}
+                       </td>
+                     {% endfor %}
+                 </tr>
+             {% endfor %}
+         </tbody>
+         </table>
+    </div>
+  </div>
 
-  
- 
-</body>
+  {% endif %}
+</body> 
 
 
 
-{% load static %}
+{% load static %} 
     
     <!-- Show success/error messages -->
 <script src="{% static 'sweetalert2/dist/sweetalert2.min.js' %}"></script>
@@ -95,49 +172,49 @@
 {% endif %} 
 
 <script type="text/javascript">
-    $(document).ready(function () {
-      $("#dataTable").DataTable({
-        //order: [[0, 'desc']],
-        "ordering": false,
-        initComplete: function () {
-          this.api()
-            .columns()
-            .every(function () {
-              var column = this;
-              var select = $(
-                '<select style="width:100%;border-radius: 10px;background-color:whitesmoke ;color: black;"><option value="">All</option></select>'
-              )
-                .appendTo($(column.header()).empty())
-                .on("change", function () {
-                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? "^" + val + "$" : "", true, false).draw();
-                });
-              column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                  var ce = d;
-                  if (
-                    ce.includes("<a") ||
-                    ce.includes("span") ||
-                    ce.includes("<input") ||
-                    ce.includes("select") ||
-                    ce.includes("textarea")
-                  ) {
-                  } else {
-                    select.append('<option value="' + d + '">' + d + "</option>");
-                  }
-                });
-            });
-        },
-        pageLength: 10,
-        lengthMenu: [
-          [5, 10, 25, 50, 100, 200, 300, 400, 500, -1],
-          [5, 10, 25, 50, 100, 200, 300, 400, 500, "All"],
-        ],
-      });
+  $(document).ready(function () {
+    $("#dataTable").DataTable({
+      //order: [[0, 'desc']],
+      "ordering": false,
+      initComplete: function () {
+        this.api()
+          .columns()
+          .every(function () {
+            var column = this;
+            var select = $(
+              '<select style="width:100%;border-radius: 10px;background-color:whitesmoke ;color: black;"><option value="">All</option></select>'
+            )
+              .appendTo($(column.header()).empty())
+              .on("change", function () {
+                var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                column.search(val ? "^" + val + "$" : "", true, false).draw();
+              });
+            column
+              .data()
+              .unique()
+              .sort()
+              .each(function (d, j) {
+                var ce = d;
+                if (
+                  ce.includes("<a") ||
+                  ce.includes("span") ||
+                  ce.includes("<input") ||
+                  ce.includes("select") ||
+                  ce.includes("textarea")
+                ) {
+                } else {
+                  select.append('<option value="' + d + '">' + d + "</option>");
+                }
+              });
+          });
+      },
+      pageLength: 10,
+      lengthMenu: [
+        [5, 10, 25, 50, 100, 200, 300, 400, 500, -1],
+        [5, 10, 25, 50, 100, 200, 300, 400, 500, "All"],
+      ],
     });
-  </script>
+  });
+</script>
 {% endblock %}
 

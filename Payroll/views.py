@@ -1,4 +1,5 @@
 # views.py
+from calendar import day_name
 import json
 # from tkinter import font
 import traceback
@@ -7,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
+from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
 from .models import *
 from .forms import *
@@ -22,6 +24,8 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl import Workbook
 from openpyxl.styles import Font, NamedStyle
+from django.db import connection
+import Db
 # from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
@@ -353,40 +357,205 @@ def employee_rate_card_view(request, id):
  
 @login_required
 def attendance_index(request):
+    type = request.GET.get('type', '')
     attendance_records = slot_attendance_details.objects.all()
-    return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records})
+    return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records,'type':type})
  
+# @login_required
+# def upload_attendance(request):
+#     if request.method == 'POST':
+#         excel_form = ExcelUploadForm(request.POST, request.FILES)
+#         if excel_form.is_valid():
+#             excel_file = request.FILES['excel_file']
+#             data = pd.read_excel(excel_file)
+#             comp = company_master.objects.get(company_id=request.POST['company_id'])
+#             site = site_master.objects.get(site_id=request.POST['site_id'])
+#             slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
+#             for index, row in data.iterrows():
+#                 attendance = slot_attendance_details(
+#                     company_id= comp ,
+#                     site_id= site,
+#                     slot_id= slot,
+#                     attendance_date=row['Attendance Date'],
+#                     employee_id=row['Employee Id'],
+#                     attendance_in=row['Attendance In'],
+#                     attendance_out=row['Attendance Out'],
+#                 )
+#                 attendance.save()
+#             messages.success(request, 'Attendance records uploaded successfully.')
+#             return redirect('attendance_index')
+
+#     else:
+#         excel_form = ExcelUploadForm()
+
+#     return render(request, 'Payroll/Attendance/create.html', {
+#         'excel_form': excel_form,
+#         'companies': company_master.objects.all(),
+#     })
 @login_required
 def upload_attendance(request):
-    if request.method == 'POST':
-        excel_form = ExcelUploadForm(request.POST, request.FILES)
-        if excel_form.is_valid():
-            excel_file = request.FILES['excel_file']
-            data = pd.read_excel(excel_file)
-            comp = company_master.objects.get(company_id=request.POST['company_id'])
-            site = site_master.objects.get(site_id=request.POST['site_id'])
-            slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
-            for index, row in data.iterrows():
-                attendance = slot_attendance_details(
-                    company_id= comp ,
-                    site_id= site,
-                    slot_id= slot,
-                    attendance_date=row['Attendance Date'],
-                    employee_id=row['Employee Id'],
-                    attendance_in=row['Attendance In'],
-                    attendance_out=row['Attendance Out'],
-                )
-                attendance.save()
-            messages.success(request, 'Attendance records uploaded successfully.')
-            return redirect('attendance_index')
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    user = request.session.get('user_id', '')
 
-    else:
-        excel_form = ExcelUploadForm()
+    try:
+        if request.method == 'POST':
+            excel_form = ExcelUploadForm(request.POST, request.FILES)
+            if excel_form.is_valid():
+                excel_file = request.FILES['excel_file']
+                file_name = excel_file.name
+                data = pd.read_excel(excel_file)
+                comp = company_master.objects.get(company_id=request.POST['company_id'])
+                site = site_master.objects.get(site_id=request.POST['site_id'])
+                slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
+                upload_for = 'Attendance Upload'
+                
+                cursor.callproc('stp_insert_checksum', (upload_for, comp.company_id, str(datetime.now().month), str(datetime.now().year), file_name))
+                for result in cursor.stored_results():
+                    c = list(result.fetchall())
+                checksum_id = c[0][0]
+
+                error_count = 0
+                success_count = 0
+                total_columns = len(data.columns)
+                total_rows = len(data)
+                
+                for index, row in data.iterrows():
+                    row_error_found = False
+
+                    # Validate Attendance Date
+                    if not row['Attendance Date'] or str(row['Attendance Date']).strip() == '':
+                        error_message = f"Attendance Date is missing or invalid for Employee ID {row['Employee Id']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+                    
+                    # Validate Attendance Date format (yyyy-mm-dd)
+                    try:
+                        attendance_date = datetime.strptime(row['Attendance Date'], '%Y-%m-%d')
+                    except ValueError:
+                        error_message = f"Invalid date format for Employee ID {row['Employee Id']} on {row['Attendance Date']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+
+                    # Validate Employee ID (check if it is blank, null or ' ')
+                    if not row['Employee Id'] or str(row['Employee Id']).strip() == '':
+                        error_message = f"Employee Id is missing or invalid at row number {row + 1}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+
+                    # Check if Employee ID exists in sc_employee_master
+                    try:
+                        employee = sc_employee_master.objects.get(employee_id=row['Employee Id'])
+                    except sc_employee_master.DoesNotExist:
+                        error_message = f"No employee with ID {row['Employee Id']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+
+                    # Validate Attendance In
+                    if not row['Attendance In'] or str(row['Attendance In']).strip() == '':
+                        error_message = f"Attendance In is missing for Employee ID {row['Employee Id']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+
+                    # Validate Attendance Out
+                    if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
+                        error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
+
+                    # If no errors, insert the attendance record
+                    attendance = slot_attendance_details(
+                        company_id=comp,
+                        site_id=site,
+                        slot_id=slot,
+                        attendance_date=attendance_date,
+                        employee_id=row['Employee Id'],
+                        attendance_in=row['Attendance In'],
+                        attendance_out=row['Attendance Out'],
+                    )
+                    attendance.save()
+
+                    result_value = "success"  # Example, you should fetch this from the actual procedure result
+
+                    if result_value == "success":
+                        success_count += 1
+                    elif result_value.startswith("error"):
+                        # Log the error message in your error log table
+                        error_message = result_value  # The error message from the procedure
+                        cursor.callproc('stp_insert_error_log', [
+                            upload_for, comp.company_id, 'attendance_file', datetime.now().date(), error_message, None, row['Employee Id']
+                        ])
+                        error_count += 1 
+
+                # Prepare checksum message
+                checksum_msg = (
+                    f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, "
+                    f"Successful Entries: {success_count}"
+                    f"{f', Errors: {error_count}' if error_count > 0 else ''}"
+                )
+
+                # Update checksum status
+                cursor.callproc('stp_update_checksum_attendance', (
+                    upload_for, comp.company_id,'', str(datetime.now().month), str(datetime.now().year),
+                    file_name, checksum_msg, error_count, checksum_id
+                ))
+
+                # Display messages based on counts
+                if error_count == 0  and success_count > 0:
+                    messages.success(request, "All data uploaded successfully!")
+                else:
+                    messages.warning(request,
+                        f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries "
+                        "please check the error logs for error {error_count}."
+                    )
+
+                # If row error found, show the error count
+                # if row_error_found:
+                #     messages.error(request, f'{error_count} error(s) found during upload.')
+                # else:
+                #     messages.success(request, 'Attendance records uploaded successfully.')
+
+                return redirect('/attendance_index?type=index')
+
+        else:
+            excel_form = ExcelUploadForm()
+
+        # Handling exceptions and cursor closing
+    except Exception as e:
+        print(f"Error: {e}") 
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
 
     return render(request, 'Payroll/Attendance/create.html', {
+        'type': type,
         'excel_form': excel_form,
         'companies': company_master.objects.all(),
     })
+
+
+
+
 @login_required
 def get_sites(request):
     company_id = request.GET.get('company_id')
@@ -701,13 +870,17 @@ def download_sample(request):
             cell.style = header_style
 
         # Add sample attendance data
-        time_format = "%H:%M"  # 24-hour format without AM/PM
+        time_format = "%H:%M:%S"  # 24-hour format with hours, minutes, and seconds
+
         attendance_data = [
-            ["2024-11-15", "EMP001", datetime.strptime("09:00", "%H:%M").strftime(time_format), 
-            datetime.strptime("17:00", "%H:%M").strftime(time_format)],
-            ["2024-11-15", "EMP002", datetime.strptime("09:30", "%H:%M").strftime(time_format), 
-            datetime.strptime("17:30", "%H:%M").strftime(time_format)],
+            ["2024-11-15", "EMP001", 
+            datetime.strptime("09:00:00", "%H:%M:%S").strftime(time_format), 
+            datetime.strptime("17:00:00", "%H:%M:%S").strftime(time_format)],
+            ["2024-11-15", "EMP002", 
+            datetime.strptime("09:30:00", "%H:%M:%S").strftime(time_format), 
+            datetime.strptime("17:30:00", "%H:%M:%S").strftime(time_format)],
         ]
+
 
         for row in attendance_data:
             ws.append(row)
@@ -731,6 +904,49 @@ def download_sample(request):
         fun = tb[0].name
         Cursor.callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
+
+def attendance_error(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    pre_url = request.META.get('HTTP_REFERER')
+    header, data = [], []
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+         
+       if request.method=="GET":
+            entity = 'att'
+            type = 'err'
+            cursor.callproc("stp_get_masters",[entity,type,'name',user])
+            for result in cursor.stored_results():
+                datalist1 = list(result.fetchall())
+            name = datalist1[0][0]
+            cursor.callproc("stp_get_masters", [entity, type, 'header',user])
+            for result in cursor.stored_results():
+                header = list(result.fetchall())
+            cursor.callproc("stp_get_masters",[entity,type,'data',user])
+            for result in cursor.stored_results():
+                data = list(result.fetchall())
+
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log",[fun,str(e),user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        if request.method=="GET":
+            return render(request,'Master/index.html', {'type':type,'header':header,'name':name,'data':data,'pre_url':pre_url})
+        
+
+
+
+
 
 
 
