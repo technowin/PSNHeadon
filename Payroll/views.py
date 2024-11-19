@@ -110,7 +110,7 @@ def rate_card_create(request):
                     salary_element=item,
                     item_name=item.item_name,
                     pay_type=item.pay_type,
-                    classification=item.basis,
+                    classification=item.classification,
                     four_hour_amount=four_hour_amount,
                     nine_hour_amount=nine_hour_amount
                 )
@@ -697,7 +697,7 @@ def upload_attendance(request):
                     messages.success(request, "All data uploaded successfully!")
                 else:
                     messages.warning(request,
-                        f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries, please check the error logs for error{error_count}."
+                        f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries, please check the error logs for error :{error_count}."
                     )
 
                 return redirect('/attendance_index?type=index')
@@ -819,6 +819,7 @@ def calculate_daily_salary(request,slot_id):
                             # Step 6: Fetch the BASIC element before looping
                             basic_element = salary_elements.filter(item_name='BASIC').first()
                             basic_amount = 0
+                            amount = 0
 
                             # Determine BASIC amount based on working hours
                             if basic_element:
@@ -878,37 +879,79 @@ def calculate_daily_salary(request,slot_id):
                                             amount = deduction.deduction_amount
                                         except income_tax_deduction.DoesNotExist:
                                             amount = 0
+                                    # elif element.item_name == 'Gross Earning':
+                                    #     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                                    #     total_earnings = daily_salary.objects.filter(
+                                    #         employee_id=employee_id,
+                                    #         slot_id=slot_id,
+                                    #         attendance_date=attendance.attendance_date,
+                                    #         pay_type='Earning'
+                                    #     ).aggregate(Sum('amount'))['amount__sum'] or 0
+                                    #     print(total_earnings)
+
+                                    #     amount = total_earnings 
+                                       
+                                    # elif element.item_name == 'Gross Deduction':
+                                    #     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                                    #     total_deduction = daily_salary.objects.filter(
+                                    #         employee_id=employee_id,
+                                    #         slot_id=slot_id,
+                                    #         attendance_date=attendance.attendance_date,
+                                    #         pay_type='Deduction'
+                                    #     ).aggregate(Sum('amount'))['amount__sum'] or 0
+                                    #     amount = total_deduction
+                                    # elif element.item_name == 'Net Salary':
+                                    #     total_earnings = daily_salary.objects.filter(
+                                    #         employee_id=employee_id,
+                                    #         slot_id=slot_id,
+                                    #         attendance_date=attendance.attendance_date,
+                                    #         pay_type='Earning'
+                                    #     ).aggregate(Sum('amount'))['amount__sum'] or 0
+                                    #     amount = total_earnings 
+
+                                    #     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
+                                    #     total_deduction = daily_salary.objects.filter(
+                                    #         employee_id=employee_id,
+                                    #         slot_id=slot_id,
+                                    #         attendance_date=attendance.attendance_date,
+                                    #         pay_type='Deduction'
+                                    #     ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                                    #     amount = total_earnings - total_deduction    
                                     else:
                                         if working_hours < 9:
                                             amount = element.four_hour_amount
                                         else:
                                             amount = element.nine_hour_amount
-                                elif element.classification == 'Total' and element.item_name == 'Gross Earning':
+
+                                if element.classification == 'Calculation' and element.item_name == 'Gross Earning':
                                     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
                                     total_earnings = daily_salary.objects.filter(
                                         employee_id=employee_id,
                                         slot_id=slot_id,
                                         attendance_date=attendance.attendance_date,
-                                        pay_type='earning'
+                                        pay_type='Earning'
                                     ).aggregate(Sum('amount'))['amount__sum'] or 0
+                                    print(total_earnings)
 
                                     amount = total_earnings 
-                                elif element.classification == 'Total' and element.item_name == 'Gross Deduction':
+                                elif element.classification == 'Calculation' and element.item_name == 'Gross Deduction':
                                     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
                                     total_deduction = daily_salary.objects.filter(
                                         employee_id=employee_id,
                                         slot_id=slot_id,
                                         attendance_date=attendance.attendance_date,
-                                        pay_type='deduction'
+                                        pay_type='Deduction'
                                     ).aggregate(Sum('amount'))['amount__sum'] or 0
                                     amount = total_deduction
-                                elif element.classification == 'Total' and element.item_name == 'Net Salary':
+                                elif element.classification == 'Calculation' and element.item_name == 'Net Salary':
                                     total_earnings = daily_salary.objects.filter(
                                         employee_id=employee_id,
                                         slot_id=slot_id,
                                         attendance_date=attendance.attendance_date,
-                                        pay_type='earning'
+                                        pay_type='Earning'
                                     ).aggregate(Sum('amount'))['amount__sum'] or 0
+                                    
 
                                     amount = total_earnings 
                                     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
@@ -970,7 +1013,8 @@ def calculate_daily_salary(request,slot_id):
             else:
                 # Either time_in or time_out is None
                 working_hours = 0
-    return redirect('slot_list')
+    # return redirect('slot_list')
+    return redirect(f'/user_salary_index?slot_id={slot_id}')
 class SlotListView(ListView):
     model = SlotDetails
     template_name = 'Payroll/Slot/index.html'
@@ -978,6 +1022,47 @@ class SlotListView(ListView):
     paginate_by = 10  # for pagination, optional
 def generate_salary_redirect(request, slot_id):
     return redirect('generate_salary', slot_id=slot_id)
+
+def user_salary_index(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    user = request.session.get('user_id', '')
+    try:
+        # Get the slot ID from the request
+        slot_id = request.GET.get('slot_id', '')
+        slot = get_object_or_404(SlotDetails, slot_id=slot_id)
+
+        # Retrieve user slot details for the given slot ID
+        user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+
+        # Calculate total salary by fetching net salary for each user slot
+        for user_slot in user_slot_details:
+            # Filter the record where element_name is 'net_salary' for the given employee and slot_id
+            net_salary_record = daily_salary.objects.filter(
+                employee_id=user_slot.employee_id, 
+                slot_id=slot_id, 
+                element_name='Net Salary'
+            ).first()
+            
+            # Set the values for total_salary and amount based on the filtered record
+            user_slot.total_salary = net_salary_record.amount if net_salary_record else 0
+            user_slot.amount = net_salary_record.amount if net_salary_record else 0
+
+
+        # Prepare the context for rendering the template
+        context = {
+            'slot': slot,
+            'user_slot_details': user_slot_details,
+        }
+        return render(request, 'Payroll/Slot/user_salary_index.html', context)
+    except Exception as e:
+        print(f"Error: {e}") 
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+    
 
 @login_required
 def user_slot_details_list(request, slot_id):
@@ -989,6 +1074,56 @@ def user_slot_details_list(request, slot_id):
         'user_slot_details': user_slot_details,
     }
     return render(request, 'Payroll/Slot/user_slot_details.html', context)
+
+@login_required
+def view_employee_salary_details(request, employee_id, slot_id):
+    try:
+        # Retrieve the slot object
+        slot = get_object_or_404(SlotDetails, slot_id=slot_id)
+
+        # Retrieve user slot details for the given slot ID
+        user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+
+        # Filter daily_salary records for the given slot_id and employee_id
+        daily_salary_data = daily_salary.objects.filter(slot_id=slot_id, employee_id=employee_id)
+
+        # Separate daily_salary data into two lists: earnings and deductions
+        earnings = daily_salary_data.filter(pay_type='Earning')
+        deductions = daily_salary_data.filter(pay_type='Deduction')
+
+        # Calculate the total earnings (Gross Earning and Net Salary)
+        total_earnings_value = daily_salary_data.filter(
+            pay_type='Total',
+            element_name__in=['Gross Earning', 'Net Salary']
+        ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+
+        # Calculate the total deductions (Gross Deduction and Net Salary)
+        total_deductions_value = daily_salary_data.filter(
+            pay_type='Total',
+            element_name__in=['Gross Deduction', 'Net Salary']
+        ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+
+        # Prepare the context for rendering the template
+        context = {
+            'slot': slot,
+            'user_slot_details': user_slot_details,
+            'earnings': earnings,  # Earnings list
+            'deductions': deductions,  # Deductions list
+            'total_earnings': earnings,  # Earnings used for individual elements
+            'total_deductions': deductions,  # Deductions used for individual elements
+            'total_earnings_value': total_earnings_value,  # Total Earnings value
+            'total_deductions_value': total_deductions_value  # Total Deductions value
+        }
+
+        # Render the response with context
+        return render(request, 'Payroll/Slot/view_employee_salary_details.html', context)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return render(request, 'Payroll/Slot/view_employee_salary_details.html', {'error': str(e)})
+
+
 
 @login_required
 def handle_card_name_change(request):

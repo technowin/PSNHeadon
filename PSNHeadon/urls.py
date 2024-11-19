@@ -152,6 +152,8 @@ urlpatterns = [
     path('employee_rate_card_create/', employee_rate_card_create, name='employee_rate_card_create'),
     
     path('slots', SlotListView.as_view(), name='slot_list'),
+    path('user_salary_index', user_salary_index, name='user_salary_index'),
+    path('employee/<str:employee_id>/slot/<int:slot_id>/salary-details/', view_employee_salary_details, name='view_employee_salary_details'),
     path('slots/<int:slot_id>/', user_slot_details_list, name='user_slot_details_list'),
     path('slots/generate-salary/<int:slot_id>/', generate_salary_redirect, name='generate_salary_redirect'),
     path('calculate-salary/<int:slot_id>/', calculate_daily_salary, name='generate_salary'),

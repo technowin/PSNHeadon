@@ -1,0 +1,111 @@
+{% extends "Shared/Layout.html" %}
+
+{% block content %}
+    <h2>User Slot Details for {{ slot.slot_name }}</h2>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Earnings Table -->
+        <div class="col-md-6">
+            <h3>Earnings</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Element Name</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for earning in earnings %}
+                        <tr>
+                            <td>{{ earning.element_name }}</td>
+                            <td>{{ earning.amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2">No earnings found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Deductions Table -->
+        <div class="col-md-6">
+            <h3>Deductions</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Element Name</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deduction in deductions %}
+                        <tr>
+                            <td>{{ deduction.element_name }}</td>
+                            <td>{{ deduction.amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2">No deductions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Total Earnings Table -->
+        <div class="col-md-6">
+            <h3>Total Earnings</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Element Name</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for total in total_earnings %}
+                        <tr>
+                            <td>{{ total.element_name }}</td>
+                            <td>{{ total.amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2">No earnings found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h4>Total Earnings: {{ total_earnings_value }}</h4>  <!-- Total Earnings -->
+        </div>
+
+        <!-- Total Deductions Table -->
+        <div class="col-md-6">
+            <h3>Total Deductions</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Element Name</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for total in total_deductions %}
+                        <tr>
+                            <td>{{ total.element_name }}</td>
+                            <td>{{ total.amount }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2">No deductions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h4>Total Deductions: {{ total_deductions_value }}</h4>  <!-- Total Deductions -->
+        </div>
+    </div>
+
+{% endblock %}

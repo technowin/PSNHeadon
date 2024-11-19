@@ -8,7 +8,7 @@ class salary_element_master(models.Model):
     item_id = models.AutoField(primary_key=True)
     item_name = models.TextField(null=True,blank=True)
     pay_type = models.ForeignKey('Payroll.pay_type', on_delete=models.CASCADE,related_name='salary_pay_relation',blank=True, null=True,db_column='pay_type')
-    basis = models.ForeignKey('Payroll.basis_type', on_delete=models.CASCADE,related_name='salary_basis_relation',blank=True, null=True,db_column='basis')
+    classification = models.ForeignKey('Payroll.basis_type', on_delete=models.CASCADE,related_name='salary_basis_relation',blank=True, null=True,db_column='classification')
     is_active =models.BooleanField(null=True,blank=True,default=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='salary_item_created_by',blank=True, null=True,db_column='created_by')
@@ -157,7 +157,7 @@ class daily_salary(models.Model):
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='daily_salary_slot_id', db_column='slot_id')
     employee_id = models.TextField(max_length=250, null=True, blank=True)
     company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='daily_salary_company_id', db_column='company_id',null=True,blank=True)
-    attendance_date = models.DateTimeField(null=True, blank=True)
+    attendance_date = models.DateField(null=True, blank=True)
     work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Total working hours
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Salary amount for the day
     element_name = models.TextField(null=True, blank=True)  # From salary elements

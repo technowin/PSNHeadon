@@ -7,11 +7,11 @@ from .models import *
 class SalaryElementMasterForm(forms.ModelForm):
     class Meta:
         model = salary_element_master
-        fields = ['item_name', 'pay_type', 'basis']
+        fields = ['item_name', 'pay_type', 'classification']
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
             'pay_type': forms.Select(attrs={'class': 'form-control'}),
-            'basis': forms.Select(attrs={'class': 'form-control'}),
+            'classification': forms.Select(attrs={'class': 'form-control'}),
         }
 
 
