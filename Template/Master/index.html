@@ -140,7 +140,7 @@
 
       <div class="modal-body">
         <!-- Single Form -->
-        <form class="formupl" id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'upload_excel' %}">
+        <form class="formupl" id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'upload_excel_cm' %}">
           {% csrf_token %}
           <input type="hidden" name="entity" value="{{ entity }}">
           <input type="hidden" name="type" value="{{ type }}">
@@ -161,32 +161,6 @@
           <hr>
           {% endif %}
 
-          <!-- Conditional dropdowns for 'Employee Upload' -->
-          {% comment %} {% if entity == 'em' %}
-          <div class="row d-flex justify-content-center align-items-center">
-            <div class="col-md-6 mb-3">
-              <label for="company_id" class="form-label">Company</label>
-              <select id="company_id" name="company_id" class="form-control" required>
-                <option value="" selected>Select</option>
-                {% for item in company_names %}
-                <option value="{{ item.0 }}">{{ item.1 }}</option>
-                {% endfor %}
-              </select>
-            </div>
-        
-            <div class="col-md-6 mb-3">
-              <label for="site_id" class="form-label">Worksite</label>
-              <select id="site_id" name="site_id" class="form-control" required>
-                <option value="" selected>Select</option>
-                {% for item in site_name %}
-                <option value="{{ item.0 }}">{{ item.1 }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <hr>
-        {% endif %} {% endcomment %}
-        
         {% if entity == 'em' %}
   <div class="row d-flex justify-content-center align-items-center">
     <!-- Company Dropdown -->
@@ -248,7 +222,41 @@
                    <div class="col-md-5">
                    </div>
                    {% endif %}
-                   {% if entity != 'user' and entity != 'sd'  and entity == 'dm'  and entity == 'em' and entity == 'um'  %}
+                   {% if entity != 'user' and entity != 'sd' %}
+                   <div class="modal fade" id="excel_upload">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" style="color:black">
+                              {% if entity == 'cm' %} Company Upload
+                              {% endif %}
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal"> <span>&times;</span></button>
+                          </div>
+                          <div class="modal-body">
+                           
+                             <form  class="formupl" id="uploadForm" method="POST" enctype="multipart/form-data" 
+                                   action="{% url 'upload_excel' %}">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="entity" value="{{ entity }}">
+                                  <input type="hidden" name="type" value="{{ type }}">
+                                  <span class="formupl-title">Upload your file</span>
+                                  <p class="formupl-paragraph">File should be an Excel</p>
+                                  <label for="excelFile" class="drop-container">
+                                    <span class="drop-title">Drop files here</span>
+                                    or
+                                    <input type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required>
+                                  </label>
+                             </form>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" form="uploadForm">Upload</button>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if entity == 'cm'%}
                    <div class="col-md-1">
                       <a href="{% if entity == 'r' %}#{% else %}/sample_xlsx?entity={{entity}}&type={{type}}{% endif %}" class="Btn1" hover-tooltip="Download Sample"  tooltip-position="top"
                       type="button" {% if entity == 'r' %} data-toggle="modal"  data-target="#roster_sample_xlsx_id" {% endif %}>
@@ -271,7 +279,7 @@
                        </button>                  
                    </div>
                    {% endif %}
-                   {% if entity == 'em' %}
+                   {% elif entity == 'em' %}
                    <div style="justify-content: center">
                     <a href="/employee_upload" style="text-decoration: none;">
                       <button type="submit" class="Btn"><div class="sign">&#x2191;</div> <div class="text">Launch</div></button>
@@ -308,7 +316,7 @@
                        <button type="submit" class="Btn"><div class="sign">+ </div> <div class="text">Create</div></button>
                      </form>
                     </div>
-                      {% if entity != 'user'%}
+                      {% if entity != 'user' and entity != 'sd' and entity != 'dm'%}
                       <div class="col-sm-2">
                       <form method="GET" action="/masters">
                         <input type="hidden" name="entity" value="{{ entity }}">

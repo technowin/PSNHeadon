@@ -72,6 +72,7 @@ urlpatterns = [
     # Masters
     path('masters/', masters, name='masters'),
     path('sample_xlsx/', sample_xlsx, name='sample_xlsx'),
+    path('upload_excel_cm', upload_excel_cm, name='upload_excel_cm'),
     path("roster_upload",roster_upload, name="roster_upload"),
     path("company_master",cm,name="company_master"),
     path("employee_master",employee_master, name="employee_master"),
