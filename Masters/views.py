@@ -2511,14 +2511,7 @@ def employee_upload(request):
             entity = request.GET.get('entity', '')
             type = request.GET.get('type', '')
             
-            
-            # cursor.callproc("stp_get_masters", [entity, type, 'header',user])
-            # for result in cursor.stored_results():
-            #     header = list(result.fetchall())
-            # cursor.callproc("stp_get_masters",[entity,type,'data',user])
-            # for result in cursor.stored_results():
-            #      data = list(result.fetchall())
-            cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
+            cursor.callproc("stp_get_company_site_name",[user])
             for result in cursor.stored_results():
                 site_name = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values",['designation'])
