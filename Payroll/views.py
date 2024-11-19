@@ -1097,7 +1097,6 @@ def view_employee_salary_details(request, employee_id, slot_id):
             element_name__in=['Gross Earning', 'Net Salary']
         ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
 
-        # Calculate the total deductions (Gross Deduction and Net Salary)
         total_deductions_value = daily_salary_data.filter(
             pay_type='Total',
             element_name__in=['Gross Deduction', 'Net Salary']
