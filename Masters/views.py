@@ -1699,10 +1699,134 @@ def slot_details(request):
 #         m.close()
 #         Db.closeConnection()
 
-from datetime import timedelta, datetime
-from django.utils import timezone
 
-@login_required 
+# @login_required 
+# def post_slot_details(request):
+#     Db.closeConnection()
+#     m = Db.get_connection()
+#     cursor = m.cursor()
+#     user_idd = request.session.get('user_id', '')
+#     user = CustomUser.objects.get(id=user_idd)  
+
+#     try:
+#         # Load additional shift data from JSON input
+#         shifts_data = json.loads(request.POST.get('shifts', '[]'))  
+#         shifts_data2 = json.loads(request.POST.get('shifts2', '[]')) 
+
+#         # Gather main shift data from POST request
+#         slot_name = request.POST.get('slot_name', '')
+#         description = request.POST.get('description', '')
+
+#         # Convert shift_date to a date object
+#         shift_date_str = request.POST.get('shift_date', '')
+#         shift_date = datetime.strptime(shift_date_str, '%Y-%m-%d').date() if shift_date_str else None
+
+#         start_time = request.POST.get('start_time', '')
+#         end_time = request.POST.get('end_time', '')
+#         designation = request.POST.get('designation')
+#         night_shift = request.POST.get('night_shift', '0')
+#         company_id = request.POST.get('company_id', '')
+
+#         if not shift_date and not shifts_data and not shifts_data2:
+#             return JsonResponse({'status': 'error', 'message': 'No shift data received.'})
+
+#         def insert_setting_master(slot_detail):
+#             SettingMaster.objects.create(
+#                 noti_start_time=timezone.now().date(),
+#                 noti_end_time=slot_detail.shift_date - timedelta(days=1),
+#                 interval=8,
+#                 no_of_notification=2,
+#                 no_of_employee=9999,
+#                 slot_id=get_object_or_404(SlotDetails, slot_id=slot_detail.slot_id),
+#                 created_by=user
+#             )
+
+#         # Save the main shift if all necessary data is provided
+#         if shift_date and start_time and end_time:
+#             initial_shift_detail = SlotDetails(
+#                 slot_name=slot_name,
+#                 slot_description=description,
+#                 shift_date=shift_date,
+#                 start_time=start_time,
+#                 end_time=end_time,
+#                 designation_id=get_object_or_404(designation_master, designation_id=designation),
+#                 night_shift=bool(int(night_shift)), 
+#                 company_id=company_id,
+#                 site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+#                 created_by=user
+#             )
+#             initial_shift_detail.save()
+#             insert_setting_master(initial_shift_detail)
+
+#         # Process extra shifts (shifts_data)
+#         for shift in shifts_data:
+#             if shift.get('start_time') and shift.get('end_time'):
+#                 shift_detail_add = SlotDetails(
+#                     slot_name=slot_name,
+#                     slot_description=description,
+#                     shift_date=shift_date,
+#                     designation_id=get_object_or_404(designation_master, designation_id=designation),
+#                     start_time=shift.get('start_time'),
+#                     end_time=shift.get('end_time'),
+#                     night_shift=bool(int(shift.get('night_shift', '0'))), 
+#                     company_id=company_id,
+#                     site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+#                     created_by=user
+#                 )
+#                 shift_detail_add.save()
+#                 insert_setting_master(shift_detail_add)
+
+#         # Process multiple shifts (shifts_data2)
+#         for shift2 in shifts_data2:
+#             if shift2.get('shiftDate') and shift2.get('startTime') and shift2.get('endTime'):
+#                 shift2_date_str = shift2.get('shiftDate')
+#                 shift2_date = datetime.strptime(shift2_date_str, '%Y-%m-%d').date()
+#                 shift_detail_add = SlotDetails(
+#                     slot_name=shift2.get('new_slot_name'),
+#                     slot_description=shift2.get('new_description'),
+#                     designation_id=get_object_or_404(designation_master, designation_id=shift2.get('new_designation')),
+#                     shift_date=shift2_date,
+#                     start_time=shift2.get('startTime'),
+#                     end_time=shift2.get('endTime'),
+#                     night_shift=bool(int(shift2.get('nightShift', '0'))), 
+#                     company_id=company_id,
+#                     site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+#                     created_by=user
+#                 )
+#                 shift_detail_add.save()
+#                 insert_setting_master(shift_detail_add)
+
+#             for additional_shift in shift2.get('shiftTimes', []):
+#                 if additional_shift.get('newStartTime') and additional_shift.get('newEndTime'):
+#                     shift_detail_additional = SlotDetails(
+#                         slot_name=shift2.get('new_slot_name'),
+#                         slot_description=shift2.get('new_description'),
+#                         designation_id=get_object_or_404(designation_master, designation_id=shift2.get('new_designation')),
+#                         shift_date=shift2_date,
+#                         start_time=additional_shift.get('newStartTime'),
+#                         end_time=additional_shift.get('newEndTime'),
+#                         night_shift=bool(int(additional_shift.get('newNightShift', '0'))),  
+#                         company_id=company_id,
+#                         site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+#                         created_by=user
+#                     )
+#                     shift_detail_additional.save()
+#                     insert_setting_master(shift_detail_additional)
+
+#         return JsonResponse({'success': True, 'redirect_url': '/masters?entity=sd&type=i'})
+
+#     except Exception as e:
+#         tb = traceback.format_exc()
+#         cursor.callproc("stp_error_log", [tb, str(e), str(user_idd)])
+#         print(f"error: {e}")
+        
+#     finally:
+#         cursor.close()
+#         m.commit()
+#         m.close()
+#         Db.closeConnection()
+
+@login_required
 def post_slot_details(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -1728,20 +1852,25 @@ def post_slot_details(request):
         designation = request.POST.get('designation')
         night_shift = request.POST.get('night_shift', '0')
         company_id = request.POST.get('company_id', '')
+        site_id1 = request.POST.get('site_id', '')
 
         if not shift_date and not shifts_data and not shifts_data2:
             return JsonResponse({'status': 'error', 'message': 'No shift data received.'})
 
         def insert_setting_master(slot_detail):
-            SettingMaster.objects.create(
+            # Create SettingMaster entry
+            setting_master = SettingMaster.objects.create(
                 noti_start_time=timezone.now().date(),
                 noti_end_time=slot_detail.shift_date - timedelta(days=1),
                 interval=8,
                 no_of_notification=2,
                 no_of_employee=9999,
-                slot_id=get_object_or_404(SlotDetails, slot_id=slot_detail.slot_id),
+                slot_id=slot_detail,
                 created_by=user
             )
+            # Update SlotDetails with the SettingMaster ID
+            slot_detail.setting_id = get_object_or_404(SettingMaster, id=setting_master.id)
+            slot_detail.save()
 
         # Save the main shift if all necessary data is provided
         if shift_date and start_time and end_time:
@@ -1754,7 +1883,7 @@ def post_slot_details(request):
                 designation_id=get_object_or_404(designation_master, designation_id=designation),
                 night_shift=bool(int(night_shift)), 
                 company_id=company_id,
-                site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                site_id=get_object_or_404(sit, site_id=site_id1),
                 created_by=user
             )
             initial_shift_detail.save()
@@ -1772,7 +1901,7 @@ def post_slot_details(request):
                     end_time=shift.get('end_time'),
                     night_shift=bool(int(shift.get('night_shift', '0'))), 
                     company_id=company_id,
-                    site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                    site_id=get_object_or_404(sit, site_id=site_id1),
                     created_by=user
                 )
                 shift_detail_add.save()
@@ -1790,9 +1919,9 @@ def post_slot_details(request):
                     shift_date=shift2_date,
                     start_time=shift2.get('startTime'),
                     end_time=shift2.get('endTime'),
-                    night_shift=bool(int(shift2.get('nightShift', '0'))), 
+                    night_shift=bool(int(shift2.get('newNightShift', '0'))), 
                     company_id=company_id,
-                    site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                    site_id=get_object_or_404(sit, site_id=site_id1),
                     created_by=user
                 )
                 shift_detail_add.save()
@@ -1809,7 +1938,7 @@ def post_slot_details(request):
                         end_time=additional_shift.get('newEndTime'),
                         night_shift=bool(int(additional_shift.get('newNightShift', '0'))),  
                         company_id=company_id,
-                        site_id=get_object_or_404(sit, site_id=request.POST.get('site_id', '')),
+                        site_id=get_object_or_404(sit, site_id=site_id1),
                         created_by=user
                     )
                     shift_detail_additional.save()
@@ -1829,7 +1958,6 @@ def post_slot_details(request):
         Db.closeConnection()
 
 
-        
 
 @login_required 
 def setting_master(request):
@@ -2732,7 +2860,7 @@ def get_worksites(request):
     try:
         user_id = request.session.get('user_id', '')
         selectedCompany = request.POST.get('selectedCompany','')
-        cursor.callproc("stp_get_company_wise_site_names", [user_id,selectedCompany])
+        cursor.callproc("stp_get_slot_siteName", [user_id,selectedCompany])
         for result in cursor.stored_results():
             companywise_site_names = list(result.fetchall())
 

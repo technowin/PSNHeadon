@@ -100,7 +100,7 @@ class site_card_relation(models.Model):
     updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='site_role_card_updated_by',blank=True, null=True,db_column='updated_by')
     class Meta:
-        unique_together=['site_id','card_id','designation_id']
+        unique_together=['site','card','designation']
         db_table = 'site_card_relation'
         
 class employee_rate_card_details(models.Model):
@@ -125,9 +125,9 @@ class employee_rate_card_details(models.Model):
 class slot_attendance_details(models.Model):
     id = models.AutoField(primary_key=True)
     company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE,related_name='attendance_company_id',blank=True, null=True,db_column='company_id')
-    site_id = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='attendance_site_id',blank=True, null=True,db_column='site_id')
+    site_id = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='attendance_site_id1',blank=True, null=True,db_column='site_id')
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE,related_name='attendance_slot_id',blank=True, null=True,db_column='slot_id')
-    attendance_date = models.DateTimeField(null=True,blank=True)
+    attendance_date = models.DateField(null=True,blank=True)
     attendance_in = models.TextField(null=True,blank=True)
     employee_id = models.TextField(max_length=250,null=True,blank=True)
     attendance_out = models.TextField(null=True,blank=True)
