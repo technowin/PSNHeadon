@@ -1,7 +1,6 @@
 {% extends "Shared/Layout.html" %}
 
 {% block content %}
-    <h2>User Slot Details for {{ slot.slot_name }}</h2>
 
     <!-- Success/Error Messages -->
     {% if messages %}
@@ -9,6 +8,38 @@
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Net Salary Details</h2>
+        </div>
+        <div class="card-body">
+            <!-- Employee Details -->
+            <form>
+                <div class="row mb-3">
+                    <!-- Employee ID -->
+                    <div class="col-md-4">
+                        <label for="employeeId"class="me-2 text-dark"><strong>Employee ID:</strong></label>
+                        <input type="text" id="employeeId" class="form-control" value="{{ employee_id }}" readonly>
+                    </div>
+                    <!-- Employee Name -->
+                    <div class="col-md-4">
+                        <label for="employeeName" class="me-2 text-dark"><strong>Employee Name:</strong></label>
+                        <input type="text" id="employeeName" class="form-control" value="{{ employee_name }}" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="shiftDate" class="me-2 text-dark"><strong>Date:</strong></label>
+                        <input type="text" id="shiftDate" class="form-control" value="{{ date }}" readonly>
+                    </div>
+                </div>
+            </form>
+            
+            <hr>
+
+    
+            <div class="card">
+
+                <div class="card-body">
 
     <div class="row">
         <!-- Earnings Table -->
@@ -70,7 +101,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for total in total_earnings%}
+                    {% for total in total_earnings_value%}
                         <tr>
                             <td>{{ total.element_name }}</td>
                             <td>{{ total.amount }}</td>
@@ -93,7 +124,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for total in total_deductions %}
+                    {% for total in total_deductions_value %}
                         <tr>
                             <td>{{ total.element_name }}</td>
                             <td>{{ total.amount }}</td>
@@ -105,5 +136,11 @@
             </table>
         </div>
     </div>
-
+</div>
+</div>
+</div>
+<div class="d-flex justify-content-center">
+    <a href="{% url 'slot_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+</div>
 {% endblock %}

@@ -579,7 +579,7 @@ def upload_attendance(request):
                 for index, row in data.iterrows():
                     row_error_found = False
 
-                    # Validate Attendance Date
+                    # Validate Attendance Date (handling both dd-mm-yyyy and yyyy-mm-dd formats)
                     date_str = str(row['Attendance Date']).strip()
 
                     if date_str:
@@ -598,12 +598,10 @@ def upload_attendance(request):
                             except ValueError:
                                 pass
 
-                        # If parsing succeeds, use the parsed date
+                        # If parsing succeeds, continue processing with attendance_date
                         if attendance_date:
-                            # Continue processing with attendance_date
                             pass
                         else:
-                            # Log an error for invalid date
                             error_message = f"Invalid date format for Employee ID {row['Employee Id']} on {date_str}"
                             cursor.callproc('stp_insert_attendance_error_log', [
                                 upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
@@ -612,7 +610,6 @@ def upload_attendance(request):
                             row_error_found = True
                             continue
                     else:
-                        # Log an error for missing date
                         error_message = f"Attendance Date is missing for Employee ID {row['Employee Id']}"
                         cursor.callproc('stp_insert_attendance_error_log', [
                             upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
@@ -621,7 +618,7 @@ def upload_attendance(request):
                         row_error_found = True
                         continue
 
-                    # Validate Employee ID (check if it is blank, null or ' ')
+                    # Validate Employee ID (check if it is blank, null, or ' ')
                     if not row['Employee Id'] or str(row['Employee Id']).strip() == '':
                         error_message = f"Employee Id is missing or invalid at row number {row + 1}"
                         cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
@@ -647,13 +644,34 @@ def upload_attendance(request):
                         row_error_found = True
                         continue
 
-                    # Validate Attendance Out
+                    # Validate Attendance Out and check if 'attendance_out' is greater than 'attendance_in'
                     if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
                         error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
                         cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
                         error_count += 1
                         row_error_found = True
                         continue
+                    else:
+                        try:
+                            attendance_in_time = datetime.strptime(str(row['Attendance In']), '%H:%M').time()
+                            attendance_out_time = datetime.strptime(str(row['Attendance Out']), '%H:%M').time()
+                            
+                            if attendance_out_time <= attendance_in_time:
+                                error_message = f"Attendance Out time must be greater than Attendance In time for Employee ID {row['Employee Id']}"
+                                cursor.callproc('stp_insert_attendance_error_log', [
+                                    upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
+                                ])
+                                error_count += 1
+                                row_error_found = True
+                                continue
+                        except ValueError:
+                            error_message = f"Invalid time format for Attendance In/Out for Employee ID {row['Employee Id']}"
+                            cursor.callproc('stp_insert_attendance_error_log', [
+                                upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
+                            ])
+                            error_count += 1
+                            row_error_found = True
+                            continue
 
                     # If no errors, insert the attendance record
                     attendance = slot_attendance_details(
@@ -1080,9 +1098,19 @@ def view_employee_salary_details(request, employee_id, slot_id):
     try:
         # Retrieve the slot object
         slot = get_object_or_404(SlotDetails, slot_id=slot_id)
+        date = slot.shift_date
 
         # Retrieve user slot details for the given slot ID
         user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+        if user_slot_details:
+    # Fetch the employee record based on employee_id
+            employee = sc_employee_master.objects.filter(employee_id=employee_id).first()
+            if employee:
+                employee_name = employee.employee_name
+            else:
+                employee_name = None  # Handle case where employee is not found
+        else:
+            employee_name = None 
 
         # Filter daily_salary records for the given slot_id and employee_id
         daily_salary_data = daily_salary.objects.filter(slot_id=slot_id, employee_id=employee_id)
@@ -1092,20 +1120,26 @@ def view_employee_salary_details(request, employee_id, slot_id):
         deductions = daily_salary_data.filter(pay_type='Deduction')
 
         # Calculate the total earnings (Gross Earning and Net Salary)
+        # Fetch rows for earnings
         total_earnings_value = daily_salary_data.filter(
             pay_type='Total',
             element_name__in=['Gross Earning', 'Net Salary']
-        ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        )
 
+        # Fetch rows for deductions
         total_deductions_value = daily_salary_data.filter(
             pay_type='Total',
             element_name__in=['Gross Deduction', 'Net Salary']
-        ).aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        )
+
 
         # Prepare the context for rendering the template
         context = {
             'slot': slot,
+            'date':date,
+            'employee_id':employee_id,
             'user_slot_details': user_slot_details,
+            'employee_name':employee_name,
             'earnings': earnings,  # Earnings list
             'deductions': deductions,  # Deductions list
             'total_earnings': earnings,  # Earnings used for individual elements
@@ -1176,15 +1210,15 @@ def download_sample(request):
             cell.style = header_style
 
         # Add sample attendance data
-        time_format = "%H:%M:%S"  # 24-hour format with hours, minutes, and seconds
+        time_format = "%H:%M"  # 24-hour format with hours, minutes, and seconds
 
         attendance_data = [
-            ["2024-11-15", "EMP001", 
-            datetime.strptime("09:00:00", "%H:%M:%S").strftime(time_format), 
-            datetime.strptime("17:00:00", "%H:%M:%S").strftime(time_format)],
-            ["2024-11-15", "EMP002", 
-            datetime.strptime("09:30:00", "%H:%M:%S").strftime(time_format), 
-            datetime.strptime("17:30:00", "%H:%M:%S").strftime(time_format)],
+            ["2024-11-05", "EMP001", 
+            datetime.strptime("09:00", "%H:%M").strftime(time_format), 
+            datetime.strptime("17:00", "%H:%M").strftime(time_format)],
+            ["2024-11-05", "EMP002", 
+            datetime.strptime("09:30", "%H:%M").strftime(time_format), 
+            datetime.strptime("17:30", "%H:%M").strftime(time_format)],
         ]
 
 

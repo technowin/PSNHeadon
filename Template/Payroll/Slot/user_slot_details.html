@@ -1,6 +1,5 @@
 {% extends "Shared/Layout.html" %}
 {% block content %}
-    <h2>User Slot Details for {{ slot.slot_name }}</h2>
 
     <!-- Success/Error Messages -->
     {% if messages %}
@@ -9,15 +8,23 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Generate Button -->
-    <a href="{% url 'generate_salary' slot.slot_id %}" class="btn btn-success mb-3">Generate Salary</a>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+            <h2>User Slot Details for {{ slot.slot_name }}</h2>
+            <a href="{% url 'generate_salary' slot.slot_id %}" class="btn btn-success mb-3">Generate Salary</a>
+            </div>
+        </div>
+        <br>
+        <div class="card-=body">
 
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>Employee ID</th>
                 <th>Company</th>
-                <th>Confirmation</th>
+                <th>Worksite</th>
                 <th>Created At</th>
             </tr>
         </thead>
@@ -26,11 +33,17 @@
             <tr>
                 <td>{{ user_slot.employee_id }}</td>
                 <td>{{ user_slot.company_id.company_name }}</td>
-                <td>{{ user_slot.confirmation }}</td>
+                <td>{{ user_slot.site_id.site_name }}</td>
                 <td>{{ user_slot.created_at }}</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+    <div class="d-flex justify-content-center">
+        <a href="{% url 'slot_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+    
+</div>
+</div>
 
 {% endblock %}
