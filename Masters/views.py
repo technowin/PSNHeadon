@@ -17,7 +17,6 @@ import Db
 import re
 from datetime import datetime
 
-
 import bcrypt
 from django.contrib.auth.decorators import login_required
 from Masters.serializers import CompanyMasterSerializer, DesignationSerializer, ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SiteSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotDetailsSerializer1
