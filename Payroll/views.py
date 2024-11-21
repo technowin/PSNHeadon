@@ -1037,7 +1037,7 @@ class SlotListView(ListView):
     model = SlotDetails
     template_name = 'Payroll/Slot/index.html'
     context_object_name = 'slots'
-    paginate_by = 10  # for pagination, optional
+    paginate_by = 50  # for pagination, optional
 def generate_salary_redirect(request, slot_id):
     return redirect('generate_salary', slot_id=slot_id)
 
