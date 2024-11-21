@@ -17,8 +17,8 @@
         <br>
         <br>
             <p><strong>Relation Name:</strong> {{ site_card_relation.relation_name }}</p>
-            <p><strong>Site ID:</strong> {{ site_card_relation.site_id }}</p>
-            <p><strong>Card ID:</strong> {{ site_card_relation.card_id }}</p>
+            <p><strong>Site ID:</strong> {{ site_card_relation.site.site_name }}</p>
+            <p><strong>Card ID:</strong> {{ site_card_relation.card.card_name }}</p>
             <br>
         <div class="text-center">
             <a href="{% url 'site_card_relation_edit' site_card_relation.pk %}" class="btn btn-primary">Edit Card</a>
