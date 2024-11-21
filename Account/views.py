@@ -688,11 +688,9 @@ def menu_order(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor=m.cursor()
-    pre_url = request.META.get('HTTP_REFERER')
     header = []
     data = []
     name = ''
-    entity = ''
     type = ''
     
     try:
@@ -735,7 +733,7 @@ def menu_order(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/menu_master.html', {'type':type,'name':name,'header':header,'data':data})
+            return render(request,'Master/menu/menu_master.html', {'type':type,'name':name,'header':header,'data':data})
         elif request.method=="POST":  
             new_url = f'/menu_admin?entity=menu&type=i'
             return redirect(new_url) 
