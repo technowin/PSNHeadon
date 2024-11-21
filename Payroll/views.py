@@ -645,33 +645,33 @@ def upload_attendance(request):
                         continue
 
                     # Validate Attendance Out and check if 'attendance_out' is greater than 'attendance_in'
-                    if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
-                        error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
-                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
-                        error_count += 1
-                        row_error_found = True
-                        continue
-                    else:
-                        try:
-                            attendance_in_time = datetime.strptime(str(row['Attendance In']), '%H:%M').time()
-                            attendance_out_time = datetime.strptime(str(row['Attendance Out']), '%H:%M').time()
+                    # if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
+                    #     error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
+                    #     cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                    #     error_count += 1
+                    #     row_error_found = True
+                    #     continue
+                    # else:
+                    #     try:
+                    #         attendance_in_time = datetime.strptime(str(row['Attendance In']), '%H:%M').time()
+                    #         attendance_out_time = datetime.strptime(str(row['Attendance Out']), '%H:%M').time()
                             
-                            if attendance_out_time <= attendance_in_time:
-                                error_message = f"Attendance Out time must be greater than Attendance In time for Employee ID {row['Employee Id']}"
-                                cursor.callproc('stp_insert_attendance_error_log', [
-                                    upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
-                                ])
-                                error_count += 1
-                                row_error_found = True
-                                continue
-                        except ValueError:
-                            error_message = f"Invalid time format for Attendance In/Out for Employee ID {row['Employee Id']}"
-                            cursor.callproc('stp_insert_attendance_error_log', [
-                                upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
-                            ])
-                            error_count += 1
-                            row_error_found = True
-                            continue
+                    #         if attendance_out_time <= attendance_in_time:
+                    #             error_message = f"Attendance Out time must be greater than Attendance In time for Employee ID {row['Employee Id']}"
+                    #             cursor.callproc('stp_insert_attendance_error_log', [
+                    #                 upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
+                    #             ])
+                    #             error_count += 1
+                    #             row_error_found = True
+                    #             continue
+                    #     except ValueError:
+                    #         error_message = f"Invalid time format for Attendance In/Out for Employee ID {row['Employee Id']}"
+                    #         cursor.callproc('stp_insert_attendance_error_log', [
+                    #             upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
+                    #         ])
+                    #         error_count += 1
+                    #         row_error_found = True
+                    #         continue
 
                     # If no errors, insert the attendance record
                     attendance = slot_attendance_details(
