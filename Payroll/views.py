@@ -223,7 +223,9 @@ def rate_card_view(request, card_id):
 
 @login_required
 def site_card_relation_index(request):
-    site_card_relations = site_card_relation.objects.all()
+    site_card_relations = site_card_relation.objects.select_related(
+    'site', 'card', 'designation').all()
+    # site_card_relations = site_card_relation.objects.all()
     return render(request, 'Payroll/SiteCardRelation/index.html', {'site_card_relations': site_card_relations})
 @login_required
 def site_card_relation_create(request):

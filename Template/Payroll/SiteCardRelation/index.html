@@ -69,9 +69,9 @@
                     {% for relation in site_card_relations %}
                         <tr>
                             <td>{{ relation.relation_name }}</td>
-                            <td>{{ relation.site_id }}</td>
-                            <td>{{ relation.card_id }}</td>
-                            <td>{{ relation.designation_id }}</td>
+                            <td>{{ relation.site.site_name }}</td>
+                            <td>{{ relation.card.card_name }}</td>
+                            <td>{{ relation.designation.designation_name }}</td>
                             <td>
                                 <a href="{% url 'site_card_relation_view' relation.pk %}">View</a> |
                                 <a href="{% url 'site_card_relation_edit' relation.pk %}">Edit</a>
