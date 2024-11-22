@@ -10,12 +10,14 @@
         {% endfor %}
     {% endif %}
 
-    <div class="card">
-        <div class="card-header">
-            <h2>Slot Details</h2>
-        </div>
-        <div class="card-body">
+    <!-- Include DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
+<div class="card">
+    <div class="card-header">
+        <h2>Slot Details</h2>
+    </div>
+    <div class="card-body">
         <table id="slotsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -45,9 +47,27 @@
     </div>
 </div>
 
-    <script>
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Include DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- Initialize DataTables -->
+<script>
+    $(document).ready(function () {
+        $('#slotsTable').DataTable({
+            "paging": true,        // Enable pagination
+            "searching": true,     // Enable search/filter functionality
+            "ordering": true,      // Enable column sorting
+            "info": true           // Show table information
+        });
+    });
+</script>
+
+
+    {% comment %} <script>
         $(document).ready(function () {
             $('#slotsTable').DataTable();  // Initialize DataTables.js
         });
-    </script>
+    </script> {% endcomment %}
 {% endblock %}

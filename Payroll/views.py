@@ -644,36 +644,13 @@ def upload_attendance(request):
                         row_error_found = True
                         continue
 
-                    # Validate Attendance Out and check if 'attendance_out' is greater than 'attendance_in'
-                    # if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
-                    #     error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
-                    #     cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
-                    #     error_count += 1
-                    #     row_error_found = True
-                    #     continue
-                    # else:
-                    #     try:
-                    #         attendance_in_time = datetime.strptime(str(row['Attendance In']), '%H:%M').time()
-                    #         attendance_out_time = datetime.strptime(str(row['Attendance Out']), '%H:%M').time()
-                            
-                    #         if attendance_out_time <= attendance_in_time:
-                    #             error_message = f"Attendance Out time must be greater than Attendance In time for Employee ID {row['Employee Id']}"
-                    #             cursor.callproc('stp_insert_attendance_error_log', [
-                    #                 upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
-                    #             ])
-                    #             error_count += 1
-                    #             row_error_found = True
-                    #             continue
-                    #     except ValueError:
-                    #         error_message = f"Invalid time format for Attendance In/Out for Employee ID {row['Employee Id']}"
-                    #         cursor.callproc('stp_insert_attendance_error_log', [
-                    #             upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user
-                    #         ])
-                    #         error_count += 1
-                    #         row_error_found = True
-                    #         continue
+                    if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
+                        error_message = f"Attendance out is missing for Employee ID {row['Employee Id']}"
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                        error_count += 1
+                        row_error_found = True
+                        continue
 
-                    # If no errors, insert the attendance record
                     attendance = slot_attendance_details(
                         company_id=comp,
                         site_id=site,
@@ -706,7 +683,7 @@ def upload_attendance(request):
 
                 # Update checksum status
                 cursor.callproc('stp_update_checksum_attendance', (
-                    upload_for, comp.company_id,'', str(datetime.now().month), str(datetime.now().year),
+                    upload_for, comp.company_id,site.site_name, str(datetime.now().month), str(datetime.now().year),
                     file_name, checksum_msg, error_count, checksum_id
                 ))
 
@@ -942,7 +919,7 @@ def calculate_daily_salary(request,slot_id):
                                         else:
                                             amount = element.nine_hour_amount
 
-                                if element.classification == 'Calculation' and element.item_name == 'Gross Earning':
+                                if element.item_name == 'Gross Earning':
                                     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
                                     total_earnings = daily_salary.objects.filter(
                                         employee_id=employee_id,
@@ -953,7 +930,7 @@ def calculate_daily_salary(request,slot_id):
                                     print(total_earnings)
 
                                     amount = total_earnings 
-                                elif element.classification == 'Calculation' and element.item_name == 'Gross Deduction':
+                                elif element.item_name == 'Gross Deduction':
                                     # Sum all amounts from daily_salary for this employee, slot, date, and 'earning' pay_type
                                     total_deduction = daily_salary.objects.filter(
                                         employee_id=employee_id,
@@ -962,7 +939,7 @@ def calculate_daily_salary(request,slot_id):
                                         pay_type='Deduction'
                                     ).aggregate(Sum('amount'))['amount__sum'] or 0
                                     amount = total_deduction
-                                elif element.classification == 'Calculation' and element.item_name == 'Net Salary':
+                                elif  element.item_name == 'Net Salary':
                                     total_earnings = daily_salary.objects.filter(
                                         employee_id=employee_id,
                                         slot_id=slot_id,
@@ -1037,7 +1014,8 @@ class SlotListView(ListView):
     model = SlotDetails
     template_name = 'Payroll/Slot/index.html'
     context_object_name = 'slots'
-    paginate_by = 50  # for pagination, optional
+    paginate_by = 50  
+    
 def generate_salary_redirect(request, slot_id):
     return redirect('generate_salary', slot_id=slot_id)
 
