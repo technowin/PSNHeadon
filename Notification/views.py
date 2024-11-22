@@ -365,7 +365,7 @@ class check_and_notify_all_users(APIView):
                 try:
                 # Ensure end_time is a datetime.time object (convert if it's a string)
                     if isinstance(slot_instance.end_time, str):
-                        end_time = datetime.strptime(slot_instance.end_time, "%H:%M:%S").time()
+                        end_time = datetime.strptime(slot_instance.end_time, "%H:%M").time()
                     else:
                         end_time = slot_instance.end_time
 
@@ -537,6 +537,7 @@ def send_push_notification(user,shift_data,notification_log_id):
 
         credentials_json = base64.b64decode(credentials_base64).decode('utf-8')
         credentials_dict = json.loads(credentials_json)
+# Check if the decoded credentials match the original JSON file
 
         # Create credentials object
         SCOPES = ['https://www.googleapis.com/auth/firebase.messaging']

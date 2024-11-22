@@ -62,6 +62,7 @@ class rate_card_master(models.Model):
     
     def __str__(self):
         return f"{self.card_name}" if self.card_name else "Unnamed Card"
+    
 class RateCardSalaryElement(models.Model):
     rate_card = models.ForeignKey('rate_card_master', on_delete=models.CASCADE)
     salary_element = models.ForeignKey('salary_element_master', on_delete=models.CASCADE)
@@ -70,11 +71,12 @@ class RateCardSalaryElement(models.Model):
     item_name = models.TextField(null=True, blank=True)
     pay_type = models.TextField(null=True, blank=True)
     classification = models.TextField(null=True, blank=True)
-    four_hour_amount = models.BigIntegerField(null=True, blank=False)
-    nine_hour_amount = models.BigIntegerField(null=True, blank=False)
+    four_hour_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    nine_hour_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
         db_table = 'rate_card_salary_element'    
+        
 class designation_master(models.Model)    :
     designation_id = models.AutoField(primary_key=True)
     designation_name = models.TextField(null=True,blank=True)
