@@ -92,7 +92,6 @@
     <div class="row">
         <!-- Total Earnings Table -->
         <div class="col-md-6">
-            <h3>Total Earnings</h3>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -115,7 +114,6 @@
 
         <!-- Total Deductions Table -->
         <div class="col-md-6">
-            <h3>Total Deductions</h3>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -156,7 +154,7 @@
                             <td>{{ deduction.amount }}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="2">No deductions found.</td></tr>
+                        <tr><td colspan="2">No Contributions found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -178,7 +176,7 @@
                             <td>{{ deduction.amount }}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="2">No deductions found.</td></tr>
+                        <tr><td colspan="2">No Contribution found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

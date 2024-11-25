@@ -806,12 +806,13 @@ def calculate_daily_salary(request,slot_id):
                             salary_elements = RateCardSalaryElement.objects.filter(rate_card=card_id).annotate(
                             pay_type_order=Case(
                                 When(pay_type='Earning', then=1),
-                                When(pay_type='Total Earning', then=2),
-                                When(pay_type='Deduction', then=3),
-                                When(pay_type='Total', then=4),
+                                When(pay_type='Other Earning', then=2),
+                                When(pay_type='Total Earning', then=3),
+                                When(pay_type='Deduction', then=4),
                                 When(pay_type='Employer Contribution', then=5),
                                 When(pay_type='Employer Total', then=6),
-                                default=7,  # For any other pay types that are not specified
+                                When(pay_type='Total', then=7),
+                                default=8,  # For any other pay types that are not specified
                                 output_field=models.IntegerField(),
                                 )
                             ).order_by('pay_type_order', 'item_name')
@@ -866,6 +867,7 @@ def calculate_daily_salary(request,slot_id):
                                             amount = (gross_earning * element.four_hour_amount) / 100
                                         else:
                                             amount = (gross_earning * element.nine_hour_amount) / 100
+                                            
                                         # Calculate percentage based on BASIC
                                     else:
                                         # For other percentage-based items, use the normal logic
@@ -910,16 +912,6 @@ def calculate_daily_salary(request,slot_id):
                                             amount = element.four_hour_amount
                                         else:
                                             amount = element.nine_hour_amount
-
-                                    # if element.item_name == 'Gross Earning':
-                                    #     total_earnings = daily_salary.objects.filter(
-                                    #         employee_id=employee_id,
-                                    #         slot_id=slot_id,
-                                    #         attendance_date=attendance.attendance_date,
-                                    #         pay_type='Earning' 
-                                    #     ).aggregate(Sum('amount'))['amount__sum'] or 0
-                                    #     print(total_earnings)
-                                    #     amount = total_earnings
                                     if element.item_name == 'Gross Earning':
                                         total_earnings = daily_salary.objects.filter(
                                             employee_id=employee_id,
@@ -943,12 +935,13 @@ def calculate_daily_salary(request,slot_id):
                                             pay_type='Deduction'
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
                                         amount = total_deduction
+                                    
                                     elif element.item_name == 'Net Salary':
                                         total_earnings = daily_salary.objects.filter(
                                             employee_id=employee_id,
                                             slot_id=slot_id,
                                             attendance_date=attendance.attendance_date,
-                                            pay_type='Earning'
+                                            pay_type__in=['Earning', 'Other Earning'] 
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
 
                                         total_deductions = daily_salary.objects.filter(
@@ -971,15 +964,25 @@ def calculate_daily_salary(request,slot_id):
                                             pay_type='Employer Contribution'
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
                                         amount = employer_total
+                                    elif element.item_name == 'Total Earning':
+                                        # Filter for 'Earning' and 'Other Earning' in pay_type
+                                        total_earning = daily_salary.objects.filter(
+                                            employee_id=employee_id,
+                                            slot_id=slot_id,
+                                            attendance_date=attendance.attendance_date,
+                                            pay_type__in=['Earning', 'Other Earning']  # Include both Earning and Other Earning
+                                        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                                        # Set the calculated total as the amount
+                                        amount = total_earning
                                     elif element.item_name == 'CTC':
                                         # Filter for 'Employer Total' and 'Gross Earning' in item_name
-                                        total_earnings = daily_salary.objects.filter(
+                                        total_earn = daily_salary.objects.filter(
                                             employee_id=employee_id,
                                             slot_id=slot_id,
                                             attendance_date=attendance.attendance_date,
                                             pay_type='Earning'
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
-                                        print(total_earnings)
 
                                         employer_total = daily_salary.objects.filter(
                                             employee_id=employee_id,
@@ -989,21 +992,23 @@ def calculate_daily_salary(request,slot_id):
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
 
                                         # If the sum is None, set amount to 0
-                                        ctc = total_earnings + employer_total
-                                        amount = ctc  # Store net salary in amount
-                                        print(net_salary) 
-                                elif slot.night_shift == 'True' and  element.item_name == 'Transport Allowance':
-                                        # Calculate percentage based on BASIC
-                                        if working_hours < 9:
-                                            amount = element.four_hour_amount
-                                        else:
-                                            amount = element.nine_hour_amount 
-                                elif slot.night_shift == 'True' and  element.item_name == 'Night Fees':
-                                        # Calculate percentage based on BASIC
-                                        if working_hours < 9:
-                                            amount = element.four_hour_amount
-                                        else:
-                                            amount = element.nine_hour_amount 
+                                        ctc = total_earn + employer_total
+                                        amount = ctc  
+                                    if slot.night_shift == 'True':  # Check if the slot is a night shift
+                                        if element.item_name == 'Transport Allowance':
+                                            # Calculate percentage based on BASIC for Transport Allowance
+                                            if working_hours < 9:
+                                                amount = element.four_hour_amount
+                                            else:
+                                                amount = element.nine_hour_amount
+                                        elif element.item_name == 'Night Fees':
+                                            # Calculate percentage based on BASIC for Night Fees
+                                            if working_hours < 9:
+                                                amount = element.four_hour_amount
+                                            else:
+                                                amount = element.nine_hour_amount
+
+
                                 else:
                                         # Absolute Amount 
                                     if working_hours < 9:
@@ -1144,7 +1149,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
         daily_salary_data = daily_salary.objects.filter(slot_id=slot_id, employee_id=employee_id)
 
         # Separate daily_salary data into two lists: earnings and deductions
-        earnings = daily_salary_data.filter(pay_type='Earning')
+        earnings = daily_salary_data.filter(pay_type__in=['Earning','Total Earning','Other Earning'])
         deductions = daily_salary_data.filter(pay_type__in=['Deduction'])
         employer_contribution = daily_salary_data.filter(pay_type__in=['Employer Contribution'])
         employer_contribution_total = daily_salary_data.filter(pay_type__in=['Employer Total'])
@@ -1153,7 +1158,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
         # Fetch rows for earnings
         total_earnings_value = daily_salary_data.filter(
             # pay_type__in='Total',
-            element_name__in=['Gross Earning', 'Net Salary']
+            element_name__in=['Total Earning', 'Net Salary']
         )
 
         # Fetch rows for deductions
@@ -1165,10 +1170,8 @@ def view_employee_salary_details(request, employee_id, slot_id):
 
         # Prepare the context for rendering the template
         context = {
-            'slot': slot,
             'date':date,
             'employee_id':employee_id,
-            'user_slot_details': user_slot_details,
             'employee_name':employee_name,
             'earnings': earnings,  # Earnings list
             'deductions': deductions,  # Deductions list
@@ -1177,7 +1180,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
             'total_earnings_value': total_earnings_value,  # Total Earnings value
             'total_deductions_value': total_deductions_value,
             'employer_contribution':employer_contribution,
-            'employer_contribution_total':employer_contribution_total # Total Deductions value
+            'employer_contribution_total':employer_contribution_total 
         }
 
         # Render the response with context
