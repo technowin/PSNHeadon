@@ -666,7 +666,7 @@ def send_push_notification(user,shift_data,notification_log_id):
     try:
         
         # Retrieve and decode the base64-encoded credentials
-        credentials_base64 = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_BASE60')
+        credentials_base64 = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_BASE64')
         if not credentials_base64:
             raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_BASE64 environment variable is not set")
 
