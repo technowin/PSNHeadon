@@ -135,46 +135,122 @@ def masters(request):
                     messages.success(request, 'Data updated successfully !')
             if entity == 'urm' and (type == 'acu' or type == 'acr'):
                 
+            #     created_by = request.session.get('user_id', '')
+            #     ur = request.POST.get('ur', '')
+            #     selected_company_ids = list(map(int, request.POST.getlist('company_id')))
+            #     selected_worksites  = request.POST.getlist('worksite')
+            #     company_worksite_map = {}
+                
+            #     if not selected_company_ids or not selected_worksites:
+            #         messages.error(request, 'Company or worksite data is missing!')
+            #         return redirect(f'/masters?entity={entity}&type=urm')
+            #     if type not in ['acu', 'acr'] or not ur:
+            #         messages.error(request, 'Invalid data received.')
+            #         return redirect(f'/masters?entity={entity}&type=urm')
+                
+            #     cursor.callproc("stp_get_company_worksite",[",".join(request.POST.getlist('company_id'))])
+            #     for result in cursor.stored_results():
+            #         company_worksites  = list(result.fetchall())
+                    
+            #     for company_id, worksite_name in company_worksites:
+            #         if company_id not in company_worksite_map:
+            #             company_worksite_map[company_id] = []
+            #         company_worksite_map[company_id].append(worksite_name)
+                
+            #     filtered_combinations = []
+            #     for company_id in selected_company_ids:
+            #         valid_worksites = company_worksite_map.get(company_id, [])
+            #         # Filter worksites that were actually selected by the user
+            #         selected_valid_worksites = [ws for ws in selected_worksites if ws in valid_worksites]
+            #         filtered_combinations.extend([(company_id, ws) for ws in selected_valid_worksites])
+                    
+            #     cursor.callproc("stp_delete_access_control",[type,ur])
+            #     r=''
+            #     for company_id, worksite in filtered_combinations:
+            #         cursor.callproc("stp_post_access_control",[type,ur,company_id,worksite,created_by])
+            #         for result in cursor.stored_results():
+            #                 r = list(result.fetchall())
+            #     type='urm'
+            #     if r[0][0] == "success":
+            #         messages.success(request, 'Data updated successfully !')
+                
+            # else : messages.error(request, 'Oops...! Something went wrong!')
                 created_by = request.session.get('user_id', '')
                 ur = request.POST.get('ur', '')
-                selected_company_ids = list(map(int, request.POST.getlist('company_id')))
-                selected_worksites  = request.POST.getlist('worksite')
+                selected_company_ids = list(map(int, request.POST.getlist('company_id', [])))
+                selected_worksites = request.POST.getlist('worksite', [])
                 company_worksite_map = {}
-                
+
+                # Validate input
                 if not selected_company_ids or not selected_worksites:
                     messages.error(request, 'Company or worksite data is missing!')
                     return redirect(f'/masters?entity={entity}&type=urm')
+
                 if type not in ['acu', 'acr'] or not ur:
                     messages.error(request, 'Invalid data received.')
                     return redirect(f'/masters?entity={entity}&type=urm')
-                
-                cursor.callproc("stp_get_company_worksite",[",".join(request.POST.getlist('company_id'))])
-                for result in cursor.stored_results():
-                    company_worksites  = list(result.fetchall())
-                    
-                for company_id, worksite_name in company_worksites:
-                    if company_id not in company_worksite_map:
-                        company_worksite_map[company_id] = []
-                    company_worksite_map[company_id].append(worksite_name)
-                
-                filtered_combinations = []
-                for company_id in selected_company_ids:
-                    valid_worksites = company_worksite_map.get(company_id, [])
-                    # Filter worksites that were actually selected by the user
-                    selected_valid_worksites = [ws for ws in selected_worksites if ws in valid_worksites]
-                    filtered_combinations.extend([(company_id, ws) for ws in selected_valid_worksites])
-                    
-                cursor.callproc("stp_delete_access_control",[type,ur])
-                r=''
-                for company_id, worksite in filtered_combinations:
-                    cursor.callproc("stp_post_access_control",[type,ur,company_id,worksite,created_by])
+
+                # Extract city names from "Company Name - City Name"
+                selected_worksite_cities = [ws.split(" - ")[-1].strip() for ws in selected_worksites]
+
+                # Fetch company-worksite mappings
+                try:
+                    cursor.callproc("stp_get_company_worksite", [",".join(map(str, selected_company_ids))])
                     for result in cursor.stored_results():
-                            r = list(result.fetchall())
-                type='urm'
-                if r[0][0] == "success":
-                    messages.success(request, 'Data updated successfully !')
-                
-            else : messages.error(request, 'Oops...! Something went wrong!')
+                        company_worksites = list(result.fetchall())
+
+                    # Build a map of company_id to worksite names
+                    for company_id, worksite_name in company_worksites:
+                        if company_id not in company_worksite_map:
+                            company_worksite_map[company_id] = []
+                        company_worksite_map[company_id].append(worksite_name)
+
+                    # Filter valid combinations of company_id and worksites
+                    filtered_combinations = []
+                    # Maintain a set to track already processed (company_id, site_id) combinations
+                    processed_combinations = set()
+
+                    for company_id in selected_company_ids:
+                        valid_worksites = company_worksite_map.get(company_id, [])
+                        # Filter worksites that match the extracted city names and exist in the site_master table
+                        selected_valid_worksites = [ws for ws in selected_worksite_cities if ws in valid_worksites]
+
+                        for worksite in selected_valid_worksites:
+                            # Use Django ORM to fetch site_id for each valid combination of company_id and worksite_name
+                            try:
+                                site = sit.objects.get(site_name=worksite, company_id=company_id)  # Filtering by both site_name and company_id
+                                site_id = site.site_id
+                                
+                                # Check if the combination is already processed
+                                if (company_id, site_id) not in processed_combinations:
+                                    filtered_combinations.append((company_id, site_id, worksite))
+                                    processed_combinations.add((company_id, site_id))  # Mark this combination as processed
+                            except sit.DoesNotExist:
+                                # Skip the combination if no site is found for the given company and worksite
+                                continue
+
+
+                    # Delete existing access control
+                    cursor.callproc("stp_delete_access_control", [type, ur])
+
+                    # Insert new access control data
+                    insertion_results = []
+                    for company_id, site_id, worksite in filtered_combinations:
+                        cursor.callproc("stp_post_access_control", [type, ur, company_id, worksite,site_id, created_by])
+                        for result in cursor.stored_results():
+                            insertion_results = list(result.fetchall())
+
+                    type = 'urm'
+                    if insertion_results and insertion_results[0][0] == "success":
+                        messages.success(request, 'Data updated successfully!')
+                    else:
+                        messages.error(request, 'Failed to update data. Please try again.')
+                                
+                except Exception as e:
+                    tb = traceback.extract_tb(e.__traceback__)
+                    fun = tb[0].name
+                    cursor.callproc("stp_error_log",[fun,str(e),user])  
+                    messages.error(request, 'Oops...! Something went wrong!')
                              
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -1310,6 +1386,7 @@ def get_access_control(request):
     user  = request.session.get('user_id', '')
     try:
         if request.method == "POST":
+            type1 = request.POST.get('type1','')
             type = request.POST.get('type','')
             ur = request.POST.get('ur', '')
             cursor.callproc("stp_get_access_control_val", [type,ur,'company'])
@@ -1318,14 +1395,23 @@ def get_access_control(request):
             cursor.callproc("stp_get_access_control_val", [type,ur,'worksite'])
             for result in cursor.stored_results():
                 worksite = list(result.fetchall())
-            if type == 'worksites':
+            if type1 == 'worksites':
                 company_id = request.POST.getlist('company_id','')
                 company_ids = ','.join(company_id)
-                cursor.callproc("stp_get_access_control_val", [type,company_ids,'worksites'])
+                cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
                 for result in cursor.stored_results():
                     worksite = list(result.fetchall())
                     
-            response = {'result': 'success', 'company': company, 'worksite': worksite}
+            response = {
+            'result': 'success',
+            'company': company,
+            'worksite': worksite,
+            }
+            if type1 == 'worksites':
+                response['worksite'] = worksite
+
+        # Return JSON response
+            return JsonResponse(response)
         else: response = {'result': 'fail', 'message': 'Invalid request method'}
 
     except Exception as e:
@@ -2696,6 +2782,54 @@ def get_worksites(request):
         Db.closeConnection()
     
     return JsonResponse({'companywise_site_names': companywise_site_names}, status=200)
+
+def update_remaining_companies(request):
+    # Assuming 'Db' is a database utility class. Make sure it's properly defined elsewhere.
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+
+    user = request.session.get('user_id', '')
+    if request.method == 'POST':
+        # Get remaining company IDs from the POST request
+        remaining_company_ids = request.POST.getlist('remaining_company_ids', [])
+
+        if not remaining_company_ids:
+            return JsonResponse({'status': 'error', 'message': 'No company IDs provided'}, status=400)
+
+        try:
+        # Convert remaining company IDs to integers if they are strings
+            company_ids = [int(company_id) for company_id in remaining_company_ids]
+            
+            # Query the UserRoleMap model to find roles for the provided company IDs
+            user_roles = user_role_map.objects.filter(company_id__in=company_ids).values('company_id')
+
+            # Prepare a set of unique company IDs from user_role_map (to avoid duplicates)
+            company_ids_from_user_roles = {user_role['company_id'] for user_role in user_roles}
+
+            # Query the Worksite model to fetch worksite names based on the filtered company IDs
+            worksites = user_role_map.objects.filter(company_id__in=company_ids_from_user_roles,user_id=user).values('company_id', 'worksite')
+
+            # Prepare the response data
+            worksite_names = {}
+            for worksite in worksites:
+                company_id = worksite['company_id']
+                worksite_name = worksite['worksite']
+                if company_id not in worksite_names:
+                    worksite_names[company_id] = []
+                worksite_names[company_id].append(worksite_name)
+
+        # Return the worksite names as a JSON response
+            return JsonResponse({'status': 'success', 'data': worksite_names})
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            fun = tb[0].name
+            cursor.callproc("stp_error_log", [fun, str(e), request.user.id])
+            print(f"error: {e}")
+            return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
+
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
 
 
