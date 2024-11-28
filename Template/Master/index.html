@@ -782,23 +782,43 @@
           },
           success: function (res) {
               if (res.result === 'success') {
-                  // Clear existing options
-                  worksiteSelect.clearOptions(); // Clear existing options
 
-                  // Add multiple options from the response
-                  res.worksite.forEach(function (item) {
-                      worksiteSelect.addOption({ 
-                          value: item[0], // Assuming item[0] is the value
-                          text: item[0]   // Assuming item[1] is the text
-                      });
+                var worksite = res.worksite;
+                var worksite_id = $('#worksite');
+                var worksite_inst = worksite_id[0].selectize;
+
+                if (worksite_inst) {
+                  worksite.forEach(function(item) {
+                    worksite_inst.addOption({ value: item[0], text: item[1] });
                   });
-                  
-                  // Automatically select all values (if required)
-                  var values = res.worksite.map(item => item[0]); // Extract values from response
-                  worksiteSelect.setValue(values, true); // Set selected values
-                  
-                  // Refresh options to reflect changes
-                  worksiteSelect.refreshOptions(false);
+
+                  var worksite_val = worksite.map(item => item[0]);
+                  worksite_inst.setValue(worksite_val, true); 
+                } else {
+                  worksite_id.selectize({valueField: 'value',labelField: 'text',
+                        options: worksite.map(function(item) {
+                            return { value: item[0], text: item[1] };
+                        }),
+                        items: worksite.map(item => item[0])  
+                    });
+                }
+                  // Clear existing options
+                //  worksiteSelect.clearOptions(); // Clear existing options
+//
+                //  // Add multiple options from the response
+                //  res.worksite.forEach(function (item) {
+                //      worksiteSelect.addOption({ 
+                //          value: item[0], // Assuming item[0] is the value
+                //          text: item[0]   // Assuming item[1] is the text
+                //      });
+                //  });
+                //  
+                //  // Automatically select all values (if required)
+                //  var values = res.worksite.map(item => item[0]); // Extract values from response
+                //  worksiteSelect.setValue(values, true); // Set selected values
+                //  
+                //  // Refresh options to reflect changes
+                //  worksiteSelect.refreshOptions(false);
                   
               } else {
                   console.error('Failed to fetch worksites:', res.message);
