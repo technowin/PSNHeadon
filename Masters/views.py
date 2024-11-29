@@ -1443,12 +1443,12 @@ def get_access_control2(request):
             cursor.callproc("stp_get_access_control_val", [type,ur,'worksite'])
             for result in cursor.stored_results():
                 worksite = list(result.fetchall())
-            if type1 == 'worksites':
-                company_id = request.POST.getlist('company_id','')
-                company_ids = ','.join(company_id)
-                cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
-                for result in cursor.stored_results():
-                    worksite = list(result.fetchall())
+            # if type1 == 'worksites':
+            #     company_id = request.POST.getlist('company_id','')
+            #     company_ids = ','.join(company_id)
+            #     cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
+            #     for result in cursor.stored_results():
+            #         worksite = list(result.fetchall())
                     
             response = {
             'result': 'success',
@@ -1491,12 +1491,12 @@ def get_access_control1(request):
             cursor.callproc("stp_get_access_control_val", [type,ur,'worksite'])
             for result in cursor.stored_results():
                 worksite = list(result.fetchall())
-            if type1 == 'worksites':
-                company_id = request.POST.getlist('company_id','')
-                company_ids = ','.join(company_id)
-                cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
-                for result in cursor.stored_results():
-                    worksite = list(result.fetchall())
+            # if type1 == 'worksites':
+            #     company_id = request.POST.getlist('company_id','')
+            #     company_ids = ','.join(company_id)
+            #     cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
+            #     for result in cursor.stored_results():
+            #         worksite = list(result.fetchall())
                     
             response = {
             'result': 'success',
