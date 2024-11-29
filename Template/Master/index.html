@@ -749,7 +749,7 @@
   
     });    {% endcomment %}
 
-    $(document).ready(function() {
+    {% comment %} $(document).ready(function() {
       var worksiteSelect = $('#worksite').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null, 
           })[0].selectize;
     
@@ -829,7 +829,66 @@
           },
       });
     });
-      })
+      }) {% endcomment %}
+
+      $(document).ready(function() {
+        var worksiteSelect = $('#worksite').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null, 
+            })[0].selectize;
+      
+        var company = $('#company_id').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null,
+            onInitialize: function () {var control = this;
+            control.clear();}});
+      
+      company.on('change', async function (value) {
+        debugger;
+          var worksiteSelect = $('#worksite')[0].selectize;
+          worksiteSelect.clearOptions(); // Clear existing options
+          worksiteSelect.setValue('');   // Reset selection
+      
+          var company_id = $('#company_id').val();
+          var ur = $('#ur').val();
+          var type = $('#type').val();// Get selected company ID(s)
+      
+          // AJAX request to fetch worksite values
+          $.ajax({
+            url: '/get_access_control',
+            type: 'POST',
+            datatype: "json",
+            traditional: true,
+            data: {
+                type1: 'worksites',
+                type:type,
+                ur:ur,
+                company_id: company_id,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            },
+            success: function (res) {
+                if (res.result === 'success') {
+                    // Clear existing options
+                    worksiteSelect.clearOptions();
+        
+                    // Add multiple options from the response
+                    res.worksite.forEach(function (item) {
+                        worksiteSelect.addOption({ value: item[0], text: item[0] });
+                    });
+        
+                    // Automatically select all values (if required)
+                    var values = res.worksite.map(item => item[0]); // Extract values from response
+                    worksiteSelect.setValue(values);
+        
+                    // Refresh options
+                    worksiteSelect.refreshOptions(false);
+                } else {
+                    console.error('Failed to fetch worksites:', res.message);
+                }
+            },
+            error: function (err) {
+                console.error('AJAX error:', err);
+            },
+        });
+      });
+        })
+       
      
   
   
