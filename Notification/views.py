@@ -66,40 +66,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 #         response_data = {'has_shift': False}
     
 #     return JsonResponse(response_data)
-import json
-import google.auth
-from google.oauth2 import service_account
-import google.auth.transport.requests
-import os
-
-import base64
-import json
-from google.oauth2 import service_account
-from google.auth.transport.requests import Request
-from rest_framework import status
-
-from Notification.models import notification_log
-from datetime import datetime, timedelta
-
-# Create your views here.
-# def check_shift_for_next_day(request, employee_id, site_id):
-#     tomorrow = now().date() + timedelta(days=1)
-    
-#     try:
-#         site = site_master.objects.get(site_id=site_id)
-        
-#         shift = sc_roster.objects.get(employee_id=employee_id, site=site, shift_date=tomorrow)
-        
-#         response_data = {
-#             'has_shift': True,
-#             'notification_time': site.notification_time.strftime('%H:%M'),
-#             'shift_from': shift.shift_from.strftime('%H:%M'),
-#             'shift_to': shift.shift_to.strftime('%H:%M'),
-#         }
-#     except sc_roster.DoesNotExist:
-#         response_data = {'has_shift': False}
-    
-#     return JsonResponse(response_data)
 
 class check_and_notify_user(APIView):
     permission_classes = [IsAuthenticated]
@@ -126,508 +92,7 @@ class check_and_notify_user(APIView):
         else:
             return Response({"message": "No shifts found for the next day."}, status=200)
 
-# class check_and_notify_all_users(APIView):
-    
-#     def get(self, request):
-#         users = CustomUser.objects.all()
-#         current_time = timezone.now()
-#         errors = []
-#         success = []
-        
-#         for user in users:
 
-#             slot_ids = SlotDetails.objects.filter(
-#                 Q(designation_id__in=designation_ids) & Q(site_id__in=site_ids)
-#             ).values_list('slot_id', flat=True)
-
-#             if user.phone != '8291104778':
-#                 continue
-#             # Step 1: Fetch employee based on user's phone number
-#             employee = sc_employee_master.objects.filter(mobile_no=user.phone).first()
-#             if not employee:
-#                 continue
-            
-#             # Step 2: Get site and designation IDs for the employee
-#             site_ids = employee_site.objects.filter(employee_id=employee.employee_id).values_list('site_id', flat=True)
-#             designation_ids = employee_designation.objects.filter(employee_id=employee.employee_id).values_list('designation_id', flat=True)
-            
-#             # Step 3: Get slot IDs that match both designation and site IDs
-#             slot_ids = SlotDetails.objects.filter(
-#                 Q(designation_id__in=designation_ids) & Q(site_id__in=site_ids)
-#             ).values_list('slot_id', flat=True)
-            
-#             # Step 4: Fetch notification settings for each slot ID from SettingMaster
-#             notification_settings = SettingMaster.objects.filter(slot_id__in=slot_ids).values(
-#                 'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
-#             )
-
-#             # Process each notification setting for the slots
-#             for setting in notification_settings:
-#                 slot_id = setting['slot_id']
-#                 noti_start_time = setting['noti_start_time']
-#                 noti_end_time = setting['noti_end_time']
-#                 interval = setting['interval']
-#                 no_of_notification = int(setting['no_of_notification'])
-                
-#                 current_notification_time = noti_start_time
-#                 notifications_sent = 0
-
-#                 # Send notifications at specified intervals
-#                 while notifications_sent < no_of_notification and current_notification_time <= noti_end_time:
-#                     try:
-#                         # Serialize shift data for notification
-#                         slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-#                         shift_data = SlotDetailsSerializer(slot_instance).data
-
-#                         # Log the notification in user_notification_log
-#                         notification_entry = user_notification_log.objects.create(
-#                             slot_id=slot_instance,
-#                             noti_send_time=timezone.now(),
-#                             notification_message="Notification for shift confirmation",
-#                             type_id=11,  # Replace with actual type_id if needed
-#                             created_by=user,
-#                             employee_id = employee.employee_id,
-#                             emp_id=get_object_or_404(sc_employee_master, employee_id=employee.employee_id)
-#                         )
-
-#                         # Send push notification and handle response
-#                         result = send_push_notification(user, shift_data, notification_entry.id)
-#                         if result != "success":
-#                             # Handle errors in sending notification
-#                             response_message = result.split("--")
-#                             if len(response_message) == 2:
-#                                 error_detail = response_message[1]
-#                                 if error_detail == "Requested entity was not found.":
-#                                     notification_entry.notification_message = "App Is Not Installed"
-#                                 elif error_detail == "The registration token is not a valid FCM registration token":
-#                                     notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."
-#                                 else:
-#                                     notification_entry.notification_message = result
-#                             else:
-#                                 notification_entry.notification_message = result
-                            
-#                             notification_entry.save()
-#                             errors.append(f"Error sending notification to {user.full_name} - {result}")
-#                         else:
-#                             notification_entry.noti_receive_time = timezone.now()
-#                             notification_entry.save()
-
-#                         interval_minutes = int(interval) 
-
-#                         notifications_sent += 1
-#                         current_notification_time += timedelta(minutes=interval_minutes)
-
-#                         # Break if the next notification time exceeds noti_end_time
-#                         if current_notification_time > noti_end_time:
-#                             break
-
-#                     except Exception as e:
-#                         tb = traceback.format_exc()
-#                         print(f"Error: {e}")
-#                         errors.append(tb)
-
-#         # Return response with success and error messages
-#         if errors:
-#             return Response({'error': errors, 'success': success}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'success': success}, status=status.HTTP_200_OK)
-
-# class check_and_notify_all_users(APIView):
-    
-#     def get(self, request):
-#         current_time = timezone.now()
-#         errors = []
-#         success = []
-        
-#         slot_details = SlotDetails.objects.all().values('site_id', 'designation_id')
-#         site_ids = [slot['site_id'] for slot in slot_details]
-#         designation_ids = [slot['designation_id'] for slot in slot_details]
-
-#         # Step 2: Get employee IDs based on site and designation IDs
-#         employee_ids = set(
-#             employee_site.objects.filter(site_id__in=site_ids).values_list('employee_id', flat=True)
-#         ).intersection(
-#             employee_designation.objects.filter(designation_id__in=designation_ids).values_list('employee_id', flat=True)
-#         )
-
-#         # Step 3: Fetch employees based on employee IDs to get phone numbers
-#         employees = sc_employee_master.objects.filter(employee_id__in=employee_ids)
-#         employee_phone_map = {emp.employee_id: emp.mobile_no for emp in employees}
-
-#         # Step 4: Iterate over employees and send notifications
-#         for employee_id, phone_number in employee_phone_map.items():
-#             # Retrieve CustomUser by phone number
-#             user = CustomUser.objects.filter(phone=phone_number).first()
-#             if not user:
-#                 continue
-
-#             if user.phone != '8291104778':
-#                 continue
-
-#             # Fetch slot IDs for the user's designation and site
-#             relevant_slot_ids = SlotDetails.objects.filter(
-#                 designation_id__in=designation_ids, site_id__in=site_ids,shift_date__gte=current_time
-#             ).values_list('slot_id', flat=True)
-
-#             # Step 5: Fetch notification settings for each relevant slot ID
-#             notification_settings = SettingMaster.objects.filter(slot_id__in=relevant_slot_ids).values(
-#                 'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
-#             )
-
-#             for setting in notification_settings:
-#                 slot_id = setting['slot_id']
-#                 noti_start_time = setting['noti_start_time']
-#                 noti_end_time = setting['noti_end_time']
-#                 interval_hours = int(setting['interval'])  # Interval in hours
-#                 no_of_notification = int(setting['no_of_notification'])
-
-#                 current_notification_time = noti_start_time
-#                 notifications_sent = 0
-
-#                 # Send the first notification immediately
-#                 while notifications_sent < no_of_notification and current_notification_time <= noti_end_time:
-#                     try:
-#                         # Serialize shift data for notification
-#                         slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-#                         shift_data = SlotDetailsSerializer(slot_instance).data
-
-#                         # Log the notification in user_notification_log
-#                         notification_entry = user_notification_log.objects.create(
-#                             slot_id=slot_instance,
-#                             noti_send_time=timezone.now(),
-#                             notification_message="Notification for shift confirmation",
-#                             type_id=11,  # Replace with actual type_id if needed
-#                             created_by=user,
-#                             employee_id=employee_id,
-#                             emp_id=get_object_or_404(sc_employee_master, employee_id=employee_id)
-#                         )
-
-#                         # Send push notification
-#                         result = send_push_notification(user, shift_data, notification_entry.id)
-#                         if result != "success":
-#                             # Handle errors in sending notification
-#                             response_message = result.split("--")
-#                             if len(response_message) == 2:
-#                                 error_detail = response_message[1]
-#                                 if error_detail == "Requested entity was not found.":
-#                                     notification_entry.notification_message = "App Is Not Installed"
-#                                 elif error_detail == "The registration token is not a valid FCM registration token":
-#                                     notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."
-#                                 else:
-#                                     notification_entry.notification_message = result
-#                             else:
-#                                 notification_entry.notification_message = result
-
-#                             notification_entry.save()
-#                             errors.append(f"Error sending notification to {user.full_name} - {result}")
-#                         else:
-#                             notification_entry.noti_receive_time = timezone.now()
-#                             notification_entry.save()
-
-#                         # Increment notification count and next notification time by interval hours
-#                         notifications_sent += 1
-#                         current_notification_time += timedelta(hours=interval_hours)
-
-#                         # Break if the next notification time exceeds noti_end_time
-#                         if current_notification_time > noti_end_time:
-#                             break
-
-#                     except Exception as e:
-#                         tb = traceback.format_exc()
-#                         print(f"Error: {e}")
-# #                         errors.append(tb)
-
-                
-
-#         # Return response with success and error messages
-#         if errors:
-#             return Response({'error': errors, 'success': success}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'success': success}, status=status.HTTP_200_OK)
-
-# class check_and_notify_all_users(APIView):
-    
-
-#     def get(self, request):
-#         current_time = timezone.now()
-#         errors = []
-#         success = []
-        
-#         slot_details = SlotDetails.objects.all().values('site_id', 'designation_id')
-#         site_ids = [slot['site_id'] for slot in slot_details]
-#         designation_ids = [slot['designation_id'] for slot in slot_details]
-
-#         # Step 2: Get employee IDs based on site and designation IDs
-#         employee_ids = set(
-#             employee_site.objects.filter(site_id__in=site_ids).values_list('employee_id', flat=True)
-#         ).intersection(
-#             employee_designation.objects.filter(designation_id__in=designation_ids).values_list('employee_id', flat=True)
-#         )
-
-#         # Step 3: Fetch employees based on employee IDs to get phone numbers
-#         employees = sc_employee_master.objects.filter(employee_id__in=employee_ids)
-#         employee_phone_map = {emp.employee_id: emp.mobile_no for emp in employees}
-
-#         # Step 4: Iterate over employees and send notifications
-#         for employee_id, phone_number in employee_phone_map.items():
-#             # Retrieve CustomUser by phone number
-#             user = CustomUser.objects.filter(phone=phone_number).first()
-#             if not user:
-#                 continue
-
-#             if user.phone != '8291104778':
-#                 continue
-
-#             # Fetch slot IDs for the user's designation and site
-#             relevant_slot_ids = SlotDetails.objects.filter(
-#                 designation_id__in=designation_ids, site_id__in=site_ids, shift_date__gte=current_time
-#             ).values_list('slot_id', flat=True)
-
-#             # Step 5: Fetch notification settings for each relevant slot ID
-#             notification_settings = SettingMaster.objects.filter(slot_id__in=relevant_slot_ids).values(
-#                 'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
-#             )
-
-#             for setting in notification_settings:
-#                 slot_id = setting['slot_id']
-#                 noti_start_time = setting['noti_start_time']
-#                 noti_end_time = setting['noti_end_time']
-#                 interval_hours = int(setting['interval'])  # Interval in hours
-#                 no_of_notification = int(setting['no_of_notification'])
-
-#                 # Initial notification time at 00:00 AM on noti_start_time
-#                 slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-
-#                 try:
-#                     if isinstance(slot_instance.start_time, str):
-#                         start_time = datetime.strptime(slot_instance.start_time, "%H:%M").time()
-                  
-#                     current_notification_time = timezone.make_aware(
-#                         datetime.combine(noti_start_time, start_time)  # Combine noti_start_time (date) with start_time (time)
-#                     )
-#                 except Exception as e:
-#                     # Log the exception for debugging purposes
-#                     print(f"An error occurred while setting current_notification_time: {e}")
-#                     # Optionally, re-raise the exception if you want it to propagate further
-#                     raise
-#                 # Set end time to 4 hours before the noti_end_time
-#                 try:
-#                 # Ensure end_time is a datetime.time object (convert if it's a string)
-#                     if isinstance(slot_instance.end_time, str):
-#                         end_time = datetime.strptime(slot_instance.end_time, "%H:%M").time()
-#                     else:
-#                         end_time = slot_instance.end_time
-
-#                     # Combine the date part of noti_end_time with the end_time (time) to set the last_notification_time
-#                     last_notification_time = timezone.make_aware(
-#                         datetime.combine(noti_end_time, end_time)  # Combine noti_end_time (date) with end_time (time)
-#                     ) - timedelta(hours=4)
-
-#                     # Check for the last sent notification time for this slot
-#                     last_sent_notification = user_notification_log.objects.filter(
-#                         slot_id=slot_id,
-#                         employee_id=employee_id
-#                     ).order_by('-noti_send_time').first()
-
-#                     # Logic to handle notification sending...
-#                     if last_sent_notification:
-#                         # Handle the logic for the next notification based on last sent notification
-#                         pass
-
-#                 except Exception as e:
-#                     # Log the exception for debugging purposes
-#                     print(f"An error occurred while calculating last_notification_time: {e}")
-#                     # Optionally, re-raise the exception if you want it to propagate further
-#                     raise
-
-
-#                 # If a previous notification exists, calculate the next allowed notification time
-#                 if last_sent_notification:
-#                     current_notification_time = last_sent_notification.noti_send_time + timedelta(hours=interval_hours)
-                
-#                 # Check if we can send a new notification
-#                 if current_notification_time <= last_notification_time and no_of_notification > 0:
-#                     try:
-#                         # Serialize shift data for notification
-#                         slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-#                         shift_data = SlotDetailsSerializer(slot_instance).data
-
-#                         # Log the notification in user_notification_log
-#                         notification_entry = user_notification_log.objects.create(
-#                             slot_id=slot_instance,
-#                             noti_send_time=timezone.now(),
-#                             notification_message="Notification for shift confirmation",
-#                             type_id=11,  # Replace with actual type_id if needed
-#                             created_by=user,
-#                             employee_id=employee_id,
-#                             emp_id=get_object_or_404(sc_employee_master, employee_id=employee_id)
-#                         )
-
-#                         # Send push notification
-#                         result = send_push_notification(user, shift_data, notification_entry.id)
-#                         if result != "success":
-#                             # Handle errors in sending notification
-#                             response_message = result.split("--")
-#                             if len(response_message) == 2:
-#                                 error_detail = response_message[1]
-#                                 if error_detail == "Requested entity was not found.":
-#                                     notification_entry.notification_message = "App Is Not Installed"
-#                                 elif error_detail == "The registration token is not a valid FCM registration token":
-#                                     notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."
-#                                 else:
-#                                     notification_entry.notification_message = result
-#                             else:
-#                                 notification_entry.notification_message = result
-
-#                             notification_entry.save()
-#                             errors.append(f"Error sending notification to {user.full_name} - {result}")
-#                         else:
-#                             notification_entry.noti_receive_time = timezone.now()
-#                             notification_entry.save()
-#                             success.append(f"Notification sent to {user.full_name}.")
-
-#                     except Exception as e:
-#                         tb = traceback.format_exc()
-#                         print(f"Error: {e}")
-#                         errors.append(tb)
-
-#         # Return response with success and error messages
-#         if errors:
-#             return Response({'error': errors, 'success': success}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'success': success}, status=status.HTTP_200_OK)
-
-# class check_and_notify_all_users(APIView):
-#     def get(self, request):
-#         current_time = timezone.now()
-#         errors = []
-#         success = []
-
-#         # Step 1: Fetch slot details
-#         slot_details = SlotDetails.objects.all().values('site_id', 'designation_id')
-#         site_ids = [slot['site_id'] for slot in slot_details]
-#         designation_ids = [slot['designation_id'] for slot in slot_details]
-
-#         # Step 2: Get employee IDs based on site and designation IDs
-#         employee_ids = set(
-#             employee_site.objects.filter(site_id__in=site_ids).values_list('employee_id', flat=True)
-#         ).intersection(
-#             employee_designation.objects.filter(designation_id__in=designation_ids).values_list('employee_id', flat=True)
-#         )
-
-#         # Step 3: Fetch employees based on employee IDs to get phone numbers
-#         employees = sc_employee_master.objects.filter(employee_id__in=employee_ids)
-#         employee_phone_map = {emp.employee_id: emp.mobile_no for emp in employees}
-
-#         # Step 4: Iterate over employees and send notifications
-#         for employee_id, phone_number in employee_phone_map.items():
-#             # Retrieve CustomUser by phone number
-#             user = CustomUser.objects.filter(phone=phone_number).first()
-#             if not user:
-#                 continue
-
-#             # Fetch slot IDs for the user's designation and site
-#             relevant_slot_ids = SlotDetails.objects.filter(
-#                 designation_id__in=designation_ids, site_id__in=site_ids, shift_date__gte=current_time
-#             ).values_list('slot_id', flat=True)
-
-#             # Step 5: Fetch notification settings for each relevant slot ID
-#             notification_settings = SettingMaster.objects.filter(slot_id__in=relevant_slot_ids).values(
-#                 'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
-#             )
-
-#             for setting in notification_settings:
-#                 slot_id = setting['slot_id']
-#                 noti_start_time = setting['noti_start_time']
-
-#                 try:
-#                     slot_noti = slot_notification_log.objects.filter(slot_id=slot_id, type_id=11).exists()
-#                 except Exception as e:
-#                         all_notifications_sent = False
-#                         tb = traceback.format_exc()
-#                         print(f"Error: {e}")
-#                         errors.append(tb) 
-
-#                 if not slot_noti:
-#                     try:
-#                         # Set notification time
-#                         slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-#                         if isinstance(slot_instance.start_time, str):
-#                             start_time = datetime.strptime(slot_instance.start_time, "%H:%M").time()
-
-#                         current_notification_time = timezone.make_aware(
-#                             datetime.combine(noti_start_time, start_time)
-#                         )
-
-#                     except Exception as e:
-#                         print(f"An error occurred while setting current_notification_time: {e}")
-#                         raise
-
-#                     # all_notifications_sent = True  # Flag to track if all notifications are sent successfully
-
-#                     # Proceed with sending notifications
-#                     try:
-#                         shift_data = SlotDetailsSerializer(slot_instance).data
-
-#                         # Log the notification in user_notification_log
-#                         notification_entry = user_notification_log.objects.create(
-#                             slot_id=slot_instance,
-#                             noti_send_time=timezone.now(),
-#                             notification_message="Notification for shift confirmation",
-#                             type_id=11,
-#                             created_by=user,
-#                             employee_id=employee_id,
-#                             emp_id=get_object_or_404(sc_employee_master, employee_id=employee_id)
-#                         )
-
-#                         # Send push notification
-#                         result = send_push_notification(user, shift_data, notification_entry.id)
-#                         if result != "success":
-#                             all_notifications_sent = False  # Mark as unsuccessful if any notification fails
-#                             response_message = result.split("--")
-#                             if len(response_message) == 2:
-#                                 error_detail = response_message[1]
-#                                 if error_detail == "Requested entity was not found.":
-#                                     notification_entry.notification_message = "App Is Not Installed"
-#                                 elif error_detail == "The registration token is not a valid FCM registration token":
-#                                     notification_entry.notification_message = "User Not Correctly Registered to the App. Please Login Again."
-#                                 else:
-#                                     notification_entry.notification_message = result
-#                             else:
-#                                 notification_entry.notification_message = result
-
-#                             notification_entry.save()
-#                             errors.append(f"Error sending notification to {user.full_name} - {result}")
-#                         else:
-#                             notification_entry.noti_receive_time = timezone.now()
-#                             notification_entry.save()
-#                             success.append(f"Notification sent to {user.full_name}.")
-
-#                     except Exception as e:
-#                         all_notifications_sent = False
-#                         tb = traceback.format_exc()
-#                         print(f"Error: {e}")
-#                         errors.append(tb)
-
-#                 # Insert into slot_notification_log if all notifications are sent successfully
-#                 # if all_notifications_sent:
-#                     try:
-#                         slot_notification_log.objects.create(
-#                             noti_sent_time= timezone.now(),
-#                             slot_id=slot_instance,
-#                             type_id=11
-#                         )
-#                         success.append(f"Notification log created for slot_id {slot_id}.")
-#                     except Exception as e:
-#                         tb = traceback.format_exc()
-#                         print(f"Error creating notification log: {e}")
-#                         errors.append(tb)
-
-#         # Return response with success and error messages
-#         if errors:
-#             return Response({'error': errors, 'success': success}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'success': success}, status=status.HTTP_200_OK)
 
 class check_and_notify_all_users(APIView):
     def get(self, request):
@@ -653,50 +118,45 @@ class check_and_notify_all_users(APIView):
 
         # Step 4: Iterate over employees and send notifications
         for employee_id, phone_number in employee_phone_map.items():
-            # Retrieve CustomUser by phone number
-            user = CustomUser.objects.filter(phone=phone_number).first()
-            if not user:
-                continue
+            try:
+                # Retrieve CustomUser by phone number
+                user = CustomUser.objects.filter(phone=phone_number).first()
+                if not user:
+                    continue
 
-            # Fetch slot IDs for the user's designation and site
-            relevant_slot_ids = SlotDetails.objects.filter(
-                designation_id__in=designation_ids, site_id__in=site_ids, shift_date__gte=current_time
-            ).values_list('slot_id', flat=True)
+                # Fetch slot IDs for the user's designation and site
+                relevant_slot_ids = SlotDetails.objects.filter(
+                    designation_id__in=designation_ids, site_id__in=site_ids, shift_date__gte=current_time
+                ).values_list('slot_id', flat=True)
 
-            # Step 5: Fetch notification settings for each relevant slot ID
-            notification_settings = SettingMaster.objects.filter(slot_id__in=relevant_slot_ids).values(
-                'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
-            )
+                # Step 5: Fetch notification settings for each relevant slot ID
+                notification_settings = SettingMaster.objects.filter(slot_id__in=relevant_slot_ids).values(
+                    'slot_id', 'noti_start_time', 'noti_end_time', 'interval', 'no_of_notification'
+                )
 
-            for setting in notification_settings:
-                slot_id = setting['slot_id']
-                noti_start_time = setting['noti_start_time']
+                for setting in notification_settings:
+                    slot_id = setting['slot_id']
+                    noti_start_time = setting['noti_start_time']
 
-                # Check if a record already exists in slot_notification_log
-                if slot_notification_log.objects.filter(slot_id=slot_id, type_id=11).exists():
-                    continue  # Skip sending notification if record exists
+                    # Check if a record already exists in slot_notification_log
+                    if slot_notification_log.objects.filter(slot_id=slot_id, type_id=11).exists():
+                        continue  # Skip sending notification if record exists
 
-                try:
                     # Set notification time
                     slot_instance = get_object_or_404(SlotDetails, slot_id=slot_id)
-                    if isinstance(slot_instance.start_time, str):
-                        start_time = datetime.strptime(slot_instance.start_time, "%H:%M").time()
-
+                    start_time = (
+                        datetime.strptime(slot_instance.start_time, "%H:%M").time()
+                        if isinstance(slot_instance.start_time, str)
+                        else slot_instance.start_time
+                    )
                     current_notification_time = timezone.make_aware(
                         datetime.combine(noti_start_time, start_time)
                     )
-                    print(current_notification_time)
 
-                except Exception as e:
-                    print(f"An error occurred while setting current_notification_time: {e}")
-                    continue  # Log the error and move to the next setting
-
-                
-                if current_time >= current_notification_time and current_time < (current_notification_time + timedelta(seconds=30)):
-                    # If the current time is within a 30-second window around the notification time, send the notification
-                    try:
+                    current_datetime = timezone.now()
+                    if current_datetime >= current_notification_time:
+                        # Send notification
                         shift_data = SlotDetailsSerializer(slot_instance).data
-                        # Log the notification attempt in user_notification_log
                         notification_entry = user_notification_log.objects.create(
                             slot_id=slot_instance,
                             noti_send_time=timezone.now(),
@@ -706,7 +166,6 @@ class check_and_notify_all_users(APIView):
                             employee_id=employee_id,
                             emp_id=get_object_or_404(sc_employee_master, employee_id=employee_id)
                         )
-                        # Send push notification
                         result = send_push_notification(user, shift_data, notification_entry.id)
                         if result != "success":
                             response_message = result.split("--")
@@ -726,15 +185,14 @@ class check_and_notify_all_users(APIView):
                             notification_entry.noti_receive_time = timezone.now()
                             notification_entry.save()
                             success.append(f"Notification sent to {user.full_name}.")
-                    
-                    except Exception as e:
-                        # Log the error but continue the loop
-                        tb = traceback.format_exc()
-                        print(f"Error: {e}")
-                        errors.append(tb)
-            # End of inner loop (slot settings)
 
-        # Insert into slot_notification_log once all notifications are attempted for this slot_id
+            except Exception as e:
+                # Log the error but continue to the next employee
+                tb = traceback.format_exc()
+                print(f"Error processing employee {employee_id}: {e}")
+                errors.append(f"Employee ID {employee_id}: {tb}")
+
+        # Insert into slot_notification_log for all relevant slot IDs
         for slot_id in relevant_slot_ids:
             try:
                 if not slot_notification_log.objects.filter(slot_id=slot_id, type_id=11).exists():
@@ -750,10 +208,11 @@ class check_and_notify_all_users(APIView):
                 errors.append(tb)
 
         # Return response with success and error messages
+        response_data = {'success': success}
         if errors:
-            return Response({'error': errors, 'success': success}, status=status.HTTP_200_OK)
-        else:
-            return Response({'success': success}, status=status.HTTP_200_OK)
+            response_data['errors'] = errors
+        return Response(response_data, status=status.HTTP_200_OK)
+
 
 class send_reminder_notifications(APIView):
     def get(self, request):
