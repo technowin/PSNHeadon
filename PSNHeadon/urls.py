@@ -48,6 +48,7 @@ urlpatterns = [
     path('DefaultRecords', DefaultRecords.as_view(), name='DefaultRecords'),
     path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
     path('StateName', StateName.as_view(), name='StateName'),
+    path('send_reminder_notifications', send_reminder_notifications.as_view(), name='send_reminder_notifications'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),
