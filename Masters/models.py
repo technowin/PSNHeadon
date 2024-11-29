@@ -329,3 +329,4 @@ class HistUserSlotDetails(models.Model):
         db_table = 'hist_user_slot_details'
     def __str__(self):
         return self.name
+    

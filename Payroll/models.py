@@ -206,7 +206,8 @@ class income_tax_deduction(models.Model):
     
 class StatusMaster(models.Model):
     status_id = models.AutoField(primary_key=True)
-    status_name = models.CharField(max_length=100)
+    status_name = models.TextField(max_length=100, null=True, blank=True)
+    status_value = models.TextField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'status_master'
