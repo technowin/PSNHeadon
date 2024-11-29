@@ -257,6 +257,7 @@ class send_reminder_notifications(APIView):
                 if last_notification_time:
                     try:
                         next_notification_time = last_notification_time + timedelta(hours=interval)
+                        print(current_time)
                         print(f"Next notification time: {next_notification_time}")
                     except Exception as e:
                         # Log the error but continue the loop

@@ -1423,6 +1423,103 @@ def get_access_control(request):
         m.close()
         Db.closeConnection()
         return JsonResponse(response)
+    
+def get_access_control2(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    company = []
+    worksite = []
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+        if request.method == "POST":
+            type1 = request.POST.get('type1','')
+            type = request.POST.get('type','')
+            ur = request.POST.get('ur', '')
+            cursor.callproc("stp_get_access_control_val", [type,ur,'company'])
+            for result in cursor.stored_results():
+                company = list(result.fetchall())
+            cursor.callproc("stp_get_access_control_val", [type,ur,'worksite'])
+            for result in cursor.stored_results():
+                worksite = list(result.fetchall())
+            # if type1 == 'worksites':
+            #     company_id = request.POST.getlist('company_id','')
+            #     company_ids = ','.join(company_id)
+            #     cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
+            #     for result in cursor.stored_results():
+            #         worksite = list(result.fetchall())
+                    
+            response = {
+            'result': 'success',
+            'company': company,
+            'worksite': worksite,
+            }
+
+        # Return JSON response
+            return JsonResponse(response)
+        else: response = {'result': 'fail', 'message': 'Invalid request method'}
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), user])
+        print(f"error: {e}")
+        response = {'result': 'fail', 'message': 'Something went wrong!'}
+
+    finally:
+        cursor.close()
+        m.close()
+        Db.closeConnection()
+        return JsonResponse(response)
+    
+def get_access_control1(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    company = []
+    worksite = []
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+        if request.method == "POST":
+            type1 = request.POST.get('type1','')
+            type = request.POST.get('type','')
+            ur = request.POST.get('ur', '')
+            cursor.callproc("stp_get_access_control_val", [type,ur,'company'])
+            for result in cursor.stored_results():
+                company = list(result.fetchall())
+            cursor.callproc("stp_get_access_control_val", [type,ur,'worksite'])
+            for result in cursor.stored_results():
+                worksite = list(result.fetchall())
+            # if type1 == 'worksites':
+            #     company_id = request.POST.getlist('company_id','')
+            #     company_ids = ','.join(company_id)
+            #     cursor.callproc("stp_get_access_control_val", [type1,company_ids,'worksites'])
+            #     for result in cursor.stored_results():
+            #         worksite = list(result.fetchall())
+                    
+            response = {
+            'result': 'success',
+            'company': company,
+            'worksite': worksite,
+            }
+
+        # Return JSON response
+            return JsonResponse(response)
+        else: response = {'result': 'fail', 'message': 'Invalid request method'}
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), user])
+        print(f"error: {e}")
+        response = {'result': 'fail', 'message': 'Something went wrong!'}
+
+    finally:
+        cursor.close()
+        m.close()
+        Db.closeConnection()
+        return JsonResponse(response)
+    
 class RosterDataAPIView(APIView):
     # Ensure the user is authenticated using JWT
     permission_classes = [IsAuthenticated]

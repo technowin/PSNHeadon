@@ -831,7 +831,7 @@
     });
       }) {% endcomment %}
 
-      $(document).ready(function() {
+      {% comment %} $(document).ready(function() {
         var worksiteSelect = $('#worksite').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null, 
             })[0].selectize;
       
@@ -888,9 +888,257 @@
         });
       });
         })
-       
-     
-  
+        {% endcomment %}
+
+        {% comment %} $(document).ready(function () {
+          var worksiteSelect = $('#worksite').selectize({
+              plugins: ['remove_button'],
+              delimiter: ',',
+              persist: false,
+              create: false,
+              selectOnTab: false,
+              maxItems: null,
+          })[0].selectize;
+      
+          var company = $('#company_id').selectize({
+              plugins: ['remove_button'],
+              delimiter: ',',
+              persist: false,
+              create: false,
+              selectOnTab: false,
+              maxItems: null,
+              onInitialize: function () {
+                  var control = this;
+                  control.clear();
+              }
+          });
+      
+          // Change event for company selection
+          company.on('change', async function (value) {
+              debugger;
+              var selectedCompanies = company[0].selectize.items; // Get current selected company IDs
+              var previousCompanies = company[0].selectize.lastValidValue || []; // Get the last valid value
+      
+              // Determine added or removed companies
+              var addedCompanies = selectedCompanies.filter(x => !previousCompanies.includes(x));
+              var removedCompanies = previousCompanies.filter(x => !selectedCompanies.includes(x));
+      
+              // Handle additions (send to a different URL)
+              if (addedCompanies.length > 0) {
+                  console.log('Added Companies:', addedCompanies);
+      
+                  // Handle addition logic
+                  var company_id = $('#company_id').val();
+                  var ur = $('#ur').val();
+                  var type = $('#type').val();
+      
+                  // AJAX request to add companies (to a different URL)
+                  $.ajax({
+                      url: '/get_access_control1', // URL for adding companies
+                      type: 'POST',
+                      datatype: "json",
+                      traditional: true,
+                      data: {
+                          type1: 'worksites',
+                          type: type,
+                          ur: ur,
+                          company_id: addedCompanies, // Pass only added companies
+                          csrfmiddlewaretoken: '{{ csrf_token }}',
+                      },
+                      success: function (response) {
+                          if (response.result === 'success') {
+                            debugger;
+                              // Add options to the worksite dropdown
+                              var worksite = response.worksite;
+                              var worksite_id = $('#worksite');
+                              var worksite_inst = worksite_id[0].selectize;
+                              if (worksite_inst) {
+                                worksite.forEach(function(item) {
+                                  worksite_inst.addOption({ value: item[0], text: item[1] });
+                                });
+            
+                                var worksite_val = worksite.map(item => item[0]);
+                                worksite_inst.setValue(worksite_val, true); 
+                              } else {
+                                worksite_id.selectize({valueField: 'value',labelField: 'text',
+                                      options: worksite.map(function(item) {
+                                          return { value: item[0], text: item[1] };
+                                      }),
+                                      items: worksite.map(item => item[0])  
+                                  });
+                              }
+                          } else {
+                              console.error('Failed to fetch worksites:', res.message);
+                          }
+                      },
+                      error: function (err) {
+                          console.error('AJAX error:', err);
+                      },
+                  });
+              }
+      
+              // Handle removals (send to the original URL)
+              if (removedCompanies.length > 0) {
+                  var company_id = $('#company_id').val();
+                  var ur = $('#ur').val();
+                  var type = $('#type').val();
+                  console.log('Removed Companies:', removedCompanies);
+      
+                  // Handle removal logic
+                  removedCompanies.forEach(function (removedCompany) {
+                      // Optionally, clear related worksites from the dropdown
+                      worksiteSelect.removeOption(removedCompany); 
+                  });
+      
+                  // AJAX request to remove companies (to the original URL)
+                  $.ajax({
+                      url: '/get_access_control2', // URL for removing companies
+                      type: 'POST',
+                      datatype: "json",
+                      traditional: true,
+                      data: {
+                          ur:ur,
+                          type1:'worksites',
+                          tyep:type,
+                          company_id: removedCompanies, // Pass only removed companies
+                          csrfmiddlewaretoken: '{{ csrf_token }}',
+                      },
+                      success: function (response) {
+                        if (response.result === 'success') {
+                          debugger;
+                            // Add options to the worksite dropdown
+                            var worksite = response.worksite;
+                            var worksite_id = $('#worksite');
+                            var worksite_inst = worksite_id[0].selectize;
+                            if (worksite_inst) {
+                              worksite.forEach(function(item) {
+                                worksite_inst.addOption({ value: item[0], text: item[1] });
+                              });
+          
+                              var worksite_val = worksite.map(item => item[0]);
+                              worksite_inst.setValue(worksite_val, true); 
+                            } else {
+                              worksite_id.selectize({valueField: 'value',labelField: 'text',
+                                    options: worksite.map(function(item) {
+                                        return { value: item[0], text: item[1] };
+                                    }),
+                                    items: worksite.map(item => item[0])  
+                                });
+                            }
+                        } else {
+                            console.error('Failed to fetch worksites:', res.message);
+                        }
+                    },
+                    error: function (err) {
+                        console.error('AJAX error:', err);
+                    },
+                  });
+              }
+      
+              // Update the last valid value
+              company[0].selectize.lastValidValue = [...selectedCompanies];
+          });
+      }); {% endcomment %}
+
+      $(document).ready(function () {
+        var worksiteSelect = $('#worksite').selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false,
+            selectOnTab: false,
+            maxItems: null,
+        })[0].selectize;
+    
+        var company = $('#company_id').selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false,
+            selectOnTab: false,
+            maxItems: null,
+            onInitialize: function () {
+                var control = this;
+                control.clear();
+            }
+        });
+    
+        // Function to send AJAX for adding or removing companies
+        function sendCompanyChanges(company_ids, actionType) {
+          debugger;
+            $.ajax({
+                url: actionType === 'add' ? '/get_access_control1' : '/get_access_control2', // URL for adding or removing companies
+                type: 'POST',
+                datatype: "json",
+                traditional: true,
+                data: {
+                    ur: $('#ur').val(),
+                    type1: 'worksites',
+                    type: $('#type').val(),
+                    company_id: company_ids, // Pass the list of company_ids
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (response) {
+                    if (response.result === 'success') {
+                        // Handle adding/removing worksites logic
+                        var worksite = response.worksite;
+                        var worksite_id = $('#worksite');
+                        var worksite_inst = worksite_id[0].selectize;
+                        if (worksite_inst) {
+                            worksite.forEach(function(item) {
+                                worksite_inst.addOption({ value: item[0], text: item[1] });
+                            });
+    
+                            var worksite_val = worksite.map(item => item[0]);
+                            worksite_inst.setValue(worksite_val, true);
+                        } else {
+                            worksite_id.selectize({
+                                valueField: 'value',
+                                labelField: 'text',
+                                options: worksite.map(function(item) {
+                                    return { value: item[0], text: item[1] };
+                                }),
+                                items: worksite.map(item => item[0])
+                            });
+                        }
+                    } else {
+                        console.error('Failed to fetch worksites:', response.message);
+                    }
+                },
+                error: function (err) {
+                    console.error('AJAX error:', err);
+                }
+            });
+        }
+    
+        // Change event for company selection
+        company.on('change', async function (value) {
+            debugger;
+            var selectedCompanies = company[0].selectize.items; // Get current selected company IDs
+            var previousCompanies = company[0].selectize.lastValidValue || []; // Get the last valid value
+    
+            // Determine added or removed companies
+            var addedCompanies = selectedCompanies.filter(x => !previousCompanies.includes(x));
+            var removedCompanies = previousCompanies.filter(x => !selectedCompanies.includes(x));
+    
+            // Handle additions
+            if (addedCompanies.length > 0) {
+                console.log('Added Companies:', addedCompanies);
+                sendCompanyChanges(addedCompanies, 'add'); // Send added companies
+            }
+    
+            // Handle removals
+            if (removedCompanies.length > 0) {
+                console.log('Removed Companies:', removedCompanies);
+                sendCompanyChanges(removedCompanies, 'remove'); // Send removed companies
+            }
+    
+            // Update the last valid value
+            company[0].selectize.lastValidValue = [...selectedCompanies];
+        });
+    });
+    
+      
   
 </script>
 <script>
