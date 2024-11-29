@@ -1407,8 +1407,6 @@ def get_access_control(request):
             'company': company,
             'worksite': worksite,
             }
-            if type1 == 'worksites':
-                response['worksite'] = worksite
 
         # Return JSON response
             return JsonResponse(response)
