@@ -41,10 +41,11 @@ class user_notification_log(models.Model):
         return self.employee_id
     
 
-class slot_notifiaction_log(models.Model):
+class slot_notification_log(models.Model):
     id = models.AutoField(primary_key=True)
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='slot_notifi_id',blank=True, null=True,db_column='slot_id')
     noti_sent_time = models.DateTimeField(null=True,blank=True)
+    type = models.ForeignKey(parameter_master, on_delete=models.CASCADE,related_name='slot_type_id',blank=True, null=True,db_column='type_id')
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_noti_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
