@@ -262,7 +262,7 @@ class SettingMaster(models.Model):
     noti_end_time = models.DateField(null=True,blank=True)
     no_of_notification = models.IntegerField(null=True, blank=False)
     no_of_employee =  models.IntegerField(null=True, blank=False)
-    interval = models.TextField(null=True,blank=True)
+    interval = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='setting_created',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
