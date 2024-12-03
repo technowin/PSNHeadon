@@ -242,6 +242,7 @@ class SlotDetails(models.Model):
     start_time = models.TextField(null=True,blank=True)
     end_time = models.TextField(null=True,blank=True)
     night_shift = models.BooleanField(null=True,blank=True,default=True)
+    status = models.ForeignKey('Payroll.StatusMaster', on_delete=models.CASCADE,related_name='slot_status',blank=True, null=True,db_column='status_id')
     is_active =models.BooleanField(null=True,blank=True,default=True)
     message = models.TextField(max_length=255,null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)

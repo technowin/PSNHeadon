@@ -1,0 +1,90 @@
+{% extends "Shared/Layout.html" %}
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<!-- Employee Attendance Details Card -->
+<div class="card">
+    <div class="card-header">
+        <h3>Employee Attendance Details</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" href="{% url 'edit_attendance' slot_attendance.id %}">
+            {% csrf_token %}
+            
+            <!-- Employee Details -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="employee_id">Employee ID</label>
+                    <input type="text" id="employee_id" class="form-control" value="{{ employee_details.employee_id }}" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label for="employee_name">Employee Name</label>
+                    <input type="text"  name= "employee_name" id="employee_name" class="form-control" value="{{ employee_details.employee_name }}" readonly />
+                </div>
+            </div>
+
+            <!-- Slot and Shift Details -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="company_name">Company</label>
+                    <input type="text" id="company_name" class="form-control" value="{{ slot_attendance.slot_id.company.company_name }}" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label for="site_name">Site</label>
+                    <input type="text" id="site_name" class="form-control" value="{{ slot_attendance.slot_id.site_id.site_name }}" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label for="designation">Designation</label>
+                    <input type="text" id="designation" class="form-control" value="{{ slot_attendance.slot_id.designation_id.designation_name }}" readonly />
+                </div>
+            </div>
+
+            <!-- Shift Date and Time -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="shift_date">Shift Date</label>
+                    <input type="text" id="shift_date" class="form-control" value="{{ slot_attendance.slot_id.shift_date }}" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label for="shift_time">Shift Time</label>
+                    <input type="text" id="shift_time" class="form-control" value="{{ slot_attendance.slot_id.start_time }} - {{ slot_attendance.slot_id.end_time }}" readonly />
+                </div>
+            </div>
+
+            <!-- Attendance Time (In & Out) -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="attendance_in">Attendance In</label>
+                    <input type="text" name="attendance_in" id="attendance_in" class="form-control" value="{{ slot_attendance.attendance_in }}"  />
+                </div>
+                <div class="col-md-6">
+                    <label for="attendance_out">Attendance Out</label>
+                    <input type="text" name="attendance_out" id="attendance_out" class="form-control" value="{{ slot_attendance.attendance_out }}" />
+                </div>
+            </div>
+
+            <!-- Status -->
+           <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="status">Status</label>
+                    <input type="text" id="status" class="form-control" value="{{ slot_attendance.slot_id.status.status_name }}" readonly/>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Update </button>
+                <a href="{% url 'attendance_index' %}?type=index" class="btn btn-secondary">Back to List</a>
+            </div>
+
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

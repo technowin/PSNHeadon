@@ -742,30 +742,12 @@
     });    {% endcomment %}
 
     $(document).ready(function () {
-      $('#worksite').selectize({
-          plugins: ['remove_button'],
-          delimiter: ',',
-          persist: false,
-          create: false,
-          selectOnTab: false,
-          maxItems: null,
-          onInitialize: function () {
-              var control = this;
-              control.clear();
-          },
+      $('#worksite').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null,
+        onInitialize: function () {var control = this;control.clear();},
       });
   
-      var company = $('#company_id').selectize({
-          plugins: ['remove_button'],
-          delimiter: ',',
-          persist: false,
-          create: false,
-          selectOnTab: false,
-          maxItems: null,
-          onInitialize: function () {
-              var control = this;
-              control.clear();
-          },
+      var company = $('#company_id').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null,
+        onInitialize: function () {var control = this;control.clear();},
       });
   
       company.on('change', async function () {
@@ -825,107 +807,7 @@
       });
   });
   
-  
-  
-  
-
     
-
-    {% comment %} $(document).ready(function () {
-      var worksiteSelect = $('#worksite').selectize({
-          plugins: ['remove_button'],
-          delimiter: ',',
-          persist: false,
-          create: false,
-          selectOnTab: false,
-          maxItems: null,
-      })[0].selectize;
-  
-      var company = $('#company_id').selectize({
-          plugins: ['remove_button'],
-          delimiter: ',',
-          persist: false,
-          create: false,
-          selectOnTab: false,
-          maxItems: null,
-          onInitialize: function () {
-              var control = this;
-              control.clear();
-          }
-      });
-  
-      // Function to send AJAX for adding or removing companies
-      function sendCompanyChanges(company_ids, actionType) {
-          $.ajax({
-              url: actionType === 'add' ? '/get_access_control1' : '/get_access_control',
-              type: 'POST',
-              datatype: "json",
-              traditional: true,
-              data: {
-                  ur: $('#ur').val(),
-                  type1: 'worksites',
-                  type: $('#type').val(),
-                  company_id: company_ids,
-                  csrfmiddlewaretoken: '{{ csrf_token }}',
-              },
-              success: function (response) {
-                  if (response.result === 'success') {
-                      var worksite = response.worksite;
-                      var selectedWorksites = response.selected_worksites || [];
-                      var worksite_inst = worksiteSelect;
-  
-                      // Add all options to the dropdown
-                      worksite_inst.clearOptions();
-                      worksite.forEach(function (item) {
-                          worksite_inst.addOption({ value: item[0], text: item[1] });
-                      });
-  
-                      // Set selected worksites
-                      worksite_inst.setValue(selectedWorksites, true);
-                  } else {
-                      console.error('Failed to fetch worksites:', response.message);
-                  }
-              },
-              error: function (err) {
-                  console.error('AJAX error:', err);
-              }
-          });
-      }
-  
-      // Change event for company selection
-      company.on('change', async function (value) {
-          var selectedCompanies = company[0].selectize.items; // Get current selected company IDs
-          var previousCompanies = company[0].selectize.lastValidValue || []; // Get the last valid value
-  
-          // Determine added or removed companies
-          var addedCompanies = selectedCompanies.filter(x => !previousCompanies.includes(x));
-          var removedCompanies = previousCompanies.filter(x => !selectedCompanies.includes(x));
-  
-          // Handle additions
-          if (addedCompanies.length > 0) {
-              console.log('Added Companies:', addedCompanies);
-              sendCompanyChanges(addedCompanies, 'add');
-          }
-  
-          // Handle removals
-          if (removedCompanies.length > 0) {
-              console.log('Removed Companies:', removedCompanies);
-              sendCompanyChanges(removedCompanies, 'remove');
-  
-              // Clear the selection for removed worksites
-              var currentWorksites = worksiteSelect.items;
-              var filteredWorksites = currentWorksites.filter(function (item) {
-                  return !removedCompanies.includes(item);
-              });
-              worksiteSelect.setValue(filteredWorksites, true);
-          }
-  
-          // Update the last valid value
-          company[0].selectize.lastValidValue = [...selectedCompanies];
-      });
-  }); {% endcomment %}
-  
-      
   
 </script>
 <script>

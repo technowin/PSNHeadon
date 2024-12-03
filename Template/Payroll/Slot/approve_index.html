@@ -16,12 +16,12 @@
 <div class="card">
     <div class="card-header">
         <h2>Slot Details</h2>
-        <input type='hidden' value = {{role_id}}>
     </div>
     <div class="card-body">
         <table id="slotsTable" class="table table-striped">
             <thead>
                 <tr>
+                    <th>Slot Id</th>
                     <th>Slot Name</th>
                     <th>Slot Description</th>
                     <th>Shift Date</th>
@@ -33,13 +33,14 @@
             <tbody>
             {% for slot in slots %}
                 <tr>
+                    <td>{{ slot.slot_id}}</td>
                     <td>{{ slot.slot_name }}</td>
                     <td>{{ slot.slot_description }}</td>
                     <td>{{ slot.shift_date }}</td>
                     <td>{{ slot.start_time }}</td>
                     <td>{{ slot.end_time }}</td>
                     <td>
-                        <a href="{% url 'user_slot_details_list' slot.slot_id %}" class="btn btn-primary">Generate Salary</a>
+                        <a href="{% url 'view_approve_salary' slot.slot_id %}" class="btn btn-primary">View Details</a>
                     </td>
                 </tr>
             {% endfor %}

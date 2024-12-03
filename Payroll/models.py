@@ -133,6 +133,7 @@ class slot_attendance_details(models.Model):
     attendance_in = models.TextField(null=True,blank=True)
     employee_id = models.TextField(max_length=250,null=True,blank=True)
     attendance_out = models.TextField(null=True,blank=True)
+    status = models.ForeignKey('Payroll.StatusMaster', on_delete=models.CASCADE,related_name='attendance_status',blank=True, null=True,db_column='status_id')
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='slot_attendance_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
@@ -207,8 +208,6 @@ class income_tax_deduction(models.Model):
 class StatusMaster(models.Model):
     status_id = models.AutoField(primary_key=True)
     status_name = models.TextField(max_length=100, null=True, blank=True)
-    status_value = models.TextField(max_length=100, null=True, blank=True)
-
     class Meta:
         db_table = 'status_master'
         

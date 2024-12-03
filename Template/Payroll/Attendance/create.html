@@ -106,9 +106,13 @@
                         <div class="col-md-4">
                             {{ excel_form.as_p }}
                         </div>
-                         <div class="col-md-4">
+
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary" id="download-sample-btn">Download Sample</button>
+                        </div>
+                         {% comment %} <div class="col-md-4">
                             <a href="{% url 'download_sample' %}" class="btn btn-primary" id="download-sample-btn">Download Sample</a>
-                        </div> 
+                        </div>  {% endcomment %}
                         
                     </div>
                     
@@ -160,6 +164,41 @@
             });
         });
     </script>
+
+<script>
+    document.getElementById('download-sample-btn').addEventListener('click', function () {
+        debugger;
+        const companyId = document.getElementById('company_id').value;
+        const siteId = document.getElementById('site_id').value;
+        const slotId = document.getElementById('slot_id').value;
+
+        // Perform AJAX request
+        $.ajax({
+            url: "{% url 'download_sample' %}",
+            method: "GET",
+            data: {
+                company_id: companyId,
+                site_id: siteId,
+                slot_id: slotId,
+            },
+            xhrFields: {
+                responseType: 'blob' // To handle file download
+            },
+            success: function (data, status, xhr) {
+                const filename = xhr.getResponseHeader('Content-Disposition')
+                    .split('filename=')[1].replace(/"/g, '');
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(data);
+                link.download = filename;
+                link.click();
+            },
+            error: function (xhr, status, error) {
+                alert('Error occurred while downloading the file. Please try again.');
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
 

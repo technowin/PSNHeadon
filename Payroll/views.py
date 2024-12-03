@@ -408,16 +408,21 @@ def upload_attendance(request):
             if excel_form.is_valid():
                 excel_file = request.FILES['excel_file']
                 file_name = excel_file.name
-                data = pd.read_excel(excel_file)
-                comp = company_master.objects.get(company_id=request.POST['company_id'])
-                site = site_master.objects.get(site_id=request.POST['site_id'])
-                slot = SlotDetails.objects.get(slot_id=request.POST['slot_id'])
+                
+                # Skip metadata rows (first 2 rows), read data from the third row onward
+                data = pd.read_excel(excel_file, skiprows=2)
+
+                # Retrieve related objects
+                comp = get_object_or_404(company_master, company_id=request.POST['company_id'])
+                site = get_object_or_404(site_master, site_id=request.POST['site_id'])
+                slot = get_object_or_404(SlotDetails, slot_id=request.POST['slot_id'])
                 upload_for = 'Attendance Upload'
                 
-                cursor.callproc('stp_insert_checksum', (upload_for, comp.company_id, str(datetime.now().month), str(datetime.now().year), file_name))
-                for result in cursor.stored_results():
-                    c = list(result.fetchall())
-                checksum_id = c[0][0]
+                # Insert checksum record
+                cursor.callproc('stp_insert_checksum', (
+                    upload_for, comp.company_id, str(datetime.now().month), str(datetime.now().year), file_name
+                ))
+                checksum_id = list(cursor.stored_results())[0].fetchall()[0][0]
 
                 error_count = 0
                 success_count = 0
@@ -427,8 +432,8 @@ def upload_attendance(request):
                 for index, row in data.iterrows():
                     row_error_found = False
 
-                    # Validate Attendance Date (handling both dd-mm-yyyy and yyyy-mm-dd formats)
-                    date_str = str(row['Attendance Date']).strip()
+                    # Validate Attendance Date
+                    date_str = str(row.get('Attendance Date', '')).strip()
 
                     if date_str:
                         attendance_date = None
@@ -499,6 +504,7 @@ def upload_attendance(request):
                         row_error_found = True
                         continue
 
+
                     attendance = slot_attendance_details(
                         company_id=comp,
                         site_id=site,
@@ -507,8 +513,12 @@ def upload_attendance(request):
                         employee_id=row['Employee Id'],
                         attendance_in=row['Attendance In'],
                         attendance_out=row['Attendance Out'],
+                        status_id=get_object_or_404(StatusMaster, status_id=1).status_id
                     )
                     attendance.save()
+                    slot_details = get_object_or_404(SlotDetails, slot_id=slot.slot_id)
+                    slot_details.status = get_object_or_404(StatusMaster, status_id=1)  # Assuming status_id is a ForeignKey
+                    slot_details.save()
 
                     result_value = "success"  # Example, you should fetch this from the actual procedure result
 
@@ -917,6 +927,19 @@ class SlotListView(ListView):
     template_name = 'Payroll/Slot/index.html'
     context_object_name = 'slots'
     paginate_by = 50  
+    def get_queryset(self):
+        # Filter the SlotDetails based on status_id = 2
+        return SlotDetails.objects.filter(status_id=2)
+    
+class ApproveSlotListView(ListView):
+    model = SlotDetails
+    template_name = 'Payroll/Slot/approve_index.html'
+    context_object_name = 'slots'
+    paginate_by = 50  
+    def get_queryset(self):
+        # Filter the SlotDetails based on status_id = 2
+        return SlotDetails.objects.filter(status_id=3)
+
     
 def generate_salary_redirect(request, slot_id):
     return redirect('generate_salary', slot_id=slot_id)
@@ -954,6 +977,44 @@ def user_salary_index(request):
             'user_slot_details': user_slot_details,
         }
         return render(request, 'Payroll/Slot/user_salary_index.html', context)
+    except Exception as e:
+        print(f"Error: {e}") 
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+    
+def view_approve_salary(request,slot_id):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    user = request.session.get('user_id', '')
+    try:
+        slot = get_object_or_404(SlotDetails, slot_id=slot_id)
+
+        # Retrieve user slot details for the given slot ID
+        user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+
+        # Calculate total salary by fetching net salary for each user slot
+        for user_slot in user_slot_details:
+            # Filter the record where element_name is 'net_salary' for the given employee and slot_id
+            net_salary_record = daily_salary.objects.filter(
+                employee_id=user_slot.employee_id, 
+                slot_id=slot_id, 
+                element_name='Net Salary'
+            ).first()
+            
+            # Set the values for total_salary and amount based on the filtered record
+            user_slot.total_salary = net_salary_record.amount if net_salary_record else 0
+            user_slot.amount = net_salary_record.amount if net_salary_record else 0
+
+
+        # Prepare the context for rendering the template
+        context = {
+            'slot': slot,
+            'user_slot_details': user_slot_details,
+        }
+        return render(request, 'Payroll/Slot/view_approve_salary.html', context)
     except Exception as e:
         print(f"Error: {e}") 
         tb = traceback.extract_tb(e.__traceback__)
@@ -1063,10 +1124,33 @@ def handle_card_name_change(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 @login_required
+@login_required
 def download_sample(request):
     user = request.session.get('user_id', '')
 
     try:
+        # Retrieve the parameters from the GET request
+        company = request.GET.get('company_id', 'N/A')
+        site = request.GET.get('site_id', 'N/A')
+        slot = request.GET.get('slot_id', 'N/A')
+
+        # Fetch the names from the respective tables
+        company_name = "Example Company"
+        site_name = "Example Site"
+        slot_name = "Your Slot Name"
+
+        if company != 'N/A':
+            company = get_object_or_404(company_master, company_id=company)
+            company_name = company.company_name
+
+        if site != 'N/A':
+            site = get_object_or_404(site_master, site_id=site)
+            site_name = site.site_name
+
+        if slot != 'N/A':
+            slot = get_object_or_404(SlotDetails, slot_id=slot)
+            slot_name = slot.slot_name
+
         # Create a workbook and a sheet
         wb = Workbook()
         ws = wb.active
@@ -1082,8 +1166,8 @@ def download_sample(request):
         for cell in ws[1]:  # Row 1 is the first header row
             cell.style = header_style
 
-        # Add sample values for Company Name, Site Name, Slot Name
-        ws.append(["Example Company", "Example Site", "Your Slot Name"])
+        # Add selected or default values for Company Name, Site Name, Slot Name
+        ws.append([company_name, site_name, slot_name])
 
         # Apply header style for the second header row
         header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
@@ -1092,7 +1176,7 @@ def download_sample(request):
             cell.style = header_style
 
         # Add sample attendance data
-        time_format = "%H:%M"  # 24-hour format with hours, minutes, and seconds
+        time_format = "%H:%M"  # 24-hour format with hours and minutes
 
         attendance_data = [
             ["2024-11-05", "EMP001", 
@@ -1102,7 +1186,6 @@ def download_sample(request):
             datetime.strptime("09:30", "%H:%M").strftime(time_format), 
             datetime.strptime("17:30", "%H:%M").strftime(time_format)],
         ]
-
 
         for row in attendance_data:
             ws.append(row)
@@ -1126,6 +1209,70 @@ def download_sample(request):
         fun = tb[0].name
         Cursor.callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
+
+# def download_sample(request):
+#     user = request.session.get('user_id', '')
+
+#     try:
+#         # Create a workbook and a sheet
+#         wb = Workbook()
+#         ws = wb.active
+#         ws.title = "Sample Data"
+
+#         # Define NamedStyles for headers and data rows
+#         header_style = NamedStyle(name="header_style", font=Font(bold=True, size=14))
+#         data_style = NamedStyle(name="data_style", font=Font(size=10))
+
+#         # Apply header style for the first header row
+#         header_row_1 = ["Company Name", "Site Name", "Slot Name"]
+#         ws.append(header_row_1)
+#         for cell in ws[1]:  # Row 1 is the first header row
+#             cell.style = header_style
+
+#         # Add sample values for Company Name, Site Name, Slot Name
+#         ws.append(["Example Company", "Example Site", "Your Slot Name"])
+
+#         # Apply header style for the second header row
+#         header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
+#         ws.append(header_row_2)
+#         for cell in ws[3]:  # Row 3 is the second header row
+#             cell.style = header_style
+
+#         # Add sample attendance data
+#         time_format = "%H:%M"  # 24-hour format with hours, minutes, and seconds
+
+#         attendance_data = [
+#             ["2024-11-05", "EMP001", 
+#             datetime.strptime("09:00", "%H:%M").strftime(time_format), 
+#             datetime.strptime("17:00", "%H:%M").strftime(time_format)],
+#             ["2024-11-05", "EMP002", 
+#             datetime.strptime("09:30", "%H:%M").strftime(time_format), 
+#             datetime.strptime("17:30", "%H:%M").strftime(time_format)],
+#         ]
+
+
+#         for row in attendance_data:
+#             ws.append(row)
+
+#         # Apply the data style to the data rows (starting from the 4th row)
+#         for row in ws.iter_rows(min_row=4, max_row=ws.max_row, min_col=1, max_col=4):
+#             for cell in row:
+#                 cell.style = data_style
+
+#         # Create a response object
+#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+#         response["Content-Disposition"] = "attachment; filename=sample_data.xlsx"
+
+#         # Save the workbook to the response
+#         wb.save(response)
+
+#         return response
+
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         Cursor.callproc("stp_error_log", [fun, str(e), user])
+#         messages.error(request, 'Oops...! Something went wrong!')
 
 def attendance_error(request):
     Db.closeConnection()
@@ -1165,6 +1312,108 @@ def attendance_error(request):
         if request.method=="GET":
             return render(request,'Master/index.html', {'type':type,'header':header,'name':name,'data':data,'pre_url':pre_url})
         
+
+def approve_attendance(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+        if request.method == "POST":
+            try:
+                slot_id = request.POST.get('slot_id')
+                slot_name = request.POST.get('slot_name')
+
+                # Fetch all records in SlotAttendanceDetails for the given slot_id
+                slot_attendance_records = slot_attendance_details.objects.filter(slot_id=slot_id)
+                if slot_attendance_records.exists():
+                    # Update the status for all matching records
+                    status = get_object_or_404(StatusMaster, status_id=2)
+                    slot_attendance_records.update(status=status)  # Use update() for bulk updates
+
+                # Update the status for the corresponding SlotDetails record
+                slot_details = get_object_or_404(SlotDetails, slot_id=slot_id)
+                slot_details.status = get_object_or_404(StatusMaster, status_id=2)
+                slot_details.save()  # Save the changes
+
+
+                # Show success message
+                messages.success(request, "Attendance successfully approved for Slot : {}".format(slot_name))
+                return redirect( f'/attendance_index?type=index')
+            except Exception as e:
+                # Show error message if something goes wrong
+                messages.error(request, "An error occurred: {}".format(str(e)))
+            
+        else:
+            slot_data = SlotDetails.objects.filter(slot_id__in=slot_attendance_details.objects.values('slot_id')).all() 
+            return render(request, 'Payroll/Attendance/approve.html', {'slot_data': slot_data})
+    
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log",[fun,str(e),user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
+
+def edit_attendance(request , id):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor=m.cursor()
+    global user
+    user  = request.session.get('user_id', '')
+    try:
+        if request.method == "GET":
+            slot_attendance = get_object_or_404(slot_attendance_details, id=id)
+
+            # Step 2: Retrieve the employee details based on the employee_id from SlotAttendanceDetails
+            employee_id = slot_attendance.employee_id
+            employee_details = get_object_or_404(sc_employee_master, employee_id=employee_id)
+
+            # Step 3: Pass the data to the template or handle your logic
+            context = {
+                'slot_attendance': slot_attendance,
+                'employee_details': employee_details,
+            }
+
+            return render(request, 'Payroll/Attendance/edit_attendance.html', context)
+        if request.method == "POST":
+            # Step 2: Retrieve the corresponding slot attendance details using the id
+            slot_attendance = get_object_or_404(slot_attendance_details, id=id)
+            employee_name = request.POST.get('employee_name', '')
+
+            # Step 3: Retrieve the attendance_in and attendance_out from the form (POST request)
+            attendance_in = request.POST.get('attendance_in')  # Ensure this field is in your form
+            attendance_out = request.POST.get('attendance_out')  # Ensure this field is in your form
+
+            # Step 4: Update the attendance_in and attendance_out fields
+            slot_attendance.attendance_in = attendance_in
+            slot_attendance.attendance_out = attendance_out
+
+            # Step 5: Save the updated record
+            slot_attendance.save()
+            messages.success(request, f'Attendance for {employee_name} got updated successfully!')
+            return redirect('/attendance_index?type=index')
+        else:
+            messages.error(request, 'Error updating Attendance.')
+
+        
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log",[fun,str(e),user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+
 
 
 

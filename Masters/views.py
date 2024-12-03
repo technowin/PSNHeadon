@@ -2805,16 +2805,9 @@ def update_remaining_companies(request):
             return JsonResponse({'status': 'error', 'message': 'No company IDs provided'}, status=400)
 
         try:
-        # Convert remaining company IDs to integers if they are strings
             company_ids = [int(company_id) for company_id in remaining_company_ids]
-            
-            # Query the UserRoleMap model to find roles for the provided company IDs
             user_roles = user_role_map.objects.filter(company_id__in=company_ids).values('company_id')
-
-            # Prepare a set of unique company IDs from user_role_map (to avoid duplicates)
             company_ids_from_user_roles = {user_role['company_id'] for user_role in user_roles}
-
-            # Query the Worksite model to fetch worksite names based on the filtered company IDs
             worksites = user_role_map.objects.filter(company_id__in=company_ids_from_user_roles,user_id=user).values('company_id', 'worksite')
 
             # Prepare the response data
@@ -2837,6 +2830,7 @@ def update_remaining_companies(request):
 
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
 
 
 
