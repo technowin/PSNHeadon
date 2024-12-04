@@ -11,6 +11,7 @@ from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
+from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
@@ -358,9 +359,28 @@ def employee_rate_card_view(request, id):
  
 @login_required
 def attendance_index(request):
-    type = request.GET.get('type', '')
-    attendance_records = slot_attendance_details.objects.all()
-    return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records,'type':type})
+    try:
+        type = request.GET.get('type', '')
+        attendance_records = slot_attendance_details.objects.all()
+        
+        # Encrypt the ID for each record
+        for record in attendance_records:
+            # print(record.id)
+            record.encrypted_id = encrypt_parameter(str(record.id))
+        
+        return render(request, 'Payroll/Attendance/index.html', {
+            'attendance_records': attendance_records,
+            'type': type
+        })
+    except Exception as e:
+        print(f"Error: {e}") 
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        messages.error(request, 'Oops...! Something went wrong!')
+    
+    # type = request.GET.get('type', '')
+    # attendance_records = slot_attendance_details.objects.all()
+    # return render(request, 'Payroll/Attendance/index.html', {'attendance_records': attendance_records,'type':type})
  
 # @login_required
 # def upload_attendance(request):
@@ -1210,69 +1230,6 @@ def download_sample(request):
         Cursor.callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
 
-# def download_sample(request):
-#     user = request.session.get('user_id', '')
-
-#     try:
-#         # Create a workbook and a sheet
-#         wb = Workbook()
-#         ws = wb.active
-#         ws.title = "Sample Data"
-
-#         # Define NamedStyles for headers and data rows
-#         header_style = NamedStyle(name="header_style", font=Font(bold=True, size=14))
-#         data_style = NamedStyle(name="data_style", font=Font(size=10))
-
-#         # Apply header style for the first header row
-#         header_row_1 = ["Company Name", "Site Name", "Slot Name"]
-#         ws.append(header_row_1)
-#         for cell in ws[1]:  # Row 1 is the first header row
-#             cell.style = header_style
-
-#         # Add sample values for Company Name, Site Name, Slot Name
-#         ws.append(["Example Company", "Example Site", "Your Slot Name"])
-
-#         # Apply header style for the second header row
-#         header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
-#         ws.append(header_row_2)
-#         for cell in ws[3]:  # Row 3 is the second header row
-#             cell.style = header_style
-
-#         # Add sample attendance data
-#         time_format = "%H:%M"  # 24-hour format with hours, minutes, and seconds
-
-#         attendance_data = [
-#             ["2024-11-05", "EMP001", 
-#             datetime.strptime("09:00", "%H:%M").strftime(time_format), 
-#             datetime.strptime("17:00", "%H:%M").strftime(time_format)],
-#             ["2024-11-05", "EMP002", 
-#             datetime.strptime("09:30", "%H:%M").strftime(time_format), 
-#             datetime.strptime("17:30", "%H:%M").strftime(time_format)],
-#         ]
-
-
-#         for row in attendance_data:
-#             ws.append(row)
-
-#         # Apply the data style to the data rows (starting from the 4th row)
-#         for row in ws.iter_rows(min_row=4, max_row=ws.max_row, min_col=1, max_col=4):
-#             for cell in row:
-#                 cell.style = data_style
-
-#         # Create a response object
-#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-#         response["Content-Disposition"] = "attachment; filename=sample_data.xlsx"
-
-#         # Save the workbook to the response
-#         wb.save(response)
-
-#         return response
-
-#     except Exception as e:
-#         tb = traceback.extract_tb(e.__traceback__)
-#         fun = tb[0].name
-#         Cursor.callproc("stp_error_log", [fun, str(e), user])
-#         messages.error(request, 'Oops...! Something went wrong!')
 
 def attendance_error(request):
     Db.closeConnection()
@@ -1361,7 +1318,7 @@ def approve_attendance(request):
         Db.closeConnection()
 
 
-def edit_attendance(request , id):
+def edit_attendance(request , encrypted_id):
     Db.closeConnection()
     m = Db.get_connection()
     cursor=m.cursor()
@@ -1369,6 +1326,7 @@ def edit_attendance(request , id):
     user  = request.session.get('user_id', '')
     try:
         if request.method == "GET":
+            id = decrypt_parameter(encrypted_id)
             slot_attendance = get_object_or_404(slot_attendance_details, id=id)
 
             # Step 2: Retrieve the employee details based on the employee_id from SlotAttendanceDetails
@@ -1383,6 +1341,7 @@ def edit_attendance(request , id):
 
             return render(request, 'Payroll/Attendance/edit_attendance.html', context)
         if request.method == "POST":
+            id = decrypt_parameter(encrypted_id)
             # Step 2: Retrieve the corresponding slot attendance details using the id
             slot_attendance = get_object_or_404(slot_attendance_details, id=id)
             employee_name = request.POST.get('employee_name', '')
@@ -1413,6 +1372,10 @@ def edit_attendance(request , id):
         m.commit()
         m.close()
         Db.closeConnection()
+
+
+def create_payout(request):
+    return
 
 
 

@@ -17,7 +17,7 @@ class salary_element_master(models.Model):
     class Meta:
         db_table = 'salary_element_master'
     def __str__(self):
-        return f"{self.item_name} - {self.pay_type} - {self.basis}"
+        return f"{self.item_name} - {self.pay_type} - {self.classification}"
     
 
 class pay_type(models.Model):
@@ -207,6 +207,7 @@ class income_tax_deduction(models.Model):
     
 class StatusMaster(models.Model):
     status_id = models.AutoField(primary_key=True)
+    status_type = models.TextField(max_length=100, null=True, blank=True)
     status_name = models.TextField(max_length=100, null=True, blank=True)
     class Meta:
         db_table = 'status_master'

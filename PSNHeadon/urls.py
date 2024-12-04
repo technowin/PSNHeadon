@@ -157,7 +157,7 @@ urlpatterns = [
     path('approveslots', ApproveSlotListView.as_view(), name='approveslots'),
     path('user_salary_index', user_salary_index, name='user_salary_index'),
     path('view_approve_salary/<int:slot_id>', view_approve_salary, name='view_approve_salary'),
-    path('edit_attendance/<int:id>', edit_attendance, name='edit_attendance'),
+    path('edit_attendance/<str:encrypted_id>', edit_attendance, name='edit_attendance'),
     path('employee/<str:employee_id>/slot/<int:slot_id>/salary-details/', view_employee_salary_details, name='view_employee_salary_details'),
     path('slots/<int:slot_id>/', user_slot_details_list, name='user_slot_details_list'),
     path('slots/generate-salary/<int:slot_id>/', generate_salary_redirect, name='generate_salary_redirect'),
@@ -171,6 +171,8 @@ urlpatterns = [
     path('get_slots', get_slots, name='get_slots'),
     path('handle_card_name_change', handle_card_name_change, name='handle_card_name_change'),
     path('download_sample/', download_sample, name='download_sample'),
-    path('attendance_error/', attendance_error, name='attendance_error')
+    path('attendance_error/', attendance_error, name='attendance_error'),
+
+    path('create_payout', create_payout, name='create_payout')
 
 ]

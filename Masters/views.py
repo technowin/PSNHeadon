@@ -175,82 +175,73 @@ def masters(request):
             #         messages.success(request, 'Data updated successfully !')
                 
             # else : messages.error(request, 'Oops...! Something went wrong!')
-                created_by = request.session.get('user_id', '')
-                ur = request.POST.get('ur', '')
-                selected_company_ids = list(map(int, request.POST.getlist('company_id', [])))
-                selected_worksites = request.POST.getlist('worksite', [])
-                company_worksite_map = {}
-
-                # Validate input
-                if not selected_company_ids or not selected_worksites:
-                    messages.error(request, 'Company or worksite data is missing!')
-                    return redirect(f'/masters?entity={entity}&type=urm')
-
-                if type not in ['acu', 'acr'] or not ur:
-                    messages.error(request, 'Invalid data received.')
-                    return redirect(f'/masters?entity={entity}&type=urm')
-
-                # Extract city names from "Company Name - City Name"
-                selected_worksite_cities = [ws.split(" - ")[-1].strip() for ws in selected_worksites]
-
-                # Fetch company-worksite mappings
                 try:
-                    cursor.callproc("stp_get_company_worksite", [",".join(map(str, selected_company_ids))])
-                    for result in cursor.stored_results():
-                        company_worksites = list(result.fetchall())
+                    created_by = request.session.get('user_id', '')
+                    ur = request.POST.get('ur', '')
+                    selected_worksite = request.POST.getlist('worksite', [])
+                    company_worksite_map = {}
 
-                    # Build a map of company_id to worksite names
-                    for company_id, worksite_name in company_worksites:
-                        if company_id not in company_worksite_map:
-                            company_worksite_map[company_id] = []
-                        company_worksite_map[company_id].append(worksite_name)
+                    # Validate input
+                    if not selected_worksite:
+                        messages.error(request, 'Worksite data is missing!')
+                        return redirect(f'/masters?entity={entity}&type=urm')
 
-                    # Filter valid combinations of company_id and worksites
-                    filtered_combinations = []
-                    # Maintain a set to track already processed (company_id, site_id) combinations
-                    processed_combinations = set()
+                    if type not in ['acu', 'acr'] or not ur:
+                        messages.error(request, 'Invalid data received.')
+                        return redirect(f'/masters?entity={entity}&type=urm')
 
-                    for company_id in selected_company_ids:
-                        valid_worksites = company_worksite_map.get(company_id, [])
-                        # Filter worksites that match the extracted city names and exist in the site_master table
-                        selected_valid_worksites = [ws for ws in selected_worksite_cities if ws in valid_worksites]
+                    # Parse selected worksites into company-worksite pairs
+                    selected_worksite_pairs = [
+                        tuple(ws.split(" - ", 1)) for ws in selected_worksite if " - " in ws
+                    ]
+                    if not selected_worksite_pairs:
+                        messages.error(request, 'Invalid worksite format. Expected "Company Name - Worksite Name".')
+                        return redirect(f'/masters?entity={entity}&type=urm')
 
-                        for worksite in selected_valid_worksites:
-                            # Use Django ORM to fetch site_id for each valid combination of company_id and worksite_name
-                            try:
-                                site = sit.objects.get(site_name=worksite, company_id=company_id)  # Filtering by both site_name and company_id
-                                site_id = site.site_id
-                                
-                                # Check if the combination is already processed
-                                if (company_id, site_id) not in processed_combinations:
-                                    filtered_combinations.append((company_id, site_id, worksite))
-                                    processed_combinations.add((company_id, site_id))  # Mark this combination as processed
-                            except sit.DoesNotExist:
-                                # Skip the combination if no site is found for the given company and worksite
-                                continue
+                    valid_combinations = []
+                    for company_name, worksite_name in selected_worksite_pairs:
+                        try:
+                            # Fetch company_id using ORM
+                            company = com.objects.get(company_name=company_name)
+                            company_id = company.company_id
+                        except com.DoesNotExist:
+                            messages.error(request, f'Company "{company_name}" does not exist.')
+                            continue
 
+                        # Check if the worksite exists for the company in SiteMaster
+                        if sit.objects.filter(company_id=company_id, site_name=worksite_name).exists():
+                            valid_combinations.append((company_id, worksite_name))
+                        else:
+                            messages.error(request, f'Worksite "{worksite_name}" does not exist for company "{company_name}".')
 
-                    # Delete existing access control
+                    if not valid_combinations:
+                        messages.error(request, 'No valid company-worksite combinations found.')
+
+                    # Remove existing mappings
                     cursor.callproc("stp_delete_access_control", [type, ur])
 
-                    # Insert new access control data
-                    insertion_results = []
-                    for company_id, site_id, worksite in filtered_combinations:
-                        cursor.callproc("stp_post_access_control", [type, ur, company_id, worksite,site_id, created_by])
+                    # Insert new mappings
+                    insertion_status = "failure"
+                    for company_id, worksite_name in valid_combinations:
+                        cursor.callproc("stp_post_access_control", [type, ur, company_id, worksite_name, created_by])
                         for result in cursor.stored_results():
-                            insertion_results = list(result.fetchall())
+                            r = list(result.fetchall())
+                            if r and r[0][0] == "success":
+                                insertion_status = "success"
 
-                    type = 'urm'
-                    if insertion_results and insertion_results[0][0] == "success":
+                    # Redirect based on insertion status
+                    if insertion_status == "success":
                         messages.success(request, 'Data updated successfully!')
                     else:
-                        messages.error(request, 'Failed to update data. Please try again.')
-                                
+                        messages.error(request, 'Oops...! Something went wrong!')
                 except Exception as e:
                     tb = traceback.extract_tb(e.__traceback__)
                     fun = tb[0].name
                     cursor.callproc("stp_error_log",[fun,str(e),user])  
                     messages.error(request, 'Oops...! Something went wrong!')
+
+                    
+            else : messages.error(request, 'Oops...! Something went wrong!')
                              
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -264,9 +255,13 @@ def masters(request):
         Db.closeConnection()
         if request.method=="GET":
             return render(request,'Master/index.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'site_name':site_name,'designation_name':designation_name,'data':data,'pre_url':pre_url})
-        elif request.method=="POST":  
-            new_url = f'/masters?entity={entity}&type={type}'
-            return redirect(new_url) 
+        elif request.method=="POST":
+            if entity == 'urm':
+                new_url = f'/masters?entity={entity}&type=urm'
+                return redirect(new_url) 
+            else:
+                new_url = f'/masters?entity={entity}&type={type}'
+                return redirect(new_url) 
         
 def gen_roster_xlsx_col(columns,month_input):
     year, month = map(int, month_input.split('-'))
