@@ -33,6 +33,9 @@ import Db
 @login_required
 def index(request):
     salary_elements = salary_element_master.objects.all()
+    for record in salary_elements:
+            # print(record.id)
+        record.pk = encrypt_parameter(str(record.item_id))
     return render(request, 'Payroll/SalaryElement/index.html', {'salary_elements': salary_elements})
 
 # Create a new salary element
@@ -57,6 +60,7 @@ def create(request):
 # Edit an existing salary element
 @login_required
 def edit(request, pk):
+    pk = decrypt_parameter(pk)
     salary_element = get_object_or_404(salary_element_master, pk=pk)
     
     if request.method == 'POST':
@@ -77,14 +81,16 @@ def edit(request, pk):
 # View salary element details
 @login_required
 def view(request, pk):
+    pk = decrypt_parameter(pk)
     salary_element = get_object_or_404(salary_element_master, pk=pk)
     return render(request, 'Payroll/SalaryElement/view.html', {'salary_element': salary_element})
 
 
- 
 @login_required
 def rate_card_index(request):
     rate_cards = rate_card_master.objects.all()
+    for record in rate_cards:
+        record.pk = encrypt_parameter(str(record.card_id))
     return render(request, 'Payroll/RateCard/index.html', {'rate_cards': rate_cards})
 
 @login_required
@@ -157,6 +163,7 @@ def rate_card_create(request):
  
 @login_required
 def rate_card_edit(request, card_id):
+    card_id = decrypt_parameter(card_id)
     rate_card = get_object_or_404(rate_card_master, pk=card_id)
 
     if request.method == "POST":
@@ -214,6 +221,7 @@ def rate_card_edit(request, card_id):
  
 @login_required
 def rate_card_view(request, card_id):
+    card_id = decrypt_parameter(card_id)
     rate_card = get_object_or_404(rate_card_master, pk=card_id)
     salary_elements = RateCardSalaryElement.objects.filter(rate_card=rate_card)
     
@@ -226,6 +234,8 @@ def rate_card_view(request, card_id):
 @login_required
 def site_card_relation_index(request):
     site_card_relations = site_card_relation.objects.all()
+    for record in site_card_relations:
+        record.pk = encrypt_parameter(str(record.relation_id))
     return render(request, 'Payroll/SiteCardRelation/index.html', {'site_card_relations': site_card_relations})
 @login_required
 def site_card_relation_create(request):
@@ -241,6 +251,7 @@ def site_card_relation_create(request):
     return render(request, 'Payroll/SiteCardRelation/create.html', {'form': form})
 @login_required
 def site_card_relation_edit(request, pk):
+    pk = decrypt_parameter(pk)
     site_card_relation_instance = get_object_or_404(site_card_relation, pk=pk)
     if request.method == 'POST':
         form = SiteCardRelationForm(request.POST, instance=site_card_relation_instance)
@@ -254,6 +265,7 @@ def site_card_relation_edit(request, pk):
     return render(request, 'Payroll/SiteCardRelation/edit.html', {'form': form})
 @login_required
 def site_card_relation_view(request, pk):
+    pk = decrypt_parameter(pk)
     site_card_relation_instance = get_object_or_404(site_card_relation, pk=pk)
     return render(request, 'Payroll/SiteCardRelation/view.html', {'site_card_relation': site_card_relation_instance})
  
@@ -430,7 +442,7 @@ def upload_attendance(request):
                 file_name = excel_file.name
                 
                 # Skip metadata rows (first 2 rows), read data from the third row onward
-                data = pd.read_excel(excel_file, skiprows=2)
+                data = pd.read_excel(excel_file)
 
                 # Retrieve related objects
                 comp = get_object_or_404(company_master, company_id=request.POST['company_id'])
@@ -1150,52 +1162,43 @@ def download_sample(request):
 
     try:
         # Retrieve the parameters from the GET request
-        company = request.GET.get('company_id', 'N/A')
-        site = request.GET.get('site_id', 'N/A')
-        slot = request.GET.get('slot_id', 'N/A')
+        # company = request.GET.get('company_id', 'N/A')
+        # site = request.GET.get('site_id', 'N/A')
+        # slot = request.GET.get('slot_id', 'N/A')
 
         # Fetch the names from the respective tables
         company_name = "Example Company"
         site_name = "Example Site"
         slot_name = "Your Slot Name"
 
-        if company != 'N/A':
-            company = get_object_or_404(company_master, company_id=company)
-            company_name = company.company_name
+        # if company != 'N/A':
+        #     company = get_object_or_404(company_master, company_id=company)
+        #     company_name = company.company_name
 
-        if site != 'N/A':
-            site = get_object_or_404(site_master, site_id=site)
-            site_name = site.site_name
+        # if site != 'N/A':
+        #     site = get_object_or_404(site_master, site_id=site)
+        #     site_name = site.site_name
 
-        if slot != 'N/A':
-            slot = get_object_or_404(SlotDetails, slot_id=slot)
-            slot_name = slot.slot_name
+        # if slot != 'N/A':
+        #     slot = get_object_or_404(SlotDetails, slot_id=slot)
+        #     slot_name = slot.slot_name
 
         # Create a workbook and a sheet
         wb = Workbook()
         ws = wb.active
-        ws.title = "Sample Data"
+        ws.title = "Attendance Data"
 
         # Define NamedStyles for headers and data rows
         header_style = NamedStyle(name="header_style", font=Font(bold=True, size=14))
         data_style = NamedStyle(name="data_style", font=Font(size=10))
 
-        # Apply header style for the first header row
-        header_row_1 = ["Company Name", "Site Name", "Slot Name"]
-        ws.append(header_row_1)
-        for cell in ws[1]:  # Row 1 is the first header row
+        # Add headers for attendance data
+        header_row = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
+        ws.append(header_row)
+        for cell in ws[1]:  # Apply header style to the first row
             cell.style = header_style
 
-        # Add selected or default values for Company Name, Site Name, Slot Name
-        ws.append([company_name, site_name, slot_name])
-
-        # Apply header style for the second header row
-        header_row_2 = ["Attendance Date", "Employee Id", "Attendance In", "Attendance Out"]
-        ws.append(header_row_2)
-        for cell in ws[3]:  # Row 3 is the second header row
-            cell.style = header_style
-
-        # Add sample attendance data
+        # Sample attendance data
         time_format = "%H:%M"  # 24-hour format with hours and minutes
 
         attendance_data = [
@@ -1207,17 +1210,18 @@ def download_sample(request):
             datetime.strptime("17:30", "%H:%M").strftime(time_format)],
         ]
 
+        # Add attendance data to the worksheet
         for row in attendance_data:
             ws.append(row)
 
-        # Apply the data style to the data rows (starting from the 4th row)
-        for row in ws.iter_rows(min_row=4, max_row=ws.max_row, min_col=1, max_col=4):
+        # Apply the data style to the data rows (starting from the 2nd row)
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=4):
             for cell in row:
                 cell.style = data_style
 
-        # Create a response object
+        # Create a response object for downloading the Excel file
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response["Content-Disposition"] = "attachment; filename=sample_data.xlsx"
+        response["Content-Disposition"] = "attachment; filename=attendance_data.xlsx"
 
         # Save the workbook to the response
         wb.save(response)
@@ -1227,7 +1231,7 @@ def download_sample(request):
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
-        Cursor.callproc("stp_error_log", [fun, str(e), user])
+        Cursor.callproc("stp_error_log", [fun, str(e), request.session.get('user_id', '')])
         messages.error(request, 'Oops...! Something went wrong!')
 
 

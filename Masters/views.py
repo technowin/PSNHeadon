@@ -766,9 +766,10 @@ def employee_master(request):
             cursor.callproc("stp_get_employee_status")
             for result in cursor.stored_results():
                 employee_status = list(result.fetchall())
-            cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
-            for result in cursor.stored_results():
-                site_name = list(result.fetchall())
+            if id != 0:
+                cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
+                for result in cursor.stored_results():
+                    site_name = list(result.fetchall())
             cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
@@ -783,7 +784,7 @@ def employee_master(request):
                 designation_name = list(result.fetchall())
             if id == "0":
                 if request.method == "GET":
-                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','site_name':site_name,'gender':gender ,'company_names':company_names,'state_names':state_names,'designation_name':designation_name}
+                    context = {'id':id, 'employee_status':employee_status, 'employee_status_id': '','gender':gender ,'company_names':company_names,'state_names':state_names,'designation_name':designation_name}
 
             else:
                 id1 = request.GET.get('id', '')
@@ -2463,19 +2464,6 @@ def worksite_upload(request):
             entity = request.GET.get('entity', '')
             type = request.GET.get('type', '')
             
-            
-            cursor.callproc("stp_get_masters", [entity, type, 'header',user])
-            for result in cursor.stored_results():
-                header = list(result.fetchall())
-            cursor.callproc("stp_get_masters",[entity,type,'data',user])
-            for result in cursor.stored_results():
-                 data = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['site'])
-            for result in cursor.stored_results():
-                site_name = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values",['designation'])
-            for result in cursor.stored_results():
-                designation_name = list(result.fetchall())
             cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
@@ -2483,68 +2471,7 @@ def worksite_upload(request):
             cursor.callproc("stp_city_state")
             for result in cursor.stored_results():
                 city_state_data = list(result.fetchall())
-            # cursor.callproc("stp_get_dropdown_values",['states'])
-            # for result in cursor.stored_results():
-            #     state_name = list(result.fetchall())
-            # cursor.callproc("stp_get_dropdown_values",['city'])
-            # for result in cursor.stored_results():
-            #     city_name = list(result.fetchall())
                 
-
-        if request.method=="POST":
-            entity = request.POST.get('entity', '')
-            type = request.POST.get('type', '')
-            if entity == 'r' and type == 'ed':
-                ids = request.POST.getlist('ids[]', '')
-                shifts = request.POST.getlist('shifts[]', '')
-                for id,shift in zip(ids, shifts):
-                    cursor.callproc("stp_post_roster",[id,shift])
-                    for result in cursor.stored_results():
-                        datalist = list(result.fetchall())
-                if datalist[0][0] == "success":
-                    messages.success(request, 'Data updated successfully !')
-            if entity == 'urm' and (type == 'acu' or type == 'acr'):
-                
-                created_by = request.session.get('user_id', '')
-                ur = request.POST.get('ur', '')
-                selected_company_ids = list(map(int, request.POST.getlist('company_id')))
-                selected_worksites  = request.POST.getlist('worksite')
-                company_worksite_map = {}
-                
-                if not selected_company_ids or not selected_worksites:
-                    messages.error(request, 'Company or worksite data is missing!')
-                    return redirect(f'/masters?entity={entity}&type=urm')
-                if type not in ['acu', 'acr'] or not ur:
-                    messages.error(request, 'Invalid data received.')
-                    return redirect(f'/masters?entity={entity}&type=urm')
-                
-                cursor.callproc("stp_get_company_worksite",[",".join(request.POST.getlist('company_id'))])
-                for result in cursor.stored_results():
-                    company_worksites  = list(result.fetchall())
-                    
-                for company_id, worksite_name in company_worksites:
-                    if company_id not in company_worksite_map:
-                        company_worksite_map[company_id] = []
-                    company_worksite_map[company_id].append(worksite_name)
-                
-                filtered_combinations = []
-                for company_id in selected_company_ids:
-                    valid_worksites = company_worksite_map.get(company_id, [])
-                    # Filter worksites that were actually selected by the user
-                    selected_valid_worksites = [ws for ws in selected_worksites if ws in valid_worksites]
-                    filtered_combinations.extend([(company_id, ws) for ws in selected_valid_worksites])
-                    
-                cursor.callproc("stp_delete_access_control",[type,ur])
-                r=''
-                for company_id, worksite in filtered_combinations:
-                    cursor.callproc("stp_post_access_control",[type,ur,company_id,worksite,created_by])
-                    for result in cursor.stored_results():
-                            r = list(result.fetchall())
-                type='urm'
-                if r[0][0] == "success":
-                    messages.success(request, 'Data updated successfully !')
-                
-            else : messages.error(request, 'Oops...! Something went wrong!')
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
@@ -2556,7 +2483,7 @@ def worksite_upload(request):
         m.close()
         Db.closeConnection()
         if request.method=="GET":
-            return render(request,'Master/worksite_upload.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'city_state_data':city_state_data,'site_name':site_name,'designation_name':designation_name,'data':data,'pre_url':pre_url})
+            return render(request,'Master/worksite_upload.html', {'entity':entity,'type':type,'name':name,'header':header,'company_names':company_names,'city_state_data':city_state_data,'data':data,'pre_url':pre_url})
         elif request.method=="POST":  
             new_url = f'/masters1?entity={entity}&type={type}'
             return redirect(new_url)  

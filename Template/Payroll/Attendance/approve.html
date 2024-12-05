@@ -82,6 +82,8 @@
                             <button type="button" class="btn btn-success approve-btn">Approve</button>
                         {% elif record.status_id == 2 %}
                             <button type="button" class="btn btn-success" disabled>Approved</button>
+                        {% elif record.status_id == 3 %}
+                          <button type="button" class="btn btn-success" disabled>Salary Generated</button>
                         {% endif %}
                     </form>
                   </td>
