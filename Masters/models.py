@@ -142,8 +142,8 @@ class sc_employee_master(models.Model):
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='sc_employee_updated',blank=True, null=True,db_column='updated_by')
     class Meta:
         db_table = 'sc_employee_master'
-    def __str__(self):
-        return self.employee_name
+    # def __str__(self):
+    #     return self.employee_name
     
  
 class application_search(models.Model):

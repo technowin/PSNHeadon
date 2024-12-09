@@ -190,6 +190,19 @@ def register_new_user(request):
                 user.role_id = role_id
                 user.save()
 
+                UserMenuDetails.objects.filter(user_id=user.id).delete()
+
+                # Fetch the menus for the new role
+                assigned_menus = RoleMenuMaster.objects.filter(role_id=role_id)
+
+                # Assign the new menus to the user
+                for menu in assigned_menus:
+                    UserMenuDetails.objects.create(
+                        user_id=user.id,
+                        menu_id=menu.menu_id,
+                        role_id=role_id
+                    )
+
                 messages.success(request, "User details updated successfully!")
 
         except Exception as e:
@@ -386,10 +399,6 @@ def menu_admin(request):
                 for row in rows:
                     encrypted_id = encrypt_parameter(str(row[0]))
                     data.append((encrypted_id,) + row[1:])
-
-
-
-
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)

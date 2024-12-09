@@ -833,7 +833,6 @@ def employee_master(request):
 
 
 
-
         if request.method == "POST" :
             id = request.POST.get('id', '')
             if id == '0':
@@ -1695,20 +1694,20 @@ def slot_details(request):
             slot_id = request.GET.get('slot_id', '')
             type = request.GET.get('type', '')
 
-            cursor.callproc("stp_get_userwise_dropdown", [user_id,'company'])
+            cursor.callproc("stp_get_assigned_company", [user_id])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
 
-            cursor.callproc("stp_get_userwise_dropdown", [user_id,'site'])
-            for result in cursor.stored_results():
-                site_names = list(result.fetchall())
+            # cursor.callproc("stp_get_userwise_dropdown", [user_id,'site'])
+            # for result in cursor.stored_results():
+            #     site_names = list(result.fetchall())
             
             cursor.callproc("stp_get_dropdown_values", ['designation'])
             for result in cursor.stored_results():
                 designation = list(result.fetchall())
 
             if slot_id == "0":
-                context = {'slot_id': slot_id,'company_names': company_names,'site_names': site_names,'designation':designation,'type': type}
+                context = {'slot_id': slot_id,'company_names': company_names,'designation':designation,'type': type}
 
 
         elif request.method == 'POST':

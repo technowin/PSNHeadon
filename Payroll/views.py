@@ -1,16 +1,19 @@
 # views.py
 from calendar import day_name
+from decimal import Decimal
 import json
 # from tkinter import font
 import math
 import traceback
 from colorama import Cursor
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
+from Payroll.models import payment_details as pay
 from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
 from .forms import *
@@ -24,10 +27,12 @@ from django.db.models import Case, When
 import io
 from django.http import HttpResponse
 from openpyxl import Workbook
-from openpyxl import Workbook
 from openpyxl.styles import Font, NamedStyle
 from django.db import connection
+import requests
+from django.http import JsonResponse
 import Db
+from datetime import date
 # from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
@@ -1378,8 +1383,121 @@ def edit_attendance(request , encrypted_id):
         Db.closeConnection()
 
 
+
 def create_payout(request):
-    return
+    user  = request.session.get('user_id', '')
+    api_key = 'rzp_test_WXFEdS7FORHEra'
+    api_secret = 'UoQhfvKq9I5Id7dCuelWsGmu'
+    try:
+        if request.method == 'POST':
+        # Get the list of employee_ids as strings
+            employee_ids = request.POST.getlist('employee_ids')
+            print("Employee IDs: ", employee_ids)  # Print employee_ids for debugging
+            slot_id = int(request.POST.get('slot_id', 0))  # Ensure slot_id is an integer
+
+            try:
+                # Try fetching SlotDetails for the given slot_id
+                slot_details = SlotDetails.objects.get(slot_id=slot_id)
+            except SlotDetails.DoesNotExist:
+                return redirect('error_page')
+
+            for employee_id in employee_ids:  # Loop through each employee_id (still a string)
+                print(f"Processing Employee ID: {employee_id}")  # Print employee_id_str for debugging
+                
+                employee = sc_employee_master.objects.get(employee_id=employee_id)
+                payment_details = pay.objects.first()
+                # Fetch salary details
+                salary = daily_salary.objects.filter(element_name="net salary", employee_id=employee_id).values_list('amount', flat=True).first()
+                if salary is None:
+                    raise ValueError("No net salary found for the given employee.")
+                # Prepare the API payload
+                payload = {
+                    "account_number": payment_details.account_number,
+                    "amount": int(salary),
+                    "currency": payment_details.currency,
+                    "mode": payment_details.mode,
+                    "purpose": payment_details.purpose,
+                    "fund_account": {
+                        "account_type": "bank_account",
+                        "bank_account": {
+                            "name": employee.account_holder_name,
+                            "ifsc": employee.ifsc_code,
+                            "account_number": employee.account_no,
+                        },
+                        "contact": {
+                            "name": employee.employee_name,
+                            "email": employee.email,
+                            "contact": employee.mobile_no,
+                            "type": "employee",
+                            "reference_id": str(employee.id),
+                        },
+                    },
+                    "queue_if_low_balance": True,
+                    "reference_id": str(employee.id),
+                    "narration": "Acme Corp Fund Transfer",
+                }
+                # Create payout details
+                payout = PayoutDetails.objects.create(
+                    amount=salary,
+                    company_id=get_object_or_404(company_master, company_id=slot_details.company.company_id),
+                    employee_id=employee_id,
+                    slot_id=get_object_or_404(SlotDetails, slot_id=slot_details.slot_id),
+                    payout_status=get_object_or_404(StatusMaster, status_id=5),
+                    payment_initiated_date=date.today(),
+                    created_by=get_object_or_404(CustomUser, id=user),
+                    updated_by=get_object_or_404(CustomUser, id=user),
+                )
+                # Call Razorpay API to create payout
+                response = requests.post(
+                    url="https://api.razorpay.com/v1/payouts",
+                    json=payload,
+                    auth=(api_key, api_secret),
+                )
+                if response.status_code == 200 or response.status_code == 201:
+                    print(f"Payout successful for Employee ID: {employee_id}")
+                    response_data = response.json()  # Parse the JSON response
+                    razor_payout_id = response_data.get('id')
+                    fund_account_id = response_data.get('fund_account_id')
+                    reference_id = response_data.get('reference_id')
+                    purpose = response_data.get('purpose')
+                    status = response_data.get('status')
+                    tax = response_data.get('tax')
+                    fees = response_data.get('fees')
+                    if fund_account_id and status:
+                        
+                        payout.razorpay_payout_id = razor_payout_id
+                        payout.fund_account_id = fund_account_id
+                        payout.fees = fees
+                        payout.tax = tax
+                        payout.reference_id = reference_id
+                        payout.purpose = purpose
+                        payout.payout_for_date = date.today()
+                        if status == 'processing':
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=6)
+                        payout.save()  # Save the updated record
+                        print(f"Payout updated for Employee ID: {employee_id}, Fund Account ID: {fund_account_id}, Status: {status}")
+                    else:
+                        print(f"Missing fund_account_id or status in Razorpay response for Employee ID: {employee_id}")
+                else:
+                    response_data = response.json()
+                    reason = response_data.get('error', {}).get('description', 'Unknown error')
+                    payout.failure_reason = reason
+                    payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
+                    payout.save()
+                    print(f"Payout failed for Employee ID: {employee_id}, Status Code: {response.status_code}")
+
+
+                messages.success(request, 'Salary Successfully Created for the Employees')
+                return redirect('approveslots')
+    
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        messages.error(request, 'Oops...! Something went wrong!')
+
+
+
+
 
 
 

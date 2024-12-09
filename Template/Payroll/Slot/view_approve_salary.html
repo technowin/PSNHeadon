@@ -3,11 +3,7 @@
    
 
     <!-- Success/Error Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+   
 
     <!-- Generate Button -->
     {% comment %} <a href="{% url 'generate_salary' slot.slot_id %}" class="btn btn-success mb-3">Generate Salary</a> {% endcomment %}
@@ -17,38 +13,58 @@
             <h2>User Salary Details for {{ slot.slot_name }}</h2>
         </div>
         <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Slot ID</th>
-                        <th>Employee ID</th>
-                        <th>Company</th>
-                        <th>Salary</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for user_slot in user_slot_details %}
-                    <tr>
-                        <td>{{ slot.slot_id }}</td>
-                        <td>{{ user_slot.employee_id }}</td>
-                        <td>{{ user_slot.company_id.company_name }}</td>
-                        <td>{{ user_slot.total_salary }}</td>
-                        <td>{{ user_slot.created_at }}</td>
-                        <td>
-                            <a href="{% url 'view_employee_salary_details' user_slot.employee_id slot.slot_id%}" class="btn btn-primary btn-sm">View</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <div class="d-flex justify-content-center align-items-center">
-                <button href="{% url 'create_payout' %}" class="btn btn-primary">Approve</a>
-                <button href="{% url 'approveslots' %}" class="btn btn-secondary">Back to List</a>
-            </div>
+            <form method="post" action="{% url 'create_payout' %}">
+                {% csrf_token %}
+                <input type="hidden" value="{{slot.slot_id}}" name="slot_id">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Slot ID</th>
+                            <th>Employee ID</th>
+                            <th>Company</th>
+                            <th>Salary</th>
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user_slot in user_slot_details %}
+                        <tr>
+                            <td>{{ slot.slot_id }}</td>
+                            <td>
+                                {{ user_slot.employee_id }}
+                                <input type="hidden" name="employee_ids" value="{{ user_slot.employee_id }}">
+                            </td>
+                            <td>{{ user_slot.company_id.company_name }}</td>
+                            <td>{{ user_slot.total_salary }}</td>
+                            <td>{{ user_slot.created_at }}</td>
+                            <td>
+                                <a href="{% url 'view_employee_salary_details' user_slot.employee_id slot.slot_id %}" class="btn btn-primary btn-sm">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="d-flex justify-content-center align-items-center">
+                    <button type="submit" class="btn btn-primary">Approve</button>
+                    <a href="{% url 'approveslots' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+            
         </div>
         
     </div>
+    {% if messages %}
+    {% for message in messages %}
+      <script>
+      Swal.fire({
+        title: "{{ message.tags }}",
+        text: "{{ message }}",
+        icon: "{{ message.tags }}",
+        confirmButtonText: "OK",
+      });
+    </script>
+    {% endfor %}
+  {% endif %}
 
 {% endblock %}

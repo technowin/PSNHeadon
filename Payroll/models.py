@@ -215,12 +215,13 @@ class StatusMaster(models.Model):
         
 class PayoutDetails(models.Model):
     payout_id = models.AutoField(primary_key=True)
-    employee_id = models.ForeignKey('Masters.sc_employee_master', on_delete=models.CASCADE, related_name='payout_employee')
+    # employee_id = models.ForeignKey('Masters.sc_employee_master', on_delete=models.CASCADE, related_name='payout_employee')
+    employee_id = models.TextField(null=True, blank=True)
     company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='payout_company')
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='payout_slot')
     
     # Razorpay response fields
-    razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True)  # Payout ID from Razorpay
+    razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True) 
     fund_account_id = models.CharField(max_length=100, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     fees = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -232,6 +233,8 @@ class PayoutDetails(models.Model):
     payout_for_date = models.DateField(null=True, blank=True)
     payment_initiated_date = models.DateTimeField(null=True, blank=True)
     payment_completed_date = models.DateTimeField(null=True, blank=True)
+    reference_id = models.TextField(max_length=100, null=True, blank=True)
+    purpose = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='payout_created_by')
@@ -240,3 +243,17 @@ class PayoutDetails(models.Model):
 
     class Meta:
         db_table = 'payout_details'
+
+class payment_details(models.Model):
+    id =models.AutoField(primary_key=True)
+    account_number = models.CharField(max_length=100, null=True, blank=True) 
+    currency = models.TextField(max_length=250,null=True,blank=True)
+    mode = models.TextField(max_length=250,null=True,blank=True)
+    purpose = models.TextField(max_length=250,null=True,blank=True)
+    created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, blank=True, null=True,related_name='payment_created_by')
+    updated_at = models.DateTimeField(blank=True, null=True,auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='payment_updated_by')
+    class Meta:
+        db_table = 'payment_details'
+
