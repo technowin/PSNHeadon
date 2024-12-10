@@ -250,6 +250,8 @@ class payment_details(models.Model):
     currency = models.TextField(max_length=250,null=True,blank=True)
     mode = models.TextField(max_length=250,null=True,blank=True)
     purpose = models.TextField(max_length=250,null=True,blank=True)
+    api_key = models.TextField(max_length=250,null=True,blank=True)
+    secret_key = models.TextField(max_length=250,null=True,blank=True)
     created_at = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, blank=True, null=True,related_name='payment_created_by')
     updated_at = models.DateTimeField(blank=True, null=True,auto_now=True)

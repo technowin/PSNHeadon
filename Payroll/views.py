@@ -20,6 +20,7 @@ from .forms import *
 from django.contrib.auth.decorators import login_required
 from datetime import timedelta
 from django.db.models import Sum
+from rest_framework.views import APIView
 import pandas as pd
 from django.views.generic import ListView
 from datetime import datetime
@@ -1472,7 +1473,6 @@ def create_payout(request):
                     tax = response_data.get('tax')
                     fees = response_data.get('fees')
                     if fund_account_id and status:
-                        
                         payout.razorpay_payout_id = razor_payout_id
                         payout.fund_account_id = fund_account_id
                         payout.fees = fees
@@ -1482,10 +1482,6 @@ def create_payout(request):
                         payout.payout_for_date = date.today()
                         if status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)
-                            slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
-                            SlotDetails.objects.filter(slot_id=slot_id).update(
-                                status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
-                            )
                         payout.save()  # Save the updated record
                         print(f"Payout updated for Employee ID: {employee_id}, Fund Account ID: {fund_account_id}, Status: {status}")
                     else:
@@ -1496,18 +1492,80 @@ def create_payout(request):
                     payout.failure_reason = reason
                     payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
                     payout.save()
-                    slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
-                    SlotDetails.objects.filter(slot_id=slot_id).update(
-                        status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
-                            )
-                    print(f"Payout failed for Employee ID: {employee_id}, Status Code: {response.status_code}")
 
-                messages.success(request, 'Salary Successfully Created for the Employees')
-                return redirect('approveslots')
+        messages.success(request, 'Salary Successfully Created for the Employees')
+        return redirect('approveslots')
     
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         messages.error(request, 'Oops...! Something went wrong!')
+
+
+class UpdatePayoutStatus(APIView):
+
+    def get(self, request):
+        
+            all_payouts = PayoutDetails.objects.filter(payout_status__status_id=6)
+            payment_details = pay.objects.first()
+            if not payment_details:
+                return response({"error": "Payment details not found."}, status=400)
+
+            api_key = payment_details.api_key
+            secret_key = payment_details.secret_key
+
+            for payout in all_payouts:
+                try:
+                    payout_id = payout.razorpay_payout_id
+
+                    # Initialize response to avoid referencing uninitialized variable
+                    response = None
+
+                    # Fetch payout details from Razorpay API using Basic Auth
+                    response = requests.get(
+                        f"https://api.razorpay.com/v1/payouts/{payout_id}",
+                        auth=(api_key, secret_key)
+                    )
+
+                    if response.status_code == 200:
+                        response_data = response.json()
+                        status = response_data.get('status')
+                        fees = response_data.get('fees', 0)  # Default to 0 if fees not present
+                        tax = response_data.get('tax', 0)
+                        utr = response_data.get('utr') 
+                        failure_reason = response_data.get('failure_reason', 'Unknown reason')
+
+                        # Update PayoutDetails entry based on the status
+                        if status == 'processed':
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=7)
+                            payout.utr = utr 
+                        elif status == 'processing':
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  # Assuming 6 is 'processing'
+                        elif status == 'failed':
+                            payout.failure_reason = failure_reason
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 8 is 'failed'
+                        elif status == 'reversed':
+                            payout.failure_reason = failure_reason
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=9)  # Assuming 9 is 'reversed'
+
+                        # Update additional fields
+                        payout.fees = fees
+                        payout.tax = tax
+                        payout.payment_completed_date = datetime.now()
+                        payout.save()
+
+                        print(f"Payout {payout_id} updated: Status - {status}")
+                    else:
+                        print(f"Failed to fetch payout {payout_id}: HTTP {response.status_code}, {response.text}")
+                except Exception as e:
+                    print(f"Error updating payout {payout_id}: {str(e)}")
+                    if response is not None:
+                        print(f"HTTP Response: {response.text}")
+
+                # return response({"message": "Payout statuses updated successfully."}, status=200)
+
+        # except Exception as e:
+        #     print(f"Error in payout status update: {str(e)}")
+        #     return response({"error": "Something went wrong."}, status=500)
 
 
