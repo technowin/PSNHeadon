@@ -578,46 +578,51 @@ def site_master(request):
         if request.method == "POST":
             siteId = request.POST.get('site_id', '')
             if siteId == "0":
-                response_data = {"status": "fail"}
+                # response_data = {"status": "fail"}
+                try:
+                    siteName = request.POST.get('siteName', '')
+                    siteAddress = request.POST.get('siteAddress', '')
+                    pincode = request.POST.get('pincode', '')
+                    contactPersonName = request.POST.get('contactPersonName', '')
+                    contactPersonEmail = request.POST.get('contactPersonEmail', '')
+                    contactPersonMobileNo = request.POST.get('Number', '')  
+                    # is_active = request.POST.get('status_value', '') 
+                    # noOfDays = request.POST.get('FieldDays', '')  
+                    # notificationTime = request.POST.get('notificationTime', '')
+                    # ReminderTime = request.POST.get('ReminderTime', '')
+                    companyId = request.POST.get('company_id', '')  
+                    stateId = request.POST.get('state_id', '')  
+                    cityId = request.POST.get('city_id', '')  
+                    # rosterType = request.POST.get('roster_type', '')
                 
-                siteName = request.POST.get('siteName', '')
-                siteAddress = request.POST.get('siteAddress', '')
-                pincode = request.POST.get('pincode', '')
-                contactPersonName = request.POST.get('contactPersonName', '')
-                contactPersonEmail = request.POST.get('contactPersonEmail', '')
-                contactPersonMobileNo = request.POST.get('Number', '')  
-                # is_active = request.POST.get('status_value', '') 
-                # noOfDays = request.POST.get('FieldDays', '')  
-                # notificationTime = request.POST.get('notificationTime', '')
-                # ReminderTime = request.POST.get('ReminderTime', '')
-                companyId = request.POST.get('company_id', '')  
-                stateId = request.POST.get('state_id', '')  
-                cityId = request.POST.get('city_id', '')  
-                # rosterType = request.POST.get('roster_type', '')
-               
-                params = [
-                    siteName, 
-                    siteAddress, 
-                    pincode, 
-                    contactPersonName, 
-                    contactPersonEmail, 
-                    contactPersonMobileNo, 
-                    # is_active,
-                    # noOfDays, 
-                    # notificationTime, 
-                    # ReminderTime, 
-                    companyId,
-                    stateId,
-                    cityId
-                    # rosterType
-                ]
-                
-                cursor.callproc("stp_insert_site_master", params)
-                for result in cursor.stored_results():
-                        datalist = list(result.fetchall())
-                if datalist[0][0] == "success":
-                    messages.success(request, 'Data successfully entered !')
-                else: messages.error(request, datalist[0][0])
+                    params = [
+                        siteName, 
+                        siteAddress, 
+                        pincode, 
+                        contactPersonName, 
+                        contactPersonEmail, 
+                        contactPersonMobileNo, 
+                        # is_active,
+                        # noOfDays, 
+                        # notificationTime, 
+                        # ReminderTime, 
+                        companyId,
+                        stateId,
+                        cityId
+                        # rosterType
+                    ]
+                    
+                    cursor.callproc("stp_insert_site_master", params)
+                    for result in cursor.stored_results():
+                            datalist = list(result.fetchall())
+                    if datalist[0][0] == "success":
+                        messages.success(request, 'Data successfully entered !')
+                    else: messages.error(request, datalist[0][0])
+                except Exception as e:
+                    tb = traceback.extract_tb(e.__traceback__)
+                    fun = tb[0].name
+                    cursor.callproc("stp_error_log", [fun, str(e), user])  
+                    messages.error(request, 'Oops...! Something went wrong!')
             else:
                 if request.method == "POST" :
                     siteId = request.POST.get('site_id', '')

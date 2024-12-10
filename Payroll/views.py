@@ -973,9 +973,11 @@ class ApproveSlotListView(ListView):
     template_name = 'Payroll/Slot/approve_index.html'
     context_object_name = 'slots'
     paginate_by = 50  
+
     def get_queryset(self):
-        # Filter the SlotDetails based on status_id = 2
-        return SlotDetails.objects.filter(status_id=3)
+        # Exclude SlotDetails with status_id = 1 or 2
+        return SlotDetails.objects.exclude(status_id__in=[1, 2])
+
 
     
 def generate_salary_redirect(request, slot_id):
@@ -1052,10 +1054,12 @@ def view_approve_salary(request,slot_id):
             'user_slot_details': user_slot_details,
         }
         return render(request, 'Payroll/Slot/view_approve_salary.html', context)
+
     except Exception as e:
         print(f"Error: {e}") 
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
+    
         cursor.callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
     
@@ -1447,6 +1451,10 @@ def create_payout(request):
                     created_by=get_object_or_404(CustomUser, id=user),
                     updated_by=get_object_or_404(CustomUser, id=user),
                 )
+                slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
+                SlotDetails.objects.filter(slot_id=slot_id).update(
+                    status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                )
                 # Call Razorpay API to create payout
                 response = requests.post(
                     url="https://api.razorpay.com/v1/payouts",
@@ -1474,6 +1482,10 @@ def create_payout(request):
                         payout.payout_for_date = date.today()
                         if status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)
+                            slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
+                            SlotDetails.objects.filter(slot_id=slot_id).update(
+                                status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                            )
                         payout.save()  # Save the updated record
                         print(f"Payout updated for Employee ID: {employee_id}, Fund Account ID: {fund_account_id}, Status: {status}")
                     else:
@@ -1484,7 +1496,13 @@ def create_payout(request):
                     payout.failure_reason = reason
                     payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
                     payout.save()
+                    slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
+                    SlotDetails.objects.filter(slot_id=slot_id).update(
+                        status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                            )
                     print(f"Payout failed for Employee ID: {employee_id}, Status Code: {response.status_code}")
+
+                check_payout_status.apply_async(args=[payout.id, api_key, api_secret], countdown=300)
 
 
                 messages.success(request, 'Salary Successfully Created for the Employees')
@@ -1495,6 +1513,29 @@ def create_payout(request):
         fun = tb[0].name
         messages.error(request, 'Oops...! Something went wrong!')
 
+
+def check_payout_status(payout_id, api_key, api_secret):
+    payout = PayoutDetails.objects.get(id=payout_id)
+
+    # Make API call to get payout status
+    url = f"https://api.razorpay.com/v1/payouts/{payout.razorpay_payout_id}"
+    response = requests.get(url, auth=(api_key, api_secret))
+    
+    if response.status_code == 200:
+        data = response.json()
+        status = data.get('status')
+        fees = data.get('fees')
+        tax = data.get('tax')
+
+        # Update PayoutDetails status
+        payout.fees = fees
+        payout.tax = tax
+        payout.payout_status = get_object_or_404(StatusMaster, status_id=6 if status == 'processed' else 8)
+        payout.save()
+    
+        print(f"Updated payout status for ID {payout_id} to {status}")
+    else:
+        print(f"Failed to fetch status for Payout ID {payout_id}. Status Code: {response.status_code}")
 
 
 

@@ -23,6 +23,7 @@
                             <th>Employee ID</th>
                             <th>Company</th>
                             <th>Salary</th>
+                            <th>Status</th>
                             <th>Created At</th>
                             <th>Action</th>
                         </tr>
@@ -37,6 +38,7 @@
                             </td>
                             <td>{{ user_slot.company_id.company_name }}</td>
                             <td>{{ user_slot.total_salary }}</td>
+                            <td>{{ slot.status.status_name}}</td>
                             <td>{{ user_slot.created_at }}</td>
                             <td>
                                 <a href="{% url 'view_employee_salary_details' user_slot.employee_id slot.slot_id %}" class="btn btn-primary btn-sm">View</a>
