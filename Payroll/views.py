@@ -1454,7 +1454,7 @@ def create_payout(request):
                 )
                 slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
                 SlotDetails.objects.filter(slot_id=slot_id).update(
-                    status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                    status=get_object_or_404(StatusMaster, status_id=5)  # Replace '6' with the desired status ID
                 )
                 # Call Razorpay API to create payout
                 response = requests.post(
@@ -1482,6 +1482,10 @@ def create_payout(request):
                         payout.payout_for_date = date.today()
                         if status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)
+                            slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
+                            SlotDetails.objects.filter(slot_id=slot_id).update(
+                                status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                            )
                         payout.save()  # Save the updated record
                         print(f"Payout updated for Employee ID: {employee_id}, Fund Account ID: {fund_account_id}, Status: {status}")
                     else:
@@ -1506,7 +1510,7 @@ class UpdatePayoutStatus(APIView):
 
     def get(self, request):
         
-            all_payouts = PayoutDetails.objects.filter(payout_status__status_id=6)
+            all_payouts = PayoutDetails.objects.all()
             payment_details = pay.objects.first()
             if not payment_details:
                 return response({"error": "Payment details not found."}, status=400)
@@ -1514,11 +1518,11 @@ class UpdatePayoutStatus(APIView):
             api_key = payment_details.api_key
             secret_key = payment_details.secret_key
 
+
             for payout in all_payouts:
                 try:
                     payout_id = payout.razorpay_payout_id
 
-                    # Initialize response to avoid referencing uninitialized variable
                     response = None
 
                     # Fetch payout details from Razorpay API using Basic Auth
@@ -1541,12 +1545,12 @@ class UpdatePayoutStatus(APIView):
                             payout.utr = utr 
                         elif status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  # Assuming 6 is 'processing'
-                        elif status == 'failed':
-                            payout.failure_reason = failure_reason
-                            payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 8 is 'failed'
+                        # elif status == 'failed':
+                        #     payout.failure_reason = failure_reason
+                        #     payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 8 is 'failed'
                         elif status == 'reversed':
                             payout.failure_reason = failure_reason
-                            payout.payout_status = get_object_or_404(StatusMaster, status_id=9)  # Assuming 9 is 'reversed'
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 9 is 'reversed'
 
                         # Update additional fields
                         payout.fees = fees
