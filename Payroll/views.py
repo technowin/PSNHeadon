@@ -1562,10 +1562,6 @@ class UpdatePayoutStatus(APIView):
                     if response is not None:
                         print(f"HTTP Response: {response.text}")
 
-                # return response({"message": "Payout statuses updated successfully."}, status=200)
-
-        # except Exception as e:
-        #     print(f"Error in payout status update: {str(e)}")
-        #     return response({"error": "Something went wrong."}, status=500)
+           
 
 
