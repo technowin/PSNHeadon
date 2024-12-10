@@ -1502,9 +1502,6 @@ def create_payout(request):
                             )
                     print(f"Payout failed for Employee ID: {employee_id}, Status Code: {response.status_code}")
 
-                check_payout_status.apply_async(args=[payout.id, api_key, api_secret], countdown=300)
-
-
                 messages.success(request, 'Salary Successfully Created for the Employees')
                 return redirect('approveslots')
     
@@ -1514,41 +1511,3 @@ def create_payout(request):
         messages.error(request, 'Oops...! Something went wrong!')
 
 
-def check_payout_status(payout_id, api_key, api_secret):
-    payout = PayoutDetails.objects.get(id=payout_id)
-
-    # Make API call to get payout status
-    url = f"https://api.razorpay.com/v1/payouts/{payout.razorpay_payout_id}"
-    response = requests.get(url, auth=(api_key, api_secret))
-    
-    if response.status_code == 200:
-        data = response.json()
-        status = data.get('status')
-        fees = data.get('fees')
-        tax = data.get('tax')
-
-        # Update PayoutDetails status
-        payout.fees = fees
-        payout.tax = tax
-        payout.payout_status = get_object_or_404(StatusMaster, status_id=6 if status == 'processed' else 8)
-        payout.save()
-    
-        print(f"Updated payout status for ID {payout_id} to {status}")
-    else:
-        print(f"Failed to fetch status for Payout ID {payout_id}. Status Code: {response.status_code}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
