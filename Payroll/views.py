@@ -470,24 +470,29 @@ def upload_attendance(request):
                 for index, row in data.iterrows():
                     row_error_found = False
 
-                    # Validate Attendance Date
                     date_str = str(row.get('Attendance Date', '')).strip()
 
+                    # If the date is provided, try parsing it
                     if date_str:
                         attendance_date = None
-                        # Try parsing 'dd-mm-yyyy' format
-                        if '-' in date_str and len(date_str.split('-')[0]) <= 2:  # Likely 'dd-mm-yyyy'
-                            try:
-                                attendance_date = datetime.strptime(date_str, '%d-%m-%Y').date()  # Extract only date
-                            except ValueError:
-                                pass
 
-                        # Try parsing 'yyyy-mm-dd' format
-                        if not attendance_date and '-' in date_str and len(date_str.split('-')[0]) == 4:  # Likely 'yyyy-mm-dd'
-                            try:
-                                attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Extract only date
-                            except ValueError:
-                                pass
+                        # Check if the date is already a datetime object (in case Excel passed a date object)
+                        if isinstance(row.get('Attendance Date'), datetime):
+                            attendance_date = row['Attendance Date'].date()
+                        else:
+                            # Try parsing 'dd-mm-yyyy' format
+                            if '-' in date_str and len(date_str.split('-')[0]) <= 2:  # Likely 'dd-mm-yyyy'
+                                try:
+                                    attendance_date = datetime.strptime(date_str, '%d-%m-%Y').date()  # Extract only date
+                                except ValueError:
+                                    pass
+
+                            # Try parsing 'yyyy-mm-dd' format
+                            if not attendance_date and '-' in date_str and len(date_str.split('-')[0]) == 4:  # Likely 'yyyy-mm-dd'
+                                try:
+                                    attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Extract only date
+                                except ValueError:
+                                    pass
 
                         # If parsing succeeds, continue processing with attendance_date
                         if attendance_date:
@@ -508,6 +513,7 @@ def upload_attendance(request):
                         error_count += 1
                         row_error_found = True
                         continue
+
 
                     # Validate Employee ID (check if it is blank, null, or ' ')
                     if not row['Employee Id'] or str(row['Employee Id']).strip() == '':
@@ -553,15 +559,29 @@ def upload_attendance(request):
                         attendance_out=row['Attendance Out'],
                         status_id=get_object_or_404(StatusMaster, status_id=1).status_id
                     )
+                    
                     attendance.save()
-                    slot_details = get_object_or_404(SlotDetails, slot_id=slot.slot_id)
-                    slot_details.status = get_object_or_404(StatusMaster, status_id=1)  # Assuming status_id is a ForeignKey
-                    slot_details.save()
+
+
+                    # Update the status in the UserSlotDetails table
+                    user_slot = UserSlotDetails.objects.filter(slot_id=slot, employee_id=row['Employee Id']).first()
+
+                    if user_slot:
+                        # Update the status if the record exists
+                        user_slot.status_id = get_object_or_404(StatusMaster, status_id=1).status_id
+                        user_slot.save()
+    
+
+                    # user_slot_details = get_object_or_404(UserSlotDetails, slot_id = slot.slot_id, employee_id =) 
+                    # user_slot_details.status = get_object_or_404(StatusMaster, status_id=1) 
 
                     result_value = "success"  # Example, you should fetch this from the actual procedure result
 
                     if result_value == "success":
                         success_count += 1
+                        slot_details = get_object_or_404(SlotDetails, slot_id=slot.slot_id)
+                        slot_details.status = get_object_or_404(StatusMaster, status_id=1)  # Assuming status_id is a ForeignKey
+                        slot_details.save()
                     elif result_value.startswith("error"):
                         # Log the error message in your error log table
                         error_message = result_value  # The error message from the procedure
@@ -569,6 +589,7 @@ def upload_attendance(request):
                             upload_for, comp.company_id, 'attendance_file', datetime.now().date(), error_message, None, row['Employee Id']
                         ])
                         error_count += 1 
+
 
                 # Prepare checksum message
                 checksum_msg = (
@@ -672,8 +693,8 @@ def calculate_daily_salary(request,slot_id):
                        
                         
                         # Convert time_in and time_out to time objects using strptime
-                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M').time()
-                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M').time()
+                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M:%S').time()
+                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M:%S').time()
 
                         # Calculate working hours
                         time_in_seconds = time_in.hour * 3600 + time_in.minute * 60
@@ -937,6 +958,19 @@ def calculate_daily_salary(request,slot_id):
                                     created_by=request.user,
                                     updated_by=request.user
                                     )
+                            
+                            user_slot = UserSlotDetails.objects.get(slot_id=slot, employee_id=employee_id)
+
+                            if user_slot:
+                                status = get_object_or_404(StatusMaster, status_id=3)  # Assuming you want to update the status to 2
+                                user_slot.status = status
+                                user_slot.save()
+
+                            slot = SlotDetails.objects.get(slot_id=slot_id)
+                            if slot:
+                                status = get_object_or_404(StatusMaster, status_id = 3)
+                                slot.status = status
+                                slot.save()
                             try:
                                 deduction = income_tax_deduction.objects.get(
                                     employee_id=employee_id,
@@ -1120,6 +1154,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
 
         # Prepare the context for rendering the template
         context = {
+            'slot_id':slot_id,
             'date':date,
             'employee_id':employee_id,
             'employee_name':employee_name,
@@ -1171,29 +1206,7 @@ def download_sample(request):
     user = request.session.get('user_id', '')
 
     try:
-        # Retrieve the parameters from the GET request
-        # company = request.GET.get('company_id', 'N/A')
-        # site = request.GET.get('site_id', 'N/A')
-        # slot = request.GET.get('slot_id', 'N/A')
-
-        # Fetch the names from the respective tables
-        company_name = "Example Company"
-        site_name = "Example Site"
-        slot_name = "Your Slot Name"
-
-        # if company != 'N/A':
-        #     company = get_object_or_404(company_master, company_id=company)
-        #     company_name = company.company_name
-
-        # if site != 'N/A':
-        #     site = get_object_or_404(site_master, site_id=site)
-        #     site_name = site.site_name
-
-        # if slot != 'N/A':
-        #     slot = get_object_or_404(SlotDetails, slot_id=slot)
-        #     slot_name = slot.slot_name
-
-        # Create a workbook and a sheet
+       
         wb = Workbook()
         ws = wb.active
         ws.title = "Attendance Data"
@@ -1212,12 +1225,12 @@ def download_sample(request):
         time_format = "%H:%M"  # 24-hour format with hours and minutes
 
         attendance_data = [
-            ["2024-11-05", "EMP001", 
-            datetime.strptime("09:00", "%H:%M").strftime(time_format), 
-            datetime.strptime("17:00", "%H:%M").strftime(time_format)],
-            ["2024-11-05", "EMP002", 
-            datetime.strptime("09:30", "%H:%M").strftime(time_format), 
-            datetime.strptime("17:30", "%H:%M").strftime(time_format)],
+            ["2024-11-05", "PSNID01", 
+            datetime.strptime("09:00:00", "%H:%M:%S").strftime(time_format), 
+            datetime.strptime("17:00:00", "%H:%M:%S").strftime(time_format)],
+            ["2024-11-05", "PSNID02", 
+            datetime.strptime("09:30:00", "%H:%M:%S").strftime(time_format), 
+            datetime.strptime("17:30:00", "%H:%M:%S").strftime(time_format)],
         ]
 
         # Add attendance data to the worksheet
@@ -1299,9 +1312,18 @@ def approve_attendance(request):
                 # Fetch all records in SlotAttendanceDetails for the given slot_id
                 slot_attendance_records = slot_attendance_details.objects.filter(slot_id=slot_id)
                 if slot_attendance_records.exists():
-                    # Update the status for all matching records
+                # Update the status for all matching SlotAttendanceDetails records
                     status = get_object_or_404(StatusMaster, status_id=2)
-                    slot_attendance_records.update(status=status)  # Use update() for bulk updates
+                    slot_attendance_records.update(status=status)
+
+                    # Update the status for UserSlotDetails based on the employee_id from SlotAttendanceDetails
+                    for record in slot_attendance_records:
+                        # Fetch UserSlotDetails where slot_id matches and employee_id matches the one in the SlotAttendance record
+                        user_slot = UserSlotDetails.objects.filter(slot_id=slot_id, employee_id=record.employee_id).first()
+                        if user_slot:
+                            # Update the status for each matching UserSlotDetails record
+                            user_slot.status = get_object_or_404(StatusMaster, status_id=2)
+                            user_slot.save()
 
                 # Update the status for the corresponding SlotDetails record
                 slot_details = get_object_or_404(SlotDetails, slot_id=slot_id)
@@ -1482,10 +1504,13 @@ def create_payout(request):
                         payout.payout_for_date = date.today()
                         if status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)
-                            slot_id = slot_details.slot_id  # Assuming `slot_details` has been fetched already
-                            SlotDetails.objects.filter(slot_id=slot_id).update(
-                                status=get_object_or_404(StatusMaster, status_id=6)  # Replace '6' with the desired status ID
+                            slot_id = slot_details.slot_id  
+                            UserSlotDetails.objects.filter(slot_id=slot_id, employee_id=employee_id).update(
+                                status=get_object_or_404(StatusMaster, status_id=6)
                             )
+                            # SlotDetails.objects.filter(slot_id=slot_id).update(
+                            #     status=get_object_or_404(StatusMaster, status_id=6)  
+                            # )
                         payout.save()  # Save the updated record
                         print(f"Payout updated for Employee ID: {employee_id}, Fund Account ID: {fund_account_id}, Status: {status}")
                     else:
@@ -1493,11 +1518,17 @@ def create_payout(request):
                 else:
                     response_data = response.json()
                     reason = response_data.get('error', {}).get('description', 'Unknown error')
+                    
                     payout.failure_reason = reason
-                    payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
+                    payout.payout_status = get_object_or_404(StatusMaster, status_id=9)
                     payout.save()
+                    employee_id = payout.employee_id
+                    
+                    UserSlotDetails.objects.filter(slot_id=slot_id, employee_id=employee_id).update(
+                        status=get_object_or_404(StatusMaster, status_id=9)
+                    )
 
-        messages.success(request, 'Salary Successfully Created for the Employees')
+        messages.success(request, 'Salary Successfully Started Processing to the Employees')
         return redirect('approveslots')
     
     except Exception as e:
@@ -1509,6 +1540,8 @@ def create_payout(request):
 class UpdatePayoutStatus(APIView):
 
     def get(self, request):
+            errors = []
+            success = []
         
             all_payouts = PayoutDetails.objects.all()
             payment_details = pay.objects.first()
@@ -1522,6 +1555,8 @@ class UpdatePayoutStatus(APIView):
             for payout in all_payouts:
                 try:
                     payout_id = payout.razorpay_payout_id
+                    slot = payout.slot_id.slot_id
+                    # employee = payout.employee_id
 
                     response = None
 
@@ -1534,8 +1569,6 @@ class UpdatePayoutStatus(APIView):
                     if response.status_code == 200:
                         response_data = response.json()
                         status = response_data.get('status')
-                        fees = response_data.get('fees', 0)  # Default to 0 if fees not present
-                        tax = response_data.get('tax', 0)
                         utr = response_data.get('utr') 
                         failure_reason = response_data.get('failure_reason', 'Unknown reason')
 
@@ -1543,28 +1576,91 @@ class UpdatePayoutStatus(APIView):
                         if status == 'processed':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=7)
                             payout.utr = utr 
+                            slot_details = SlotDetails.objects.filter(slot_id=slot)  # Fetch all matching SlotDetails entries
+                            if slot_details.exists():  # Check if any entries exist
+                                for slot in slot_details:  # Iterate through each matching entry
+                                    slot.status = get_object_or_404(StatusMaster, status_id=7)  
+                                    slot.save()
                         elif status == 'processing':
-                            payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  # Assuming 6 is 'processing'
-                        # elif status == 'failed':
-                        #     payout.failure_reason = failure_reason
-                        #     payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 8 is 'failed'
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  
+                            slot_details = SlotDetails.objects.filter(slot_id=slot)
+                            payout.utr = None
+                            if slot_details.exists():  # Check if any entries exist
+                                for slot in slot_details:  # Iterate through each matching entry
+                                    slot.status = get_object_or_404(StatusMaster, status_id=6)  
+                                    slot.save()
                         elif status == 'reversed':
                             payout.failure_reason = failure_reason
-                            payout.payout_status = get_object_or_404(StatusMaster, status_id=8)  # Assuming 9 is 'reversed'
-
-                        # Update additional fields
-                        payout.fees = fees
-                        payout.tax = tax
+                            payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
+                            slot_details = SlotDetails.objects.filter(slot_id=slot)
+                            payout.utr = None
+                            if slot_details.exists():  # Check if any entries exist
+                                for slot in slot_details:  # Iterate through each matching entry
+                                    slot.status = get_object_or_404(StatusMaster, status_id=8)  
+                                    slot.save()
                         payout.payment_completed_date = datetime.now()
                         payout.save()
 
-                        print(f"Payout {payout_id} updated: Status - {status}")
+                        success.append(f"Successfully Payment Sent to ", payout.employee_id)
                     else:
-                        print(f"Failed to fetch payout {payout_id}: HTTP {response.status_code}, {response.text}")
+                        errors.append(f"Error Sending payment to ", payout.employee_id)
                 except Exception as e:
                     print(f"Error updating payout {payout_id}: {str(e)}")
                     if response is not None:
                         print(f"HTTP Response: {response.text}")
+
+           
+def generate_pay_slip(request):
+    try:
+        # Get parameters from the GET request
+        employee_id = request.GET.get('employeeId')
+        slot_id = request.GET.get('slotId')
+
+        if not employee_id or not slot_id:
+            return HttpResponse("Missing employeeId or slotId", status=400)
+
+        # Fetch salary details and employee data
+        salary_details = daily_salary.objects.filter(employee_id=employee_id, slot_id=slot_id)
+        employee = get_object_or_404(UserSlotDetails, employee_id=employee_id, slot_id=slot_id)
+        
+        # Filter earnings and deductions
+        earnings = salary_details.filter(pay_type__in=['Earning', 'Other Earning'])
+        deductions = salary_details.filter(pay_type='Deduction')
+        
+        # Calculate gross earnings, gross deductions, and net salary
+        gross_earnings = earnings.aggregate(total=Sum('amount'))['total'] or 0
+        gross_deductions = deductions.aggregate(total=Sum('amount'))['total'] or 0
+        net_salary = gross_earnings - gross_deductions
+
+        # Context to render the template
+        context = {
+            'employee_name': employee.emp_id.employee_name,  # Assuming `emp_id` is a ForeignKey with the employee details
+            'employee_id': employee_id,
+            'earnings': [{'name': e.element_name, 'amount': e.amount} for e in earnings],
+            'deductions': [{'name': d.element_name, 'amount': d.amount} for d in deductions],
+            'gross_earnings': gross_earnings,
+            'net_salary': net_salary,
+        }
+
+        # # Render the payment slip template to HTML
+        # html_string = render_to_string('Payroll/Slot/payment_slip.html', context)
+
+        # # Generate PDF from the HTML string using WeasyPrint
+        # pdf_file = HTML(string=html_string).write_pdf()
+
+        # # Return the PDF as an HTTP response
+        # response = HttpResponse(pdf_file, content_type='application/pdf')
+        # response['Content-Disposition'] = f'attachment; filename="payment_slip_{employee_id}.pdf"'
+        # return response
+
+    except Exception as e:
+        # Capture and print error traceback for debugging
+        tb = traceback.format_exc()
+        print(f"Error: {e}")
+        print(f"Traceback: {tb}")
+        
+        # Return error message in response
+        return HttpResponse(f"Something went wrong: {str(e)}", status=500)
 
            
 

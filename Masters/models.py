@@ -5,7 +5,7 @@ from django.db import models
 from django.db import models
 
 from Account.models import CustomUser
-from Payroll.models import designation_master
+from Payroll.models import StatusMaster, designation_master
 
 
      
@@ -280,6 +280,7 @@ class UserSlotDetails(models.Model):
     company_id = models.ForeignKey(company_master, on_delete=models.CASCADE,related_name='UserSlotDetails_company_id',blank=True, null=True,db_column='company_id')
     site_id = models.ForeignKey(site_master, on_delete=models.CASCADE,related_name='UserSlotDetails_site_id',blank=True, null=True,db_column='site_id')
     slot_id = models.ForeignKey(SlotDetails, on_delete=models.CASCADE,related_name='UserSlotDetails_slot_id',blank=True, null=True,db_column='slot_id')
+    status = models.ForeignKey(StatusMaster, on_delete=models.CASCADE,related_name='UserSlotDetails_status_id',blank=True, null=True,db_column='status_id')
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_shit_created',blank=True, null=True,db_column='created_by') 
     class Meta:

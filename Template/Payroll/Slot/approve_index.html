@@ -1,14 +1,14 @@
 {% extends "Shared/Layout.html" %}
 {% block content %}
 
- 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Success/Error Messages -->
-    {% if messages %}
+    {% comment %} {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
-    {% endif %}
+    {% endif %} {% endcomment %}
 
     <!-- Include DataTables CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -48,6 +48,20 @@
         </table>
     </div>
 </div>
+
+{% if messages %}
+  {% for message in messages %}
+    <script>
+    Swal.fire({
+      title: "{{ message.tags }}",
+      text: "{{ message }}",
+      icon: "{{ message.tags }}",
+      confirmButtonText: "OK",
+    });
+  </script>
+  {% endfor %}
+{% endif %}
+    
 
 <!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

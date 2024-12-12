@@ -176,6 +176,7 @@ urlpatterns = [
     path('download_sample/', download_sample, name='download_sample'),
     path('attendance_error/', attendance_error, name='attendance_error'),
 
-    path('create_payout', create_payout, name='create_payout')
+    path('create_payout', create_payout, name='create_payout'),
+    path('generate_pay_slip', generate_pay_slip, name='generate_pay_slip')
 
 ]

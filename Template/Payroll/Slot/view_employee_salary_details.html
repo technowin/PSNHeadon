@@ -10,13 +10,20 @@
     {% endif %}
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h2>Net Salary Details</h2>
+            <button class="btn btn-primary" onclick = "generatePaySlip()">Payment Slip</button>
         </div>
+        
         <div class="card-body">
             <!-- Employee Details -->
             <form>
                 <div class="row mb-3">
+
+                    <div class="col-md-4" hidden>
+                        <label for="employeeId"class="me-2 text-dark"><strong>SLot Id:</strong></label>
+                        <input type="text" id="slotId" class="form-control" value="{{ slot_id }}" readonly>
+                    </div>
                     <!-- Employee ID -->
                     <div class="col-md-4">
                         <label for="employeeId"class="me-2 text-dark"><strong>Employee ID:</strong></label>
@@ -191,4 +198,37 @@
     <a href="{% url 'slot_list' %}" class="btn btn-secondary">Back to List</a>
 </div>
 </div>
+
+<script>
+    function generatePaySlip() {
+        debugger;
+        var employeeId = $('#employeeId').val();  
+        var slotId = $('#slotId').val(); 
+        
+        // Send an AJAX request
+        $.ajax({
+            url: "{% url 'generate_pay_slip' %}",  // The URL is dynamically generated
+            type: 'GET',  // HTTP method
+            data: {
+                employeeId: employeeId,  // Send employeeId
+                slotId: slotId  // Send slotId
+            },
+            success: function(response) {
+                // If the server responds with the PDF, create a download link
+                var blob = new Blob([response], { type: 'application/pdf' });
+    
+                // Create a temporary link element to trigger the download
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `payment_slip_${employeeId}.pdf`;  // Set the filename
+                link.click();  // Trigger the download
+            },
+            error: function(xhr, status, error) {
+                console.error('Error generating payment slip:', error);
+            }
+        });
+    }
+</script>
+
+    
 {% endblock %}
