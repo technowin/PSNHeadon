@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif; 
+            color: #333; 
+            margin: 0;
+            font-size:12px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .details, .salary-breakdown {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .details td, .salary-breakdown td, .salary-breakdown th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .salary-breakdown th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .total {
+            font-weight: bold;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between; /* Space between logo and date */
+            align-items: center; /* Vertically center the items */
+            padding: 10px 20px;
+            border-bottom: 2px solid #ddd; /* Optional: Adds a line below the header */
+        }
+        .header-info {
+            font-size: 16px;
+            color: #555;
+        }
+    
+        .header-info p {
+            margin: 0;
+        }
+    </style>
+    
+    <body>
+        <div class="header">
+            <div class="logo">
+                <img src="data:image/png;base64,{{ encoded_image }}" alt="Company Logo" width="auto" height="auto">
+            </div>
+        </div>
+    
+        <div style="display: flex; justify-content: space-between; width: 100%; padding: 10px 20px;">
+            <div class="header-info" style="text-align: right;"> <!-- Right aligned content -->
+                <p><b>Payment Date: {{ date }}</b></p>
+            </div>
+        </div>
+    <br>
+    
+    
+    <table class="details">
+        <tr>
+            <td><b>Employee Name:</b> {{ employee_name }}</td>
+            <td><b>Employee ID:</b> {{ employee_id }}</td>
+        </tr>
+        <tr>
+            <td><b>Company :</b> {{ slot.company.company_name }}</td>
+            <td><b>Worksite:</b> {{ slot.site_id.site_name }}</td>
+        </tr>
+        <tr>
+            <td><b>Designation:</b> {{ slot.designation_id.designation_name }}</td>
+            <td><b>Slot Name:</b> {{ slot.slot_name }}</td>
+        </tr>
+        <tr>
+            <td><b>Shift Date:</b> {{ shift_date }}</td>
+            <td><b>Shift Time:</b> {{ slot.start_time }} - {{ slot.end_time }}</td>
+        </tr>
+        <tr>
+            <td><b>Attended Time:</b> {{ result }}</td>
+    </table>
+    <br>
+    <br>
+    <table class="salary-breakdown">
+        <tr>
+            <th>Earnings</th>
+            <th>Amount</th>
+            <th>Deductions</th>
+            <th>Amount</th>
+        </tr>
+        <tr>
+            <td>
+                {% for earning in earnings %}
+                    <div>{{ earning.name }}</div>
+                {% endfor %}
+            </td>
+            <td>
+                {% for earning in earnings %}
+                    <div>{{ earning.amount }}</div>
+                {% endfor %}
+            </td>
+            <td>
+                {% for deduction in deductions %}
+                    <div>{{ deduction.name }}</div>
+                {% endfor %}
+            </td>
+            <td>
+                {% for deduction in deductions %}
+                    <div>{{ deduction.amount }}</div>
+                {% endfor %}
+            </td>
+        </tr>
+        <tr class="total">
+            <td colspan="2"><b>Total Earnings</b>: {{ total_earnings_amount }}</td>
+            <td colspan="2"><b>Total Deductions</b>: {{ gross_deductions }}</td>
+        </tr>
+        <tr class="total">
+            <td colspan="4"><b>Net Salary</b>: {{ net_salary }}</td>
+        </tr>
+        
+    </table>
+        <br>
+        <br>
+    <div class="footer">
+        <p style="font-size: 12px; color: #888;">This is a digitally generated slip. No signature required.</p>
+    </div>
+    
+</body>
+</html>

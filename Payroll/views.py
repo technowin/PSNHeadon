@@ -34,6 +34,13 @@ import requests
 from django.http import JsonResponse
 import Db
 from datetime import date
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa 
+import base64
+from io import BytesIO
+from PIL import Image
+from django.shortcuts import render
 # from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
@@ -1609,12 +1616,104 @@ class UpdatePayoutStatus(APIView):
                     if response is not None:
                         print(f"HTTP Response: {response.text}")
 
-           
+
+def refresh_payout_status(request):
+    errors = []
+    success = []
+    
+    slot = request.GET.get('slot_id')
+    
+    if not slot:
+        return JsonResponse({"error": "Slot ID not provided."}, status=400)
+
+    all_payouts = PayoutDetails.objects.filter(slot_id=slot)
+    payment_details = pay.objects.first()
+
+    if not payment_details:
+        return JsonResponse({"error": "Payment details not found."}, status=400)
+
+    api_key = payment_details.api_key
+    secret_key = payment_details.secret_key
+
+    for payout in all_payouts:
+        try:
+            payout_id = payout.razorpay_payout_id
+            slot = payout.slot_id.slot_id
+            response = None
+
+            # Fetch payout details from Razorpay API using Basic Auth
+            response = requests.get(
+                f"https://api.razorpay.com/v1/payouts/{payout_id}",
+                auth=(api_key, secret_key)
+            )
+
+            if response.status_code == 200:
+                response_data = response.json()
+                status = response_data.get('status')
+                utr = response_data.get('utr') 
+                failure_reason = response_data.get('failure_reason', 'Unknown reason')
+
+                # Update PayoutDetails entry based on the status
+                if status == 'processed':
+                    payout.payout_status = get_object_or_404(StatusMaster, status_id=7)
+                    payout.utr = utr 
+                    slot_details = SlotDetails.objects.filter(slot_id=slot)  # Fetch all matching SlotDetails entries
+                    if slot_details.exists():  # Check if any entries exist
+                        for slot in slot_details:  # Iterate through each matching entry
+                            slot.status = get_object_or_404(StatusMaster, status_id=7)  
+                            slot.save()
+                elif status == 'processing':
+                    payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  
+                    slot_details = SlotDetails.objects.filter(slot_id=slot)
+                    payout.utr = None
+                    if slot_details.exists():  # Check if any entries exist
+                        for slot in slot_details:  # Iterate through each matching entry
+                            slot.status = get_object_or_404(StatusMaster, status_id=6)  
+                            slot.save()
+                elif status == 'reversed':
+                    payout.failure_reason = failure_reason
+                    payout.payout_status = get_object_or_404(StatusMaster, status_id=8)
+                    slot_details = SlotDetails.objects.filter(slot_id=slot)
+                    payout.utr = None
+                    if slot_details.exists():  # Check if any entries exist
+                        for slot in slot_details:  # Iterate through each matching entry
+                            slot.status = get_object_or_404(StatusMaster, status_id=8)  
+                            slot.save()
+                payout.payment_completed_date = datetime.now()
+                payout.save()
+
+                success.append(f"Successfully updated payout {payout_id}")
+            else:
+                errors.append(f"Error fetching payout details for {payout_id}: {response.text}")
+
+        except Exception as e:
+            errors.append(f"Error updating payout {payout_id}: {str(e)}")
+            if response is not None:
+                errors.append(f"HTTP Response: {response.text}")
+
+    # After processing all payouts, show success or error messages
+    if errors:
+        return JsonResponse({"success": False, "errors": "Error"})
+    return JsonResponse({"success": True, "messages": "Success"})
+
+
+
 def generate_pay_slip(request):
     try:
         # Get parameters from the GET request
         employee_id = request.GET.get('employeeId')
         slot_id = request.GET.get('slotId')
+        image_path = 'static/images/psn-logo0.png'
+
+        # Open the image using Pillow
+        with Image.open(image_path) as img:
+            # Convert image to BytesIO object
+            buffer = BytesIO()
+            img.save(buffer, format='PNG')
+            buffer.seek(0)
+
+            # Encode the image to base64
+            encoded_image = base64.b64encode(buffer.read()).decode('utf-8')
 
         if not employee_id or not slot_id:
             return HttpResponse("Missing employeeId or slotId", status=400)
@@ -1622,36 +1721,75 @@ def generate_pay_slip(request):
         # Fetch salary details and employee data
         salary_details = daily_salary.objects.filter(employee_id=employee_id, slot_id=slot_id)
         employee = get_object_or_404(UserSlotDetails, employee_id=employee_id, slot_id=slot_id)
+        slot_attended = get_object_or_404(slot_attendance_details, employee_id=employee_id, slot_id=slot_id)
+
+        # Calculate the time difference
+        attendance_in_str = slot_attended.attendance_in
+        attendance_out_str = slot_attended.attendance_out
+
+        # Calculate the difference between attendance_in and attendance_out
+        time_format = "%H:%M:%S"  # 24-hour format (HH:MM)
+
+        # Convert to datetime objects (use the same date for both to compare times)
+        attendance_in = datetime.strptime(attendance_in_str, time_format)
+        attendance_out = datetime.strptime(attendance_out_str, time_format)
+
+        # Calculate the time difference
+        time_difference = attendance_out - attendance_in
+
+        # Check if the difference is more than or equal to 9 hours
+        if time_difference >= timedelta(hours=9):
+            result = f"{attendance_in.strftime(time_format)} - {attendance_out.strftime(time_format)} (9 hours )"
+        else:
+            result = f"{attendance_in.strftime(time_format)} - {attendance_out.strftime(time_format)} (4 hours )"
+
+        # The result will now contain the time difference along with the "9 hours" or "4 hours" part
+        print(result)
+        slot = get_object_or_404(SlotDetails,slot_id = slot_id)
         
         # Filter earnings and deductions
-        earnings = salary_details.filter(pay_type__in=['Earning', 'Other Earning'])
-        deductions = salary_details.filter(pay_type='Deduction')
-        
-        # Calculate gross earnings, gross deductions, and net salary
-        gross_earnings = earnings.aggregate(total=Sum('amount'))['total'] or 0
-        gross_deductions = deductions.aggregate(total=Sum('amount'))['total'] or 0
-        net_salary = gross_earnings - gross_deductions
+        earnings = salary_details.filter(pay_type__in=['Earning', 'Other Earning', 'Total Earning'])
+        deductions = salary_details.filter(Q(pay_type='Deduction') | Q(element_name='Gross Deduction'))
 
-        # Context to render the template
+        total_earnings = salary_details.filter(pay_type='Total', element_name='Total Earning').first()
+        gross_earnings = salary_details.filter(pay_type='Total Earning', element_name='Gross Earning').first()
+        net_salary = salary_details.filter(pay_type='Total', element_name='Net Salary').first()
+        gross_deductions = salary_details.filter(pay_type='Total', element_name='Gross Deduction').first()
+
+        date_today = datetime.now().strftime('%d-%m-%Y')
+        shift_date = slot.shift_date.strftime('%d-%m-%Y')
+
         context = {
+            'result':result,
+            'slot':slot,
+            'shift_date':shift_date,
             'employee_name': employee.emp_id.employee_name,  # Assuming `emp_id` is a ForeignKey with the employee details
             'employee_id': employee_id,
             'earnings': [{'name': e.element_name, 'amount': e.amount} for e in earnings],
             'deductions': [{'name': d.element_name, 'amount': d.amount} for d in deductions],
-            'gross_earnings': gross_earnings,
-            'net_salary': net_salary,
+            'gross_earnings': gross_earnings.amount,
+            'net_salary': net_salary.amount,
+            'gross_deductions':gross_deductions.amount,
+            'total_earnings_amount': total_earnings.amount ,
+            'date':date_today,
+            'encoded_image': encoded_image
         }
 
-        # # Render the payment slip template to HTML
-        # html_string = render_to_string('Payroll/Slot/payment_slip.html', context)
+        # Render the template to HTML
+        html_content = render_to_string('Payroll/Slot/payment_slip.html', context)
 
-        # # Generate PDF from the HTML string using WeasyPrint
-        # pdf_file = HTML(string=html_string).write_pdf()
+        # Create a PDF response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="payslip_{employee_id}_{slot_id}.pdf"'
 
-        # # Return the PDF as an HTTP response
-        # response = HttpResponse(pdf_file, content_type='application/pdf')
-        # response['Content-Disposition'] = f'attachment; filename="payment_slip_{employee_id}.pdf"'
-        # return response
+        # Convert HTML to PDF
+        pisa_status = pisa.CreatePDF(html_content, dest=response)
+
+        # Check for errors
+        if pisa_status.err:
+            return HttpResponse(f"Error generating PDF: {pisa_status.err}", status=500)
+
+        return response
 
     except Exception as e:
         # Capture and print error traceback for debugging
@@ -1661,6 +1799,7 @@ def generate_pay_slip(request):
         
         # Return error message in response
         return HttpResponse(f"Something went wrong: {str(e)}", status=500)
+
 
            
 

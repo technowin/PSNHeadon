@@ -13,8 +13,11 @@
     {% comment %} <a href="{% url 'generate_salary' slot.slot_id %}" class="btn btn-success mb-3">Generate Salary</a> {% endcomment %}
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h2>User Salary Details for {{ slot.slot_name }}</h2>
+            <button id="refreshButton"class="btn btn-primary">
+                Refresh All
+            </button>
         </div>
         <div class="card-body">
 
@@ -22,7 +25,7 @@
 
             <form method="post" action="{% url 'create_payout' %}">
                 {% csrf_token %}
-                <input type="hidden" value="{{slot.slot_id}}" name="slot_id">
+                <input type="hidden" id ="slot_id" value="{{slot.slot_id}}" name="slot_id">
                 <table class="table table-striped" id="salaryTable">
                     <thead>
                         <tr>
@@ -74,23 +77,62 @@
         confirmButtonText: "OK",
       });
     </script>
-
-    <script>
-
-            const form = document.getElementById('approveForm');
-            const loader = document.querySelector('.coin');
-            const table = document.getElementById('salaryTable');
-        
-            // Add submit event listener
-            form.addEventListener('submit', function () {
-                debugger;
-
-                loader.hidden = false;
-        
-                table.hidden = true;
-            });
-    </script>
     {% endfor %}
   {% endif %}
+  <script>
+    $('#refreshButton').click(function() {
+        debugger;
+        var slot_id = $('#slot_id').val();  // Get the value of the slot_id
+
+        // Check if slot_id is not empty
+        if (slot_id) {
+            // Perform the AJAX request
+            $.ajax({
+                url: '{% url "refresh_payout_status" %}',  // URL for the Django view
+                type: 'GET',
+                data: {
+                    slot_id: slot_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'  // CSRF token for security
+                },
+                success: function(response) {
+                    debugger;
+                    // Check if the response contains success status
+                    if (response.success) {
+                        // Show success alert using SweetAlert
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Payout status updated successfully!'
+                        });
+                    } else {
+                        // Show failure alert if something went wrong
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Failed to update payout status!'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Show error alert if AJAX fails
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'There was an error processing your request.'
+                    });
+                    console.error('AJAX Error:', status, error);
+                }
+            });
+        } else {
+            // If no slot_id is provided, show a warning alert
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Slot ID',
+                text: 'Please provide a valid Slot ID.'
+            });
+        }
+    });
+</script>
+
 
 {% endblock %}

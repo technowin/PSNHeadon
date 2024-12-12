@@ -19,7 +19,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import CompanyMasterSerializer, DesignationSerializer, ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SiteSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotDetailsSerializer1
+from Masters.serializers import CompanyMasterSerializer, DailySalarySerializer, DesignationSerializer, ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SiteSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotDetailsSerializer1
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1617,6 +1617,26 @@ class SlotDataAPIView(APIView):
 
             print(slot_count_list)
 
+            wage_data_queryset = salary_generated_log.objects.filter(employee_id=employee_id)
+            wage_data_count = wage_data_queryset.count()
+
+            wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
+            if not wage_data:
+                return {"error": "No data found in SalaryGeneratedLog for this employee."}
+            
+            slot_id = wage_data.slot_id.slot_id
+
+            # Step 2: Get all matching records from DailySalary
+            filtered_salaries = daily_salary.objects.filter(
+            employee_id=employee_id,
+            slot_id=slot_id,
+            element_name__in=["Net Salary"]  # Filter by specific pay_type values
+            )
+        
+        # Serialize the filtered data
+            salary_data = DailySalarySerializer(filtered_salaries, many=True)
+
+
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
@@ -1626,6 +1646,8 @@ class SlotDataAPIView(APIView):
                 'slot_count_list':slot_count_list,
                 'employee_id':employee_id,
                 'mobile_no':mobile_no,
+                'wage_count':wage_data_count,
+                'salary_data':salary_data.data,
             }
         
         except Exception as e:

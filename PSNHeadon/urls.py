@@ -177,6 +177,7 @@ urlpatterns = [
     path('attendance_error/', attendance_error, name='attendance_error'),
 
     path('create_payout', create_payout, name='create_payout'),
-    path('generate_pay_slip', generate_pay_slip, name='generate_pay_slip')
+    path('generate_pay_slip', generate_pay_slip, name='generate_pay_slip'),
+    path('refresh_payout_status', refresh_payout_status, name='generate_pay_slip'),
 
 ]
