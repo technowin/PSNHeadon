@@ -104,7 +104,7 @@ class UserSlotDetailsSerializer1(serializers.ModelSerializer):
 
 
 class DailySalarySerializer(serializers.ModelSerializer):
-    # slot_id = SlotDetailsSerializer()  # Nested serializer to include slot details
+    slot_id = SlotDetailsSerializer()  # Nested serializer to include slot details
 
     class Meta:
         model = daily_salary

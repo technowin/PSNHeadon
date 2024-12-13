@@ -1537,17 +1537,17 @@ class SlotDataAPIView(APIView):
             utr_data_queryset = PayoutDetails.objects.filter(employee_id = employee_id)
             utr_count = utr_data_queryset.count()
 
-            # wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
-            # salary_data = []
-            # if wage_data:
-            #     slot_id = wage_data.slot_id.slot_id
-            #     filtered_salaries = daily_salary.objects.filter(
-            #         employee_id=employee_id,
-            #         slot_id=slot_id,
-            #         element_name__in=["Net Salary"]
-            #     )
-            #     if filtered_salaries.exists():
-            #         salary_data = DailySalarySerializer(filtered_salaries, many=True).data 
+            wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
+            salary_data = []
+            if wage_data:
+                slot_id = wage_data.slot_id.slot_id
+                filtered_salaries = daily_salary.objects.filter(
+                    employee_id=employee_id,
+                    slot_id=slot_id,
+                    element_name__in=["Net Salary"]
+                )
+                if filtered_salaries.exists():
+                    salary_data = DailySalarySerializer(filtered_salaries, many=True).data 
 
 
 
@@ -1562,7 +1562,7 @@ class SlotDataAPIView(APIView):
                 'mobile_no':mobile_no,
                 'wage_count':wage_data_count,
                 'utr_count':utr_count,
-                # 'salary_data':salary_data,
+                'salary_data':salary_data,
             }
         
         except Exception as e:
