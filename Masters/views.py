@@ -1620,21 +1620,18 @@ class SlotDataAPIView(APIView):
             wage_data_queryset = salary_generated_log.objects.filter(employee_id=employee_id)
             wage_data_count = wage_data_queryset.count()
 
-            wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
-            if not wage_data:
-                return {"error": "No data found in SalaryGeneratedLog for this employee."}
-            
-            slot_id = wage_data.slot_id.slot_id
+            # wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
+            # salary_data = []
+            # if wage_data:
+            #     slot_id = wage_data.slot_id.slot_id
+            #     filtered_salaries = daily_salary.objects.filter(
+            #         employee_id=employee_id,
+            #         slot_id=slot_id,
+            #         element_name__in=["Net Salary"]
+            #     )
+            #     if filtered_salaries.exists():
+            #         salary_data = DailySalarySerializer(filtered_salaries, many=True).data 
 
-            # Step 2: Get all matching records from DailySalary
-            filtered_salaries = daily_salary.objects.filter(
-            employee_id=employee_id,
-            slot_id=slot_id,
-            element_name__in=["Net Salary"]  # Filter by specific pay_type values
-            )
-        
-        # Serialize the filtered data
-            salary_data = DailySalarySerializer(filtered_salaries, many=True)
 
 
             return {
@@ -1647,7 +1644,7 @@ class SlotDataAPIView(APIView):
                 'employee_id':employee_id,
                 'mobile_no':mobile_no,
                 'wage_count':wage_data_count,
-                'salary_data':salary_data.data,
+                # 'salary_data':salary_data,
             }
         
         except Exception as e:
