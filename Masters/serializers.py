@@ -111,11 +111,6 @@ class DailySalarySerializer(serializers.ModelSerializer):
         model = daily_salary
         fields = ["employee_id", "slot_id", "element_name", "pay_type", "created_at", "amount"]
 
-    def get_created_at(self, obj):
-        # Extract and return only the date portion of the datetime field
-        return obj.created_at.date()
-
-
 
 
 
