@@ -1534,8 +1534,14 @@ class SlotDataAPIView(APIView):
             wage_data_queryset = salary_generated_log.objects.filter(employee_id=employee_id)
             wage_data_count = wage_data_queryset.count()
 
-            utr_data_queryset = PayoutDetails.objects.filter(employee_id = employee_id)
+            utr_data_queryset = PayoutDetails.objects.filter(employee_id=employee_id)
+
+            # Get the count of records
             utr_count = utr_data_queryset.count()
+
+            # Get the data as a list of dictionaries
+            utr_data = list(utr_data_queryset.values())
+
 
             wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
             salary_data = []
@@ -1549,8 +1555,7 @@ class SlotDataAPIView(APIView):
                 if filtered_salaries.exists():
                     salary_data = DailySalarySerializer(filtered_salaries, many=True).data 
 
-
-
+               
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
@@ -1563,6 +1568,7 @@ class SlotDataAPIView(APIView):
                 'wage_count':wage_data_count,
                 'utr_count':utr_count,
                 'salary_data':salary_data,
+                'utr_data':utr_data
             }
         
         except Exception as e:
