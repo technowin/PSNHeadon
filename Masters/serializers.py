@@ -105,10 +105,15 @@ class UserSlotDetailsSerializer1(serializers.ModelSerializer):
 
 class DailySalarySerializer(serializers.ModelSerializer):
     slot_id = SlotDetailsSerializer()  # Nested serializer to include slot details
+    created_at = serializers.SerializerMethodField()  # Override created_at
 
     class Meta:
         model = daily_salary
-        fields = ["employee_id", "slot_id", "element_name","pay_type", "created_at", "amount"]
+        fields = ["employee_id", "slot_id", "element_name", "pay_type", "created_at", "amount"]
+
+    def get_created_at(self, obj):
+        # Extract and return only the date portion of the datetime field
+        return obj.created_at.date()
 
 
 
