@@ -1588,6 +1588,7 @@ class UpdatePayoutStatus(APIView):
                                 for slot in slot_details:  # Iterate through each matching entry
                                     slot.status = get_object_or_404(StatusMaster, status_id=7)  
                                     slot.save()
+                                    # send_salary_notification(slot, payout.employee_id, payout.amount)
                         elif status == 'processing':
                             payout.payout_status = get_object_or_404(StatusMaster, status_id=6)  
                             slot_details = SlotDetails.objects.filter(slot_id=slot)
@@ -1615,6 +1616,9 @@ class UpdatePayoutStatus(APIView):
                     print(f"Error updating payout {payout_id}: {str(e)}")
                     if response is not None:
                         print(f"HTTP Response: {response.text}")
+
+
+
 
 
 def refresh_payout_status(request):
@@ -1799,6 +1803,10 @@ def generate_pay_slip(request):
         
         # Return error message in response
         return HttpResponse(f"Something went wrong: {str(e)}", status=500)
+    
+
+
+
 
 
            
