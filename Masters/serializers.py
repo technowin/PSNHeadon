@@ -108,7 +108,7 @@ class DailySalarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = daily_salary
-        fields = ["employee_id", "slot_id", "element_name","pay_type", "created_by", "amount"]
+        fields = ["employee_id", "slot_id", "element_name","pay_type", "created_at", "amount"]
 
 
 
