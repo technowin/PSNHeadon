@@ -51,14 +51,18 @@
                             <td>{{ user_slot.status.status_name}}</td>
                             <td>{{ user_slot.created_at }}</td>
                             <td>
-                                <a href="{% url 'view_employee_salary_details' user_slot.employee_id slot.slot_id %}" class="btn btn-primary btn-sm">View</a>
+                                {% if user_slot.status.status_name == "Failed" %}
+                                <a href="{% url 'create_new_payout' user_slot.employee_id slot.slot_id %}" class="btn btn-secondary btn-sm">Create New Payout</a> </td>
+                                {% else %}
+                                <a href="{% url 'view_employee_salary_details' user_slot.employee_id slot.slot_id %}" class="btn btn-primary btn-sm">View</a> 
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
                 <div class="d-flex justify-content-center align-items-center">
-                    <button type="submit" class="btn btn-primary">Approve</button>
+                    <button type="submit" class="btn btn-primary">Approve All</button>
                     <a href="{% url 'approveslots' %}" class="btn btn-secondary">Back to List</a>
                 </div>
             </form>

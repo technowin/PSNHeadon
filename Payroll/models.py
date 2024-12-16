@@ -245,7 +245,7 @@ class PayoutDetails(models.Model):
         db_table = 'payout_details'
 
 class payment_details(models.Model):
-    id =models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     account_number = models.CharField(max_length=100, null=True, blank=True) 
     currency = models.TextField(max_length=250,null=True,blank=True)
     mode = models.TextField(max_length=250,null=True,blank=True)
@@ -258,4 +258,47 @@ class payment_details(models.Model):
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='payment_updated_by')
     class Meta:
         db_table = 'payment_details'
+
+
+class BankDetails(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id =models.TextField(null=True,blank=True)
+    company = models.ForeignKey('Masters.company_master', blank=True, null=True,on_delete=models.CASCADE, related_name='bank_company')
+    bank_name = models.TextField(null=True,blank=True)
+    branch_name = models.TextField(null=True,blank=True)
+    account_no =  models.TextField(null=True,blank=True)
+    account_holder_name =  models.TextField(null=True,blank=True)
+    ifsc_code =  models.TextField(null=True,blank=True)
+    initiated_date = models.DateTimeField(null=True, blank=True)
+    failed_date = models.DateTimeField(null=True, blank=True)
+    completed_date = models.DateTimeField(null=True, blank=True)
+    utr = models.CharField(max_length=100, null=True, blank=True)
+    failure_reason = models.TextField(null=True, blank=True)
+    reference_id = models.TextField(null=True,blank=True)
+    status = models.ForeignKey(StatusMaster, on_delete=models.CASCADE, related_name='bank_status')
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='bank_created_by')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='bank_updated_by')
+
+    class Meta:
+        db_table = 'bank_details'
+
+class BankDetailAPI(models.Model):
+    id = models.AutoField(primary_key=True)
+    api_key = models.TextField(null=True,blank=True)
+    secret_key = models.TextField(null=True,blank=True)
+    url= models.TextField(null=True,blank=True)
+    type = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='bankAPI_created_by')
+    class Meta:
+        db_table = 'bank_detailAPi'
+
+
+
+
+
+
+
 

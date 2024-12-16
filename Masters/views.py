@@ -2478,11 +2478,6 @@ class EmployeeData(APIView):
             employee.city = request.data.get('city', employee.city)
             employee.pincode = request.data.get('pincode', employee.pincode)
             employee.state_id=cc
-            employee.account_holder_name = request.data.get('account_holder_name', employee.account_holder_name)
-            employee.account_no = request.data.get('account_no', employee.account_no)
-            employee.bank_name = request.data.get('bank_name', employee.bank_name)
-            employee.branch_name = request.data.get('branch_name', employee.branch_name)
-            employee.ifsc_code = request.data.get('ifsc', employee.ifsc_code)
 
             # Save the updated employee record
             employee.save()
@@ -2701,6 +2696,104 @@ def update_remaining_companies(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
 
+class update_bank_details(APIView):
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def post(self, request):
+        Db.closeConnection()  # Close any previous DB connections
+        m = Db.get_connection()  # Get a new connection
+        cursor = m.cursor()
+        
+        # Extract data from the request
+        employee_id = request.data.get("employee_id")
+        company_id = request.data.get("company_id")
+        bank_name = request.data.get("bank_name")
+        account_no = request.data.get("account_no")
+        holder_name = request.data.get("holder_name")
+        ifsc = request.data.get("ifsc")
+        branch_name = request.data.get("branch_name")
+        phone = request.data.get("phone")
+
+        # emp_id = sc_employee_master.objects.get(employee_id=employee_id).id
+        user_id = get_object_or_404(CustomUser, id=CustomUser.objects.get(phone=phone).id)
+
+        bank = BankDetailAPI.objects.first()
+        
+        # Save data into EmployeeUpdate table using Django ORM
+        try:
+            employee_update = BankDetails.objects.create(
+                employee_id=employee_id,
+                company_id=company_id,
+                bank_name=bank_name,
+                account_no=account_no,
+                account_holder_name=holder_name,
+                ifsc_code=ifsc,
+                branch_name=branch_name,
+                initiated_date = timezone.now(),
+                status = get_object_or_404(StatusMaster, status_id = 10),
+                created_by = user_id
+            )
+            
+            # Call the Cashfree API
+            headers = {
+                "x-client-id": bank.api_key,
+                "x-client-secret": bank.secret_key
+            }
+            
+            payload = {
+                "bank_account": account_no,
+                "ifsc": ifsc,
+                "name": holder_name,
+                "branch_name" : branch_name,
+                "bank_name" : bank_name,
+            }
+            
+            response = requests.post(bank.url, json=payload, headers=headers)
+            
+            # Check if the response was successful
+            if response.status_code == 200:
+                response_data = response.json()  
+                
+                # Update the BankDetails row with the response data
+                employee_update.status = get_object_or_404(StatusMaster, status_id = 11)
+                employee_update.utr = response_data.get("utr")
+                employee_update.reference_id = response_data.get("reference_id")
+                employee_update.completed_date = timezone.now()
+                employee_update.updated_by = user_id
+                employee_update.save()
+
+
+                sc_employee_master.objects.filter(
+                    employee_id=employee_id, 
+                    company_id=company_id
+                ).update(
+                    bank_name=bank_name,
+                    account_no=account_no,
+                    account_holder_name = response_data.get('name_at_bank'),
+                    ifsc_code=ifsc,
+                    branch_name=branch_name
+                )
+
+                return JsonResponse(response_data, status=200)
+            else:
+                response_data = response.json()  # Assuming Cashfree returns JSON data
+                
+                # Update the BankDetails row with the response data
+                employee_update.status = get_object_or_404(StatusMaster, status_id = 11)
+                employee_update.reference_id = response_data.get("reference_id")
+                employee_update.failure_reason = response_data.get("message")
+                employee_update.failed_date = timezone.now()
+                employee_update.updated_by = user_id
+                employee_update.save()
+                return JsonResponse({'message': 'Failed to verify bank details', 'error': response.text}, status=500)
+        
+        except Exception as e:
+            print(e)
+            tb = traceback.extract_tb(e.__traceback__)
+            cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+            return JsonResponse({'message': str(e)}, status=500)
 
 
 

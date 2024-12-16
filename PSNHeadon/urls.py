@@ -48,6 +48,7 @@ urlpatterns = [
     path('EmployeeData', EmployeeData.as_view(), name='EmployeeData'),
     path('StateName', StateName.as_view(), name='StateName'),
     path('send_reminder_notifications', send_reminder_notifications.as_view(), name='send_reminder_notifications'),
+    path('update_bank_details', update_bank_details.as_view(), name='update_bank_details'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),
@@ -176,6 +177,7 @@ urlpatterns = [
     path('attendance_error/', attendance_error, name='attendance_error'),
 
     path('create_payout', create_payout, name='create_payout'),
+    path('create_new_payout/<str:employee_id>/slot/<int:slot_id>', create_new_payout, name='create_new_payout'),
     path('generate_pay_slip', generate_pay_slip, name='generate_pay_slip'),
     path('refresh_payout_status', refresh_payout_status, name='refresh_payout_status'),
 
