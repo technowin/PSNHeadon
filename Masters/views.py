@@ -2771,7 +2771,7 @@ class update_bank_details(APIView):
                 ).update(
                     bank_name=bank_name,
                     account_no=account_no,
-                    account_holder_name = response_data.get('name_at_bank'),
+                    account_holder_name = holder_name,
                     ifsc_code=ifsc,
                     branch_name=branch_name
                 )
