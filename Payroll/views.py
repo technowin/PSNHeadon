@@ -13,7 +13,7 @@ from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
-from Masters.serializers import DailySalarySerialize
+from Masters.serializers import DailySalarySerialize, SalaryGeneratedSerializer
 from Payroll.models import payment_details as pay
 from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
@@ -615,7 +615,6 @@ def upload_attendance(request):
                     file_name, checksum_msg, error_count, checksum_id
                 ))
 
-                # Display messages based on counts
                 if error_count == 0  and success_count > 0:
                     messages.success(request, "All data uploaded successfully!")
                 else:
@@ -1929,10 +1928,10 @@ class payment_details(APIView):
                 return Response({"error": "employee_id and company_id are required"}, status=400)
 
             # Filter data by employee_id
-            payment_data = daily_salary.objects.filter(employee_id=employee_id)
+            payment_data = salary_generated_log.objects.filter(employee_id=employee_id)
 
             # Serialize the data
-            serialized_data = DailySalarySerialize(payment_data, many=True).data
+            serialized_data = SalaryGeneratedSerializer(payment_data, many=True).data
 
             return Response(serialized_data)  # Use Response here instead of response()
         except Exception as e:

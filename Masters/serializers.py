@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from Masters.models import *
-from Payroll.models import PayoutDetails, daily_salary, slot_attendance_details
+from Payroll.models import PayoutDetails, daily_salary, salary_generated_log, slot_attendance_details
 
  
 class CompanyMasterSerializer(serializers.ModelSerializer):
@@ -123,6 +123,14 @@ class DailySalarySerialize(serializers.ModelSerializer):
 
     class Meta:
         model = daily_salary
+        fields = '__all__'
+
+
+class SalaryGeneratedSerializer(serializers.ModelSerializer):
+    slot_id = SlotDetailsSerializer()
+
+    class Meta:
+        model = salary_generated_log
         fields = '__all__'
 
 

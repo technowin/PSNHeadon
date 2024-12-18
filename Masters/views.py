@@ -2654,43 +2654,43 @@ def get_worksites(request):
     
     return JsonResponse({'companywise_site_names': companywise_site_names}, status=200)
 
-def update_remaining_companies(request):
-    # Assuming 'Db' is a database utility class. Make sure it's properly defined elsewhere.
-    Db.closeConnection()
-    m = Db.get_connection()
-    cursor = m.cursor()
+# def update_remaining_companies(request):
+#     # Assuming 'Db' is a database utility class. Make sure it's properly defined elsewhere.
+#     Db.closeConnection()
+#     m = Db.get_connection()
+#     cursor = m.cursor()
 
-    user = request.session.get('user_id', '')
-    if request.method == 'POST':
-        # Get remaining company IDs from the POST request
-        remaining_company_ids = request.POST.getlist('remaining_company_ids', [])
+#     user = request.session.get('user_id', '')
+#     if request.method == 'POST':
+#         # Get remaining company IDs from the POST request
+#         remaining_company_ids = request.POST.getlist('remaining_company_ids', [])
 
-        if not remaining_company_ids:
-            return JsonResponse({'status': 'error', 'message': 'No company IDs provided'}, status=400)
+#         if not remaining_company_ids:
+#             return JsonResponse({'status': 'error', 'message': 'No company IDs provided'}, status=400)
 
-        try:
-            company_ids = [int(company_id) for company_id in remaining_company_ids]
-            user_roles = user_role_map.objects.filter(company_id__in=company_ids).values('company_id')
-            company_ids_from_user_roles = {user_role['company_id'] for user_role in user_roles}
-            worksites = user_role_map.objects.filter(company_id__in=company_ids_from_user_roles,user_id=user).values('company_id', 'worksite')
+#         try:
+#             company_ids = [int(company_id) for company_id in remaining_company_ids]
+#             user_roles = user_role_map.objects.filter(company_id__in=company_ids).values('company_id')
+#             company_ids_from_user_roles = {user_role['company_id'] for user_role in user_roles}
+#             worksites = user_role_map.objects.filter(company_id__in=company_ids_from_user_roles,user_id=user).values('company_id', 'worksite')
 
-            # Prepare the response data
-            worksite_names = {}
-            for worksite in worksites:
-                company_id = worksite['company_id']
-                worksite_name = worksite['worksite']
-                if company_id not in worksite_names:
-                    worksite_names[company_id] = []
-                worksite_names[company_id].append(worksite_name)
+#             # Prepare the response data
+#             worksite_names = {}
+#             for worksite in worksites:
+#                 company_id = worksite['company_id']
+#                 worksite_name = worksite['worksite']
+#                 if company_id not in worksite_names:
+#                     worksite_names[company_id] = []
+#                 worksite_names[company_id].append(worksite_name)
 
-        # Return the worksite names as a JSON response
-            return JsonResponse({'status': 'success', 'data': worksite_names})
-        except Exception as e:
-            tb = traceback.extract_tb(e.__traceback__)
-            fun = tb[0].name
-            cursor.callproc("stp_error_log", [fun, str(e), request.user.id])
-            print(f"error: {e}")
-            return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
+#         # Return the worksite names as a JSON response
+#             return JsonResponse({'status': 'success', 'data': worksite_names})
+#         except Exception as e:
+#             tb = traceback.extract_tb(e.__traceback__)
+#             fun = tb[0].name
+#             cursor.callproc("stp_error_log", [fun, str(e), request.user.id])
+#             print(f"error: {e}")
+#             return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
 
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
