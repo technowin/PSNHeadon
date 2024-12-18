@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
+from Masters.serializers import DailySalarySerialize
 from Payroll.models import payment_details as pay
 from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
@@ -41,6 +42,9 @@ import base64
 from io import BytesIO
 from PIL import Image
 from django.shortcuts import render
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import AccessToken
 # from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
@@ -1910,6 +1914,30 @@ def create_new_payout(request, employee_id, slot_id):
         fun = tb[0].name
         messages.error(request, 'Oops...! Something went wrong!')
 
+
+from rest_framework.response import Response
+
+class payment_details(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            employee_id = request.data.get('employee_id')
+
+            if not employee_id:
+                return Response({"error": "employee_id and company_id are required"}, status=400)
+
+            # Filter data by employee_id
+            payment_data = daily_salary.objects.filter(employee_id=employee_id)
+
+            # Serialize the data
+            serialized_data = DailySalarySerialize(payment_data, many=True).data
+
+            return Response(serialized_data)  # Use Response here instead of response()
+        except Exception as e:
+            print(e)
+            return requests.Response({"error": str(e)}, status=500)
 
 
 

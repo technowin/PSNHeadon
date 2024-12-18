@@ -49,6 +49,7 @@ urlpatterns = [
     path('StateName', StateName.as_view(), name='StateName'),
     path('send_reminder_notifications', send_reminder_notifications.as_view(), name='send_reminder_notifications'),
     path('update_bank_details', update_bank_details.as_view(), name='update_bank_details'),
+    path('payment_details', payment_details.as_view(), name='payment_details'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),

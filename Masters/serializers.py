@@ -118,6 +118,14 @@ class PayoutSerialzer(serializers.ModelSerializer):
         model = PayoutDetails
 
 
+class DailySalarySerialize(serializers.ModelSerializer):
+    slot_id = SlotDetailsSerializer()  
+
+    class Meta:
+        model = daily_salary
+        fields = '__all__'
+
+
 
 
 
