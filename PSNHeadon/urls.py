@@ -50,6 +50,7 @@ urlpatterns = [
     path('send_reminder_notifications', send_reminder_notifications.as_view(), name='send_reminder_notifications'),
     path('update_bank_details', update_bank_details.as_view(), name='update_bank_details'),
     path('payment_details', payment_details.as_view(), name='payment_details'),
+    path('payment_slip_details', payment_slip_details.as_view(), name='payment_slip_details'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),

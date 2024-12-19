@@ -4,16 +4,18 @@ from decimal import Decimal
 import json
 # from tkinter import font
 import math
+import os
 import traceback
 from colorama import Cursor
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
+from rest_framework.response import Response
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
-from Masters.serializers import DailySalarySerialize, SalaryGeneratedSerializer
+from Masters.serializers import PaySlipSerializer, SalaryGeneratedSerializer
 from Payroll.models import payment_details as pay
 from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
@@ -45,6 +47,11 @@ from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import AccessToken
+from django.core.files.base import ContentFile
+from xhtml2pdf import pisa
+from io import BytesIO
+from django.core.files.base import ContentFile
+from django.http import HttpResponse
 # from openpyxl.styles import Font
 # Index (list all salary elements)
 @login_required
@@ -1711,6 +1718,7 @@ def generate_pay_slip(request):
         employee_id = request.GET.get('employeeId')
         slot_id = request.GET.get('slotId')
         image_path = 'static/images/psn-logo0.png'
+        user = request.session.get('user_id', '')
 
         # Open the image using Pillow
         with Image.open(image_path) as img:
@@ -1752,7 +1760,7 @@ def generate_pay_slip(request):
 
         # The result will now contain the time difference along with the "9 hours" or "4 hours" part
         print(result)
-        slot = get_object_or_404(SlotDetails,slot_id = slot_id)
+        slot = get_object_or_404(SlotDetails, slot_id=slot_id)
         
         # Filter earnings and deductions
         earnings = salary_details.filter(pay_type__in=['Earning', 'Other Earning', 'Total Earning'])
@@ -1767,35 +1775,68 @@ def generate_pay_slip(request):
         shift_date = slot.shift_date.strftime('%d-%m-%Y')
 
         context = {
-            'result':result,
-            'slot':slot,
-            'shift_date':shift_date,
+            'result': result,
+            'slot': slot,
+            'shift_date': shift_date,
             'employee_name': employee.emp_id.employee_name,  # Assuming `emp_id` is a ForeignKey with the employee details
             'employee_id': employee_id,
             'earnings': [{'name': e.element_name, 'amount': e.amount} for e in earnings],
             'deductions': [{'name': d.element_name, 'amount': d.amount} for d in deductions],
             'gross_earnings': gross_earnings.amount,
             'net_salary': net_salary.amount,
-            'gross_deductions':gross_deductions.amount,
-            'total_earnings_amount': total_earnings.amount ,
-            'date':date_today,
+            'gross_deductions': gross_deductions.amount,
+            'total_earnings_amount': total_earnings.amount,
+            'date': date_today,
             'encoded_image': encoded_image
         }
 
         # Render the template to HTML
         html_content = render_to_string('Payroll/Slot/payment_slip.html', context)
 
-        # Create a PDF response
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="payslip_{employee_id}_{slot_id}.pdf"'
+        # Create a PDF buffer (in-memory storage for the PDF)
+        pdf_buffer = BytesIO()
 
-        # Convert HTML to PDF
-        pisa_status = pisa.CreatePDF(html_content, dest=response)
+        # Generate the PDF and write it to the buffer
+        pisa_status = pisa.CreatePDF(html_content, dest=pdf_buffer)
 
-        # Check for errors
+        # Check for errors in PDF generation
         if pisa_status.err:
             return HttpResponse(f"Error generating PDF: {pisa_status.err}", status=500)
+        
+        file_name = f'payslip_{employee_id}_{slot_id}.pdf'
 
+        # Construct the full file path using os.path.join
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+
+        # Ensure the directory exists (optional but recommended)
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+
+        # Save the PDF file to the specified location
+        with open(file_path, 'wb') as pdf_file:
+            pdf_file.write(pdf_buffer.getvalue())
+
+        # Save pay slip record to the database (if you want to track the file path)
+        existing_pay_slip = PaySlip.objects.filter(employee_id=employee_id, slot_id=slot_id).first()
+
+        if existing_pay_slip:
+            # If the record exists, update the existing PaySlip
+            existing_pay_slip.pdf_file = file_path
+            existing_pay_slip.created_by = get_object_or_404(CustomUser, id = user) 
+            existing_pay_slip.save()
+        else:
+            # If no record exists, create a new PaySlip
+            pay_slip = PaySlip(
+                employee_id=employee_id,
+                slot_id=get_object_or_404(SlotDetails,slot_id =  slot_id),
+                pdf_file=file_path ,
+                created_by = get_object_or_404(CustomUser, id = user) # Save the file path in the model
+            )
+            pay_slip.save()
+
+        # Create a response to download the PDF
+        response = HttpResponse(open(file_path, 'rb').read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="payslip_{employee_id}_{slot_id}.pdf"'
         return response
 
     except Exception as e:
@@ -1914,7 +1955,6 @@ def create_new_payout(request, employee_id, slot_id):
         messages.error(request, 'Oops...! Something went wrong!')
 
 
-from rest_framework.response import Response
 
 class payment_details(APIView):
     permission_classes = [IsAuthenticated]
@@ -1937,6 +1977,34 @@ class payment_details(APIView):
         except Exception as e:
             print(e)
             return requests.Response({"error": str(e)}, status=500)
+        
+
+class payment_slip_details(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            employee_id = request.data.get('employee_id')
+            slot_id = request.data.get('slot_id')
+
+            if not employee_id or not slot_id:
+                return Response({"error": "employee_id and slot_id are required"}, status=400)
+
+            # Fetch the PaySlip record
+            payslip = PaySlip.objects.filter(employee_id=employee_id, slot_id=slot_id).first()
+
+            if not payslip:
+                return Response({"error": "No payslip found for the given employee_id and slot_id"}, status=404)
+
+            # Assuming `pdf_file` is the field in PaySlip model where the PDF is stored
+            if not payslip.pdf_file:
+                return Response({"error": "No PDF available for the selected payslip"}, status=404)
+
+            # Serve the PDF file
+            return FileResponse(payslip.pdf_file.open('rb'), content_type='application/pdf')
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 

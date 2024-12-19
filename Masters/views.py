@@ -2693,7 +2693,7 @@ def get_worksites(request):
 #             return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
 
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+#    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
 
 class update_bank_details(APIView):

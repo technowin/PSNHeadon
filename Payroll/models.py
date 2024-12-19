@@ -295,6 +295,17 @@ class BankDetailAPI(models.Model):
     class Meta:
         db_table = 'bank_detailAPi'
 
+class PaySlip(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.CharField(max_length=255)
+    slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='pay_slip_slot_id', db_column='slot_id')
+    pdf_file = models.FileField(upload_to='payslips/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='pay_slip_created_by')
+    class Meta:
+        db_table = 'pay_slip_data'
+
+
 
 
 

@@ -14,7 +14,7 @@ def logged_in_user(request):
     full_name = request.session.get('full_name', '')
     user_id = request.session.get('user_id', '')
     role_id = request.session.get('role_id', '')
-    if request.user.is_authenticated ==True:
+    if request.user.is_authenticated == True:
         user = str(request.user.id or '')
         
     cursor.callproc("stp_get_all_reports", [user])
