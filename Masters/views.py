@@ -1428,7 +1428,7 @@ class SlotDataAPIView(APIView):
             user_alloted_count = len(user_slot_data)
 
             user_attendance_details = slot_attendance_details.objects.filter(employee_id=employee_id)
-            user_attendance_data = UserSlotDetailsSerializer(user_attendance_details, many=True).data
+            user_attendance_data = UserSlotAttendedSerializer(user_attendance_details, many=True).data
 
             user_attendance_count = len(user_attendance_data)
 

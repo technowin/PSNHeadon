@@ -77,6 +77,15 @@ class UserSlotDetailsSerializer(serializers.ModelSerializer):
         model = UserSlotDetails
         fields = '__all__'
 
+class UserSlotAttendedSerializer(serializers.ModelSerializer):
+    slot_id = SlotDetailsSerializer()
+    company_id = CompanyMasterSerializer()
+    site_id = SiteSerializer()
+    # emp_id = EmployeelistSerializer()
+    class Meta:
+        model = slot_attendance_details
+        fields = '__all__'
+
 class UserSlotlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSlotDetails
