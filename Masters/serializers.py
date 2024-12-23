@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from Masters.models import *
+from Notification.models import user_notification_log
 from Payroll.models import PaySlip, PayoutDetails, daily_salary, salary_generated_log, slot_attendance_details
 
  
@@ -141,6 +142,12 @@ class SalaryGeneratedSerializer(serializers.ModelSerializer):
     class Meta:
         model = salary_generated_log
         fields = '__all__'
+
+class UserNotificationLogSerializer(serializers.ModelSerializer):
+    slot_id = SlotDetailsSerializer()
+    class Meta:
+        model = user_notification_log
+        fields = '__all__' 
 
 
 

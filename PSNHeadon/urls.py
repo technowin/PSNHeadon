@@ -51,6 +51,7 @@ urlpatterns = [
     path('update_bank_details', update_bank_details.as_view(), name='update_bank_details'),
     path('payment_details', payment_details.as_view(), name='payment_details'),
     path('payment_slip_details', payment_slip_details.as_view(), name='payment_slip_details'),
+    path('show_notification', show_notification.as_view(), name='show_notification'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),

@@ -1505,8 +1505,6 @@ class SlotDataAPIView(APIView):
                     if filtered_salaries.exists():
                         salary_data.extend(DailySalarySerializer(filtered_salaries, many=True).data)
 
-
-               
             return {
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
@@ -1537,7 +1535,7 @@ class confirm_schedule(APIView):
 
     def post(self, request):
         try:
-            data= request.data
+            data = request.data
             roster_id = request.data.get('id')
             confirmation = request.data.get('confirmation') == '1'
             user = request.user
@@ -2605,48 +2603,6 @@ def get_worksites(request):
     
     return JsonResponse({'companywise_site_names': companywise_site_names}, status=200)
 
-# def update_remaining_companies(request):
-#     # Assuming 'Db' is a database utility class. Make sure it's properly defined elsewhere.
-#     Db.closeConnection()
-#     m = Db.get_connection()
-#     cursor = m.cursor()
-
-#     user = request.session.get('user_id', '')
-#     if request.method == 'POST':
-#         # Get remaining company IDs from the POST request
-#         remaining_company_ids = request.POST.getlist('remaining_company_ids', [])
-
-#         if not remaining_company_ids:
-#             return JsonResponse({'status': 'error', 'message': 'No company IDs provided'}, status=400)
-
-#         try:
-#             company_ids = [int(company_id) for company_id in remaining_company_ids]
-#             user_roles = user_role_map.objects.filter(company_id__in=company_ids).values('company_id')
-#             company_ids_from_user_roles = {user_role['company_id'] for user_role in user_roles}
-#             worksites = user_role_map.objects.filter(company_id__in=company_ids_from_user_roles,user_id=user).values('company_id', 'worksite')
-
-#             # Prepare the response data
-#             worksite_names = {}
-#             for worksite in worksites:
-#                 company_id = worksite['company_id']
-#                 worksite_name = worksite['worksite']
-#                 if company_id not in worksite_names:
-#                     worksite_names[company_id] = []
-#                 worksite_names[company_id].append(worksite_name)
-
-#         # Return the worksite names as a JSON response
-#             return JsonResponse({'status': 'success', 'data': worksite_names})
-#         except Exception as e:
-#             tb = traceback.extract_tb(e.__traceback__)
-#             fun = tb[0].name
-#             cursor.callproc("stp_error_log", [fun, str(e), request.user.id])
-#             print(f"error: {e}")
-#             return JsonResponse({'result': 'fail', 'message': 'something went wrong!'}, status=500)
-
-
-#    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
-
-
 class update_bank_details(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -2747,4 +2703,31 @@ class update_bank_details(APIView):
             return JsonResponse({'message': str(e)}, status=500)
 
 
+class show_notification(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def get(self, request):
+        # Get the employeeId from the request data
+        employee_id = request.data.get('employee_id')
+        
+        if not employee_id:
+            return Response({"error": "employeeId is required"}, status=404)
 
+        try:
+            # Filter the data for the given employeeId
+            notifications = user_notification_log.objects.filter(employee_id=employee_id,noti_click_time__isnull=True)
+
+            # If no notifications are found for that employee, return a message
+            if not notifications:
+                return Response({"message": "No notifications found for this employee"}, status=404)
+
+            # Serialize the data
+            serializer = UserNotificationLogSerializer(notifications, many=True)
+
+            # Return the serialized data
+            return Response(serializer.data, status=200)
+        
+        except UserNotificationLogSerializer:
+            return Response({"error": "Employee not found"}, status=404)
