@@ -19,7 +19,7 @@ from datetime import datetime
 
 import bcrypt
 from django.contrib.auth.decorators import login_required
-from Masters.serializers import CompanyMasterSerializer, DailySalarySerializer, DesignationSerializer, ScRosterSerializer,EmployeeSerializer, SettingMasterSerializer, SiteSerializer, SlotDetailsSerializer, SlotListDetailsSerializer, StateMasterSerializer, UserSlotDetailsSerializer, UserSlotDetailsSerializer1
+from Masters.serializers import * 
 from Notification.models import notification_log
 from Notification.serializers import NotificationSerializer
 from PSNHeadon.encryption import *
@@ -1200,58 +1200,6 @@ def upload_excel(request):
                                 elif update_result[0] == "Success":
                                     success_count += 1
                     
-            # elif entity == 'cm':
-            #     for index,row in df.iterrows():
-            #         params = tuple(str(row.get(column, '')) for column in columns)
-            #         cursor.callproc('stp_insert_company_master', params)
-            #         for result in cursor.stored_results():
-            #                 r = list(result.fetchall())
-            #         if r[0][0] not in ("success", "updated"):
-            #             cursor.callproc('stp_insert_error_log', [upload_for, company_id,file_name,datetime.now().date(),str(r[0][0]),checksum_id,employee_id1])
-            #         if r[0][0] == "success": success_count += 1 
-            #         elif r[0][0] == "updated": update_count += 1  
-            #         else: error_count += 1
-
-
-            # if entity == 'um':
-            #     checksum_msg = f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}" \
-            #     f"{f', Updates Entries: {update_count}' if update_count > 0 else ''}" \
-            #     f"{f', Errors: {error_count} ' if error_count > 0 else ''}
-            
-            #     cursor.callproc('stp_update_checksum', (upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year), file_name, checksum_msg, error_count, update_count, checksum_id,employee_id1))
-
-            #     if error_count == 0 and update_count == 0 and success_count > 0:
-            #                 messages.success(request, f"All data uploaded successfully!.")
-            #     elif error_count == 0 and success_count == 0 and update_count > 0:
-            #                 messages.warning(request, f"All data updated successfully!.")
-            #     else:
-            #                 messages.warning(request, 
-            #                 f"The upload processed {total_columns} columns, "
-            #                 f"The upload processed {total_rows} rows, resulting in {success_count} successful entries"  
-            #                 f"{f', {update_count} updates' if update_count > 0 else ''}, and "
-            #                 f"{error_count} errors; "
-            #                 f"please check the error logs for details."
-            #             )
-            # elif entity=='sm':
-            #     checksum_msg = f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}" \
-            #     f"{f', Updates Entries: {update_count}' if update_count > 0 else ''}" \
-            #     f"{f', Errors: {error_count} ' if error_count > 0 else ''}
-                
-            #     cursor.callproc('stp_update_checksum', (upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year), file_name, checksum_msg, error_count, update_count, checksum_id,employee_id1))
-
-            #     if error_count == 0 and update_count == 0 and success_count > 0:
-            #                 messages.success(request, f"All data uploaded successfully!.")
-            #     elif error_count == 0 and success_count == 0 and update_count > 0:
-            #                 messages.warning(request, f"All data updated successfully!.")
-            #     else:
-            #                 messages.warning(request, 
-            #                 f"The upload processed {total_columns} columns, "
-            #                 f"The upload processed {total_rows} rows, resulting in {success_count} successful entries"  
-            #                 f"{f', {update_count} updates' if update_count > 0 else ''}, and "
-            #                 f"{error_count} errors; "
-            #                 f"please check the error logs for details."
-            #             )
-
             if entity == 'um':
                 checksum_msg = (
                     f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}"
@@ -1543,17 +1491,20 @@ class SlotDataAPIView(APIView):
             utr_data = list(utr_data_queryset.values())
 
 
-            wage_data = salary_generated_log.objects.filter(employee_id=employee_id).first()
+            wage_data = salary_generated_log.objects.filter(employee_id=employee_id)
             salary_data = []
-            if wage_data:
-                slot_id = wage_data.slot_id.slot_id
-                filtered_salaries = daily_salary.objects.filter(
-                    employee_id=employee_id,
-                    slot_id=slot_id,
-                    element_name__in=["Net Salary"]
-                )
-                if filtered_salaries.exists():
-                    salary_data = DailySalarySerializer(filtered_salaries, many=True).data 
+
+            if wage_data.exists():
+                for wage in wage_data:
+                    slot_id = wage.slot_id.slot_id
+                    filtered_salaries = daily_salary.objects.filter(
+                        employee_id=employee_id,
+                        slot_id=slot_id,
+                        element_name__in=["Net Salary"]
+                    )
+                    if filtered_salaries.exists():
+                        salary_data.extend(DailySalarySerializer(filtered_salaries, many=True).data)
+
 
                
             return {
