@@ -1172,7 +1172,7 @@ def upload_excel(request):
                 for index, row in df.iterrows():
                     row_error_found = False
                     row_was_updated = False
-                    site_id1 = row['Site Id']
+                    site_id1 = row['Site Name']
                     params = tuple(str(row.get(column, '')) for column in columns)
                     params += (str(company_id),)
 
@@ -1232,7 +1232,7 @@ def upload_excel(request):
 
                 cursor.callproc('stp_update_checksum', (
                     upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year),
-                    file_name, checksum_msg, error_count, update_count, checksum_id, employee_id1
+                    file_name, checksum_msg, error_count, update_count, checksum_id
                 ))
 
                 if error_count == 0 and update_count == 0 and success_count > 0:
@@ -1300,7 +1300,7 @@ def upload_excel_cm(request):
                 for result in cursor.stored_results():
                     r = list(result.fetchall())
                 if r[0][0] not in ("success", "updated"):
-                    cursor.callproc('stp_insert_error_log', [upload_for, company_id1,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+                    cursor.callproc('stp_insert_error_log_cm', [upload_for,company_id1,file_name,datetime.now().date(),str(r[0][0]),checksum_id,])
                 if r[0][0] == "success": success_count += 1 
                 elif r[0][0] == "updated": update_count += 1  
                 else: error_count += 1
@@ -1854,7 +1854,7 @@ def edit_slot_details(request):
 
     try:
         if request.method == 'GET':
-            cursor.callproc("stp_get_dropdown_values", ['company'])
+            cursor.callproc("stp_get_assigned_company", [user_id])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values", ['worksite'])
@@ -2265,7 +2265,7 @@ def employee_upload(request):
             cursor.callproc("stp_get_dropdown_values",['designation'])
             for result in cursor.stored_results():
                 designation_name = list(result.fetchall())
-            cursor.callproc("stp_get_userwise_dropdown",[user,'company'])
+            cursor.callproc("stp_get_assigned_company",[user])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
             cursor.callproc("stp_get_dropdown_values",['states'])
