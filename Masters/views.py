@@ -2711,16 +2711,23 @@ class show_notification(APIView):
     def get(self, request):
         # Get the employeeId from the request data
         employee_id = request.data.get('employee_id')
-        
+
         if not employee_id:
             return Response({"error": "employeeId is required"}, status=404)
 
         try:
-            # Filter the data for the given employeeId
-            notifications = user_notification_log.objects.filter(employee_id=employee_id,noti_click_time__isnull=True)
+            # Get the current date
+            current_date = date.today()
+
+            # Filter notifications where noti_click_time is null and shift_date has not passed
+            notifications = user_notification_log.objects.filter(
+                employee_id=employee_id,
+                noti_click_time__isnull=True,
+                slot_id__shift_date__gte=current_date  # Filter by shift_date
+            )
 
             # If no notifications are found for that employee, return a message
-            if not notifications:
+            if not notifications.exists():
                 return Response({"message": "No notifications found for this employee"}, status=404)
 
             # Serialize the data
@@ -2728,6 +2735,6 @@ class show_notification(APIView):
 
             # Return the serialized data
             return Response(serializer.data, status=200)
-        
-        except UserNotificationLogSerializer:
-            return Response({"error": "Employee not found"}, status=404)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
