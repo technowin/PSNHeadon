@@ -2719,11 +2719,13 @@ class show_notification(APIView):
             # Get the current date
             current_date = date.today()
 
-            # Filter notifications where noti_click_time is null and shift_date has not passed
+            # Filter notifications
             notifications = user_notification_log.objects.filter(
                 employee_id=employee_id,
                 noti_click_time__isnull=True,
-                slot_id__shift_date__gte=current_date  # Filter by shift_date
+                slot_id__shift_date__gte=current_date
+            ).exclude(
+                slot_id__in=UserSlotDetails.objects.filter(employee_id=employee_id).values_list('slot_id', flat=True)
             )
 
             # If no notifications are found for that employee, return a message
