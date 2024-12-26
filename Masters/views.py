@@ -605,10 +605,10 @@ def site_master(request):
                         # is_active,
                         # noOfDays, 
                         # notificationTime, 
-                        # ReminderTime, 
-                        companyId,
+                        # ReminderTime,
                         stateId,
-                        cityId
+                        cityId,
+                        companyId
                         # rosterType
                     ]
                     
@@ -986,18 +986,11 @@ def employee_master(request):
 @login_required  
 def upload_excel(request):
 
-     if request.method == 'POST' and request.FILES.get('excelFile'):
+    if request.method == 'POST' and request.FILES.get('excelFile'):
         excel_file = request.FILES['excelFile']
         file_name = excel_file.name
-       # Read the Excel file into three separate DataFrames
         df = pd.read_excel(excel_file)
-        
-        # Concatenate the three DataFrames into one
-      
-        # Calculate the total number of rows
         total_rows = len(df)
-        total_columns = len(df.columns)
-
         update_count = error_count = success_count = 0
         checksum_id = None
         r=None
@@ -1009,243 +1002,119 @@ def upload_excel(request):
             cursor = m.cursor()
             entity = request.POST.get('entity', '')
             type = request.POST.get('type', '')
-            company_id = request.POST.get('company_id','')
-            # state_id=request.POST.get('state_id', None)
+            company_id1 = request.POST.get('company_id', None)
             cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
             for result in cursor.stored_results():
                 columns = [col[0] for col in result.fetchall()]
-            # if not all(col in df.columns for col in columns):
-            #     messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
-            #     return redirect(f'/masters?entity={entity}&type={type}')
-            upload_for = {'em': 'employee master','um': 'employee master upload','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
-            cursor.callproc('stp_insert_checksum', (upload_for,company_id,str(datetime.now().month),str(datetime.now().year),file_name))
+            if not all(col in df.columns for col in columns):
+                messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
+                return redirect(f'/masters?entity={entity}&type={type}')
+            upload_for = {'em': 'employee master','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
+            cursor.callproc('stp_insert_checksum', (upload_for,company_id1,str(datetime.now().month),str(datetime.now().year),file_name))
             for result in cursor.stored_results():
                 c = list(result.fetchall())
             checksum_id = c[0][0]
-        
-            if entity == 'um':
-                success_count = 0
-                error_count = 0
-                update_count = 0
-                for index, row in df.iterrows():
-                    row_error_found = False
-                    row_was_updated = False
-                    # Retrieve employee_id from the current row
-                    employee_id1 = row['Employee Id']  # Ensure this matches your DataFrame's column name
 
-                    row_filtered = row.drop(['worksite', 'designation'], errors='ignore')
-                    params = tuple(str(row_filtered.get(column, '')) for column in columns if column not in ['worksite', 'designation'])
-                    
-                    # After validation, add company_id to params
-                    params += (str(company_id),)
-                    merged_list = list(zip(columns, params))
-
-                    print(merged_list)
-
-                    # Loop through each (column, value) pair in the merged_list for custom validation
-                    for column, value in merged_list:
-                        # Convert value to string and lowercase, then print for debugging
-                        if isinstance(value, str):
-                            value = value.strip().lower()
-
-                        # Skip validation and error logging for 'Designation' and 'Worksite' columns
-                        if column in ['Designation', 'Worksite']:
-                            continue  # Skip to the next iteration if the column is 'designation' or 'worksite'
-
-                        # Call the stored procedure with employee_id1
-                        cursor.callproc('stp_employee_validation', [column, value, employee_id1])
-                        for result in cursor.stored_results():
-                            r = list(result.fetchall())
-                            if r and r[0][0] not in ("", None, " ", "Success"):
-                                error_message = str(r[0][0])
-                                # Ensure proper logging for errors
-                                cursor.callproc('stp_insert_error_log', [upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id, employee_id1])
-                                error_count += 1
-                                row_error_found = True 
-
-                    # Now, if no errors were found, attempt to insert the employee
-                    # if error_count == 0:  # Assuming error_count is reset for each row
-                    #     for result in cursor.stored_results():
-                    #         cursor.callproc('stp_employeeinsertexcel', params)
-                    if not row_error_found:
-                        # Check if the row is an update or a new insert
-                        cursor.callproc('stp_employeeinsertexcel', params)
-                        for result in cursor.stored_results():
-                            update_result = result.fetchone()
-                            if update_result == "Updated":
-                                update_count += 1  # Increment update count
-                                row_was_updated = True
-                            elif update_result == "Success":
-                                success_count += 1  
-
-                
-                df.columns = df.columns.str.strip()  
-
-
-                if 'Employee Id' in df.columns and 'Designation' in df.columns:
-                    # print("Both 'employee id' and 'designation' found in DataFrame.")
-
-                   
-                    df_designations = df[['Employee Id', 'Designation']].dropna(subset=['Designation']).copy()
-                    df_designations['company_id'] = company_id  
-                    
-                    for index, row in df_designations.iterrows():
-                        employee_id = row['Employee Id']
-                        designations = row['Designation'].split(',')  
-
-                       
-                        for designation in designations:
-                            designation = designation.strip()  
-                            
-                            
-                            cursor.callproc('stp_insert_employee_designation', [employee_id, designation, company_id])
-
-                          
-                            for result in cursor.stored_results():
-                                r = list(result.fetchall())
-
-                            if r:
-                                result_value = r[0][0]  
-
-                                if result_value == "success":
-                                    success_count += 1
-                                elif result_value == "updated":
-                                    update_count += 1
-                                elif result_value.startswith("error"):
-                                    # Log the error message in your error log table
-                                    error_message = result_value  # The error message from the procedure
-                                    cursor.callproc('stp_insert_error_log', [
-                                        upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id,employee_id
-                                    ])
-                                    error_count += 1  # Increment error count for errors
-
-                else:
-                    # In case 'employee id' or 'designation' is missing in df.columns
-                    print("Required columns 'employee id' or 'designation' not found in the DataFrame.")
-
-                       #   this is for worksite insert  
-                if 'Employee Id' in df.columns and 'Worksite' in df.columns:
-                    # print("Both 'employee id' and 'worksite' found in DataFrame.")
-
-                    # Create a second DataFrame for 'employee_id', 'designation', and company_id
-                    df_worksite = df[['Employee Id', 'Worksite']].dropna(subset=['Worksite']).copy()
-                    df_worksite['company_id'] = company_id  # Add company_id to df_designations
-
-                    # Loop through each row in the DataFrame
-                    for index, row in df_worksite.iterrows():
-                        employee_id = row['Employee Id']
-                        worksite = row['Worksite'].split(',')  # Assuming multiple designations are comma-separated
-
-                        # Loop through each designation and insert it into the employee_designation table
-                        for worksite in worksite:
-                            worksite = worksite.strip()  # Trim spaces from the designation
-                            
-                            # Call the stored procedure to insert the designation for the employee
-                            cursor.callproc('stp_insert_employee_site', [employee_id, worksite, company_id])
-
-                            # Fetch all stored results to check the response from the procedure
-                            for result in cursor.stored_results():
-                                r = list(result.fetchall())
-
-                            if r:
-                                result_value = r[0][0]  # Fetch the result from the stored procedure
-
-                                if result_value == "success":
-                                    success_count += 1
-                                elif result_value == "updated":
-                                    update_count += 1
-                                elif result_value.startswith("error"):
-                                    # Log the error message in your error log table
-                                    error_message = result_value  # The error message from the procedure
-                                    cursor.callproc('stp_insert_error_log', [
-                                        upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id,employee_id1
-                                    ])
-                                    error_count += 1  # Increment error count for errors
-
-                else:
-                    # In case 'employee id' or 'designation' is missing in df.columns
-                    print("Required columns 'employee id' or 'worksite' not found in the DataFrame.")
-
-
-                          
-            elif entity == 'sm':
-                for index, row in df.iterrows():
-                    row_error_found = False
-                    row_was_updated = False
-                    site_id1 = row['Site Name']
+            # if entity == 'em':
+            #     for index,row in df.iterrows():
+            #         params = tuple(str(row.get(column, '')) for column in columns)
+            #         cursor.callproc('stp_insert_employee_master', params)
+            #         for result in cursor.stored_results():
+            #                 r = list(result.fetchall())
+            #         if r[0][0] not in ("success", "updated"):
+            #             cursor.callproc('stp_insert_error_log', [upload_for, company_id,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+            #         if r[0][0] == "success": success_count += 1 
+            #         elif r[0][0] == "updated": update_count += 1  
+            #         else: error_count += 1
+            if entity == 'em':
+                for index,row in df.iterrows():
                     params = tuple(str(row.get(column, '')) for column in columns)
-                    params += (str(company_id),)
+    
+                    # Get the company instance and add company_id to params
+                    params += (str(company_id1),) # Assuming company_id is an integer
+                    
+                    # Debugging: Print params to verify
+                    print("Params being passed to stored procedure:", params)
+                    
+                    # Call the stored procedure
+                    cursor.callproc('stp_insert_employee_master', params)
+                    for result in cursor.stored_results():
+                            r = list(result.fetchall())
+                    if r[0][0] not in ("success", "updated"):
+                        cursor.callproc('stp_insert_error_log', [upload_for, company_id1,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+                    if r[0][0] == "success": success_count += 1 
+                    elif r[0][0] == "updated": update_count += 1  
+                    else: error_count += 1
+            elif entity == 'sm':
+                for index, row in df.iterrows():
+                    state_name = str(row.get('State', ''))
+                    city_name = str(row.get('City', ''))
+                    
+                    try:
+                        state_obj = StateMaster.objects.get(state_name=state_name)
+                        state_id = state_obj.state_id
+                    except StateMaster.DoesNotExist:
+                        state_id = None  # State not found
+                    
+                    try:
+                        city_obj = CityMaster.objects.get(city_name=city_name)
+                        city_id = city_obj.city_id
+                    except CityMaster.DoesNotExist:
+                        city_id = None  # City not found
 
-                    # Iterate through the columns to validate each entry
-                    for column in columns:  # Added this line to define 'column'
-                        value = row[column]  # Get the value from the current row for the current column
-                        cursor.callproc('stp_site_validation', [column, value, site_id1])
+                    # Check if state_id or city_id is None and log error
+                    if state_id is None:
+                        error_message = f"Please provide a Valid State for the Worksite '{row.get('Site Name')}' at row number {index + 1}"
+                        cursor.callproc('stp_site_error_log', [upload_for, company_id1, file_name, datetime.now().date(), error_message, checksum_id, ''])
+                    
+                    if city_id is None:
+                        error_message = f"Please provide a Valid City for the Worksite '{row.get('Site Name')}' at row number {index + 1}"
+                        cursor.callproc('stp_site_error_log', [upload_for, company_id1, file_name, datetime.now().date(), error_message, checksum_id, ''])
+
+                    # Only proceed to insert into site_master if state_id and city_id are not None
+                    if state_id is not None and city_id is not None:
+                        # Get the other parameters
+                        params = tuple(str(row.get(column, '')) for column in columns if column not in ['State', 'City'])
+                        params += (str(state_id), str(city_id))
+                        params += (str(company_id1),)
+
+                        # Insert data into the site_master table
+                        cursor.callproc('stp_insert_site_master_excel', params)
+                        
+                        # Check the result from the stored procedure
                         for result in cursor.stored_results():
                             r = list(result.fetchall())
-                            if r and r[0][0] not in ("", None, " ", "Success"):
-                                error_message = str(r[0][0])
-                                # Ensure proper logging for errors
-                                cursor.callproc('stp_site_error_log', [upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id, site_id1])
-                                error_count += 1
+
+                        if r[0][0] not in ("success", "updated"):
+                            # Log error if the result is not success or updated
+                            cursor.callproc('stp_site_error_log', [upload_for, company_id1, file_name, datetime.now().date(), str(r[0][0]), checksum_id, str(row.get('Site Name'))])
+
                     
-                    if not row_error_found:
-                        # Check if the row is an update or a new insert
-                        cursor.callproc('stp_insert_site_master', params)
-                        for result in cursor.stored_results():
-                            update_result = result.fetchone()
-                            if update_result is not None:  # Check if there's a result
-                                if update_result[0] == "Updated":
-                                    update_count += 1  # Increment update count
-                                    row_was_updated = True
-                                elif update_result[0] == "Success":
-                                    success_count += 1
-                    
-            if entity == 'um':
-                checksum_msg = (
-                    f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}"
-                    f"{f', Update Entries: {update_count}' if update_count > 0 else ''}"
-                    f"{f', Errors: {error_count}' if error_count > 0 else ''}"
-                )
-
-                cursor.callproc('stp_update_checksum', (
-                    upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year),
-                    file_name, checksum_msg, error_count, update_count, checksum_id, employee_id1
-                ))
-
-                if error_count == 0 and update_count == 0 and success_count > 0:
-                    messages.success(request, "All data uploaded successfully!")
-                elif error_count == 0 and success_count == 0 and update_count > 0:
-                    messages.warning(request, "All data updated successfully!")
-                else:
-                    messages.warning(request,
-                        f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries"
-                        f"{f', {update_count} updates' if update_count > 0 else ''}, and {error_count} errors; "
-                        "please check the error logs for details."
-                    )
-
-            elif entity == 'sm':
-                checksum_msg = (
-                    f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}"
-                    f"{f', Update Entries: {update_count}' if update_count > 0 else ''}"
-                    f"{f', Errors: {error_count}' if error_count > 0 else ''}"
-                )
-
-                cursor.callproc('stp_update_checksum', (
-                    upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year),
-                    file_name, checksum_msg, error_count, update_count, checksum_id
-                ))
-
-                if error_count == 0 and update_count == 0 and success_count > 0:
-                    messages.success(request, "All data uploaded successfully!")
-                elif error_count == 0 and success_count == 0 and update_count > 0:
-                    messages.warning(request, "All data updated successfully!")
-                else:
-                    messages.warning(request,
-                        f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries"
-                        f"{f', {update_count} updates' if update_count > 0 else ''}, and {error_count} errors; "
-                        "please check the error logs for details."
-                    )
-
+                    # Increment counters based on the result
+                    if r[0][0] == "success":
+                        success_count += 1
+                    elif r[0][0] == "updated":
+                        update_count += 1
+                    else:
+                        error_count += 1
+            elif entity == 'cm':
+                for index,row in df.iterrows():
+                    params = tuple(str(row.get(column, '')) for column in columns)
+                    cursor.callproc('stp_insert_company_master', params)
+                    for result in cursor.stored_results():
+                            r = list(result.fetchall())
+                    if r[0][0] not in ("success", "updated"):
+                        cursor.callproc('stp_insert_error_log', [upload_for, company_id1,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
+                    if r[0][0] == "success": success_count += 1 
+                    elif r[0][0] == "updated": update_count += 1  
+                    else: error_count += 1
+            checksum_msg = f"Total Rows Processed: {total_rows}, Successful Entries: {success_count}" f"{f', Updates: {update_count}' if update_count > 0 else ''}" f"{f', Errors: {error_count}' if error_count > 0 else ''}"
+            cursor.callproc('stp_update_checksum', (upload_for,company_id1,'',str(datetime.now().month),str(datetime.now().year),file_name,checksum_msg,error_count,update_count,checksum_id,''))
+            if error_count == 0 and update_count == 0 and success_count > 0:
+                messages.success(request, f"All data uploaded successfully!.")
+            elif error_count == 0 and success_count == 0 and update_count > 0:
+                messages.warning(request, f"All data updated successfully!.")
+            else:messages.warning(request, f"The upload processed {total_rows} rows, resulting in {success_count} successful entries"  f"{f', {update_count} updates' if update_count > 0 else ''}" f", and {error_count} errors; please check the error logs for details.")
                    
         except Exception as e:
             tb = traceback.extract_tb(e.__traceback__)
@@ -1257,10 +1126,282 @@ def upload_excel(request):
             cursor.close()
             m.close()
             Db.closeConnection()
-            if entity=='um':
-                return redirect(f'/masters?entity=em&type=i')
-            else:
-                return redirect(f'/masters?entity={entity}&type=i')
+            return redirect(f'/masters?entity={entity}&type=i')
+
+# @login_required  
+# def upload_excel(request):
+
+#      if request.method == 'POST' and request.FILES.get('excelFile'):
+#         excel_file = request.FILES['excelFile']
+#         file_name = excel_file.name
+#        # Read the Excel file into three separate DataFrames
+#         df = pd.read_excel(excel_file)
+        
+#         # Concatenate the three DataFrames into one
+      
+#         # Calculate the total number of rows
+#         total_rows = len(df)
+#         total_columns = len(df.columns)
+
+#         update_count = error_count = success_count = 0
+#         checksum_id = None
+#         r=None
+#         global user
+#         user  = request.session.get('user_id', '')
+#         try:
+#             Db.closeConnection()
+#             m = Db.get_connection()
+#             cursor = m.cursor()
+#             entity = request.POST.get('entity', '')
+#             type = request.POST.get('type', '')
+#             company_id = request.POST.get('company_id','')
+#             # state_id=request.POST.get('state_id', None)
+#             cursor.callproc("stp_get_masters", [entity, type, 'sample_xlsx',user])
+#             for result in cursor.stored_results():
+#                 columns = [col[0] for col in result.fetchall()]
+#             # if not all(col in df.columns for col in columns):
+#             #     messages.error(request, 'Oops...! The uploaded Excel file does not contain the required columns.!')
+#             #     return redirect(f'/masters?entity={entity}&type={type}')
+#             upload_for = {'em': 'employee master','um': 'employee master upload','sm': 'site master','cm': 'company master','r': 'roster'}[entity]
+#             cursor.callproc('stp_insert_checksum', (upload_for,company_id,str(datetime.now().month),str(datetime.now().year),file_name))
+#             for result in cursor.stored_results():
+#                 c = list(result.fetchall())
+#             checksum_id = c[0][0]
+        
+#             if entity == 'um':
+#                 success_count = 0
+#                 error_count = 0
+#                 update_count = 0
+#                 for index, row in df.iterrows():
+#                     row_error_found = False
+#                     row_was_updated = False
+#                     # Retrieve employee_id from the current row
+#                     employee_id1 = row['Employee Id']  # Ensure this matches your DataFrame's column name
+
+#                     row_filtered = row.drop(['worksite', 'designation'], errors='ignore')
+#                     params = tuple(str(row_filtered.get(column, '')) for column in columns if column not in ['worksite', 'designation'])
+                    
+#                     # After validation, add company_id to params
+#                     params += (str(company_id),)
+#                     merged_list = list(zip(columns, params))
+
+#                     print(merged_list)
+
+#                     # Loop through each (column, value) pair in the merged_list for custom validation
+#                     for column, value in merged_list:
+#                         # Convert value to string and lowercase, then print for debugging
+#                         if isinstance(value, str):
+#                             value = value.strip().lower()
+
+#                         # Skip validation and error logging for 'Designation' and 'Worksite' columns
+#                         if column in ['Designation', 'Worksite']:
+#                             continue  # Skip to the next iteration if the column is 'designation' or 'worksite'
+
+#                         # Call the stored procedure with employee_id1
+#                         cursor.callproc('stp_employee_validation', [column, value, employee_id1])
+#                         for result in cursor.stored_results():
+#                             r = list(result.fetchall())
+#                             if r and r[0][0] not in ("", None, " ", "Success"):
+#                                 error_message = str(r[0][0])
+#                                 # Ensure proper logging for errors
+#                                 cursor.callproc('stp_insert_error_log', [upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id, employee_id1])
+#                                 error_count += 1
+#                                 row_error_found = True 
+
+#                     if not row_error_found:
+#                         # Check if the row is an update or a new insert
+#                         cursor.callproc('stp_employeeinsertexcel', params)
+#                         for result in cursor.stored_results():
+#                             update_result = result.fetchone()
+#                             if update_result == "Updated":
+#                                 update_count += 1  # Increment update count
+#                                 row_was_updated = True
+#                             elif update_result == "Success":
+#                                 success_count += 1  
+
+                
+#                 df.columns = df.columns.str.strip()  
+
+
+#                 if 'Employee Id' in df.columns and 'Designation' in df.columns:
+#                     # print("Both 'employee id' and 'designation' found in DataFrame.")
+
+                   
+#                     df_designations = df[['Employee Id', 'Designation']].dropna(subset=['Designation']).copy()
+#                     df_designations['company_id'] = company_id  
+                    
+#                     for index, row in df_designations.iterrows():
+#                         employee_id = row['Employee Id']
+#                         designations = row['Designation'].split(',')  
+
+                       
+#                         for designation in designations:
+#                             designation = designation.strip()  
+                            
+                            
+#                             cursor.callproc('stp_insert_employee_designation', [employee_id, designation, company_id])
+
+                          
+#                             for result in cursor.stored_results():
+#                                 r = list(result.fetchall())
+
+#                             if r:
+#                                 result_value = r[0][0]  
+
+#                                 if result_value == "success":
+#                                     success_count += 1
+#                                 elif result_value == "updated":
+#                                     update_count += 1
+#                                 elif result_value.startswith("error"):
+#                                     # Log the error message in your error log table
+#                                     error_message = result_value  # The error message from the procedure
+#                                     cursor.callproc('stp_insert_error_log', [
+#                                         upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id,employee_id
+#                                     ])
+#                                     error_count += 1  # Increment error count for errors
+
+#                 else:
+#                     # In case 'employee id' or 'designation' is missing in df.columns
+#                     print("Required columns 'employee id' or 'designation' not found in the DataFrame.")
+
+#                        #   this is for worksite insert  
+#                 if 'Employee Id' in df.columns and 'Worksite' in df.columns:
+#                     # print("Both 'employee id' and 'worksite' found in DataFrame.")
+
+#                     # Create a second DataFrame for 'employee_id', 'designation', and company_id
+#                     df_worksite = df[['Employee Id', 'Worksite']].dropna(subset=['Worksite']).copy()
+#                     df_worksite['company_id'] = company_id  # Add company_id to df_designations
+
+#                     # Loop through each row in the DataFrame
+#                     for index, row in df_worksite.iterrows():
+#                         employee_id = row['Employee Id']
+#                         worksite = row['Worksite'].split(',')  # Assuming multiple designations are comma-separated
+
+#                         # Loop through each designation and insert it into the employee_designation table
+#                         for worksite in worksite:
+#                             worksite = worksite.strip()  # Trim spaces from the designation
+                            
+#                             # Call the stored procedure to insert the designation for the employee
+#                             cursor.callproc('stp_insert_employee_site', [employee_id, worksite, company_id])
+
+#                             # Fetch all stored results to check the response from the procedure
+#                             for result in cursor.stored_results():
+#                                 r = list(result.fetchall())
+
+#                             if r:
+#                                 result_value = r[0][0]  # Fetch the result from the stored procedure
+
+#                                 if result_value == "success":
+#                                     success_count += 1
+#                                 elif result_value == "updated":
+#                                     update_count += 1
+#                                 elif result_value.startswith("error"):
+#                                     # Log the error message in your error log table
+#                                     error_message = result_value  # The error message from the procedure
+#                                     cursor.callproc('stp_insert_error_log', [
+#                                         upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id,employee_id1
+#                                     ])
+#                                     error_count += 1  # Increment error count for errors
+
+#                 else:
+#                     # In case 'employee id' or 'designation' is missing in df.columns
+#                     print("Required columns 'employee id' or 'worksite' not found in the DataFrame.")
+
+
+                          
+#             elif entity == 'sm':
+#                 for index, row in df.iterrows():
+#                     row_error_found = False
+#                     row_was_updated = False
+#                     site_id1 = row['Site Name']
+#                     params = tuple(str(row.get(column, '')) for column in columns)
+#                     params += (str(company_id),)
+
+#                     # Iterate through the columns to validate each entry
+#                     for column in columns:  # Added this line to define 'column'
+#                         value = row[column]  # Get the value from the current row for the current column
+#                         cursor.callproc('stp_site_validation', [column, value, site_id1])
+#                         for result in cursor.stored_results():
+#                             r = list(result.fetchall())
+#                             if r and r[0][0] not in ("", None, " ", "Success"):
+#                                 error_message = str(r[0][0])
+#                                 # Ensure proper logging for errors
+#                                 cursor.callproc('stp_site_error_log', [upload_for, company_id, file_name, datetime.now().date(), error_message, checksum_id, site_id1])
+#                                 error_count += 1
+                    
+#                     if not row_error_found:
+#                         # Check if the row is an update or a new insert
+#                         cursor.callproc('+', params)
+#                         for result in cursor.stored_results():
+#                             update_result = result.fetchone()
+#                             if update_result is not None:  # Check if there's a result
+#                                 if update_result[0] == "Updated":
+#                                     update_count += 1  # Increment update count
+#                                     row_was_updated = True
+#                                 elif update_result[0] == "Success":
+#                                     success_count += 1
+                    
+#             if entity == 'um':
+#                 checksum_msg = (
+#                     f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}"
+#                     f"{f', Update Entries: {update_count}' if update_count > 0 else ''}"
+#                     f"{f', Errors: {error_count}' if error_count > 0 else ''}"
+#                 )
+
+#                 cursor.callproc('stp_update_checksum', (
+#                     upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year),
+#                     file_name, checksum_msg, error_count, update_count, checksum_id, employee_id1
+#                 ))
+
+#                 if error_count == 0 and update_count == 0 and success_count > 0:
+#                     messages.success(request, "All data uploaded successfully!")
+#                 elif error_count == 0 and success_count == 0 and update_count > 0:
+#                     messages.warning(request, "All data updated successfully!")
+#                 else:
+#                     messages.warning(request,
+#                         f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries"
+#                         f"{f', {update_count} updates' if update_count > 0 else ''}, and {error_count} errors; "
+#                         "please check the error logs for details."
+#                     )
+
+#             elif entity == 'sm':
+#                 checksum_msg = (
+#                     f"Total Columns Processed in each row: {total_columns}, Total Rows Processed: {total_rows}, Successful Entries: {success_count}"
+#                     f"{f', Update Entries: {update_count}' if update_count > 0 else ''}"
+#                     f"{f', Errors: {error_count}' if error_count > 0 else ''}"
+#                 )
+
+#                 cursor.callproc('stp_update_checksum', (
+#                     upload_for, company_id, '', str(datetime.now().month), str(datetime.now().year),
+#                     file_name, checksum_msg, error_count, update_count, checksum_id
+#                 ))
+
+#                 if error_count == 0 and update_count == 0 and success_count > 0:
+#                     messages.success(request, "All data uploaded successfully!")
+#                 elif error_count == 0 and success_count == 0 and update_count > 0:
+#                     messages.warning(request, "All data updated successfully!")
+#                 else:
+#                     messages.warning(request,
+#                         f"The upload processed {total_columns} columns, {total_rows} rows, resulting in {success_count} successful entries"
+#                         f"{f', {update_count} updates' if update_count > 0 else ''}, and {error_count} errors; "
+#                         "please check the error logs for details."
+#                     )
+
+                   
+#         except Exception as e:
+#             tb = traceback.extract_tb(e.__traceback__)
+#             fun = tb[0].name
+#             cursor.callproc("stp_error_log", [fun, str(e), user])  
+#             messages.error(request, 'Oops...! Something went wrong!')
+#             m.commit()   
+#         finally:
+#             cursor.close()
+#             m.close()
+#             Db.closeConnection()
+#             if entity=='um':
+#                 return redirect(f'/masters?entity=em&type=i')
+#             else:
+#                 return redirect(f'/masters?entity={entity}&type=i')
             
 @login_required  
 def upload_excel_cm(request):
