@@ -1028,6 +1028,7 @@ def upload_excel(request):
                     
                     # After validation, add company_id to params
                     params += (str(company_id1),)
+                    params += (str(user),)
                     merged_list = list(zip(columns, params))
 
                     print(merged_list)
@@ -1220,7 +1221,7 @@ def upload_excel(request):
             if error_count == 0 and update_count == 0 and success_count > 0:
                 messages.success(request, f"All data uploaded successfully!.")
             elif error_count == 0 and success_count == 0 and update_count > 0:
-                messages.warning(request, f"All data updated successfully!.")
+                messages.success(request, f"All data updated successfully!.")
             else:messages.warning(request, f"The upload processed {total_rows} rows, resulting in {success_count} successful entries"  f"{f', {update_count} updates' if update_count > 0 else ''}" f", and {error_count} errors; please check the error logs for details.")
                    
         except Exception as e:
