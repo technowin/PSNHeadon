@@ -394,23 +394,29 @@ $(document).ready(function() {
 
 
 <script>
-function limitMobileNumber(input) {
-    // Remove any non-digit characters
-    input.value = input.value.replace(/\D/g, '');
-
-    // Check if the length exceeds 10 digits
-    if (input.value.length > 10) {
-        input.value = input.value.slice(0, 10); // Truncate to 10 digits
+    function limitMobileNumber(input) {
+        // Remove any non-digit characters
+        input.value = input.value.replace(/\D/g, '');
+    
+        // Check if the length exceeds 10 digits
+        if (input.value.length > 10) {
+            input.value = input.value.slice(0, 10); // Truncate to 10 digits
+        }
+    
+        // Get the error message element and the submit button
+        const errorMsg = document.getElementById('mobileError');
+        const submitBtn = document.getElementById('submitBtn');
+    
+        // Check if the mobile number is valid (exactly 10 digits)
+        if (input.value.length === 10) {
+            errorMsg.style.display = 'none'; // Hide error message when valid
+            submitBtn.disabled = false; // Enable submit button
+        } else {
+            errorMsg.style.display = 'block'; // Show error message when invalid
+            submitBtn.disabled = true; // Disable submit button
+        }
     }
-
-    // Optional: Show an error message if more than 10 digits are entered
-    const errorMsg = document.getElementById('mobileError');
-    if (input.value.length === 10) {
-        errorMsg.style.display = 'none'; // Hide error message when valid
-    } else {
-        errorMsg.style.display = 'block'; // Show error message if invalid
-    }
-}
+    
 </script>
 
 <script>
@@ -425,10 +431,13 @@ function limitMobileNumber(input) {
 
         // Optional: Show an error message if more than 12 digits are entered
         const errorMsg = document.getElementById('uanError');
+        const submitBtn = document.getElementById('submitBtn');
         if (input.value.length === 12) {
-            errorMsg.style.display = 'none'; // Hide error message when valid
+            errorMsg.style.display = 'none';
+            submitBtn.disabled = false;  // Hide error message when valid
         } else {
-            errorMsg.style.display = 'block'; // Show error message if invalid
+            errorMsg.style.display = 'block';
+            submitBtn.disabled = true; // Show error message if invalid
         }
     }
 </script>
@@ -437,24 +446,29 @@ function limitMobileNumber(input) {
     function validateIFSC(input) {
         // Regular expression for IFSC: 4 letters followed by 7 digits
         const ifscPattern = /^[A-Za-z]{4}\d{7}$/;
-        
+
+        // Optionally limit the input to 11 characters (IFSC should be exactly 11 characters)
+        if (input.value.length > 11) {
+            input.value = input.value.slice(0, 11); // Limit to 11 characters
+        }
+
         // Check if the input matches the IFSC pattern
         const isValid = ifscPattern.test(input.value);
 
         // Display error message if the input doesn't match the pattern
         const errorMsg = document.getElementById('ifscError');
+        const submitBtn = document.getElementById('submitBtn');
+        
         if (isValid) {
             errorMsg.style.display = 'none'; // Hide error if valid
+            submitBtn.disabled = false;      // Enable submit button
         } else {
             errorMsg.style.display = 'block'; // Show error if invalid
-        }
-
-        // Optionally limit the input to 11 characters
-        if (input.value.length > 11) {
-            input.value = input.value.slice(0, 11); // Limit to 11 characters
+            submitBtn.disabled = true;        // Disable submit button
         }
     }
 </script>
+
 
 <script>
 

@@ -239,7 +239,7 @@
             <div class="modal-body">
                 <form class="formupl" id="upload_form" method="POST" enctype="multipart/form-data" action="{% url 'upload_excel' %}">
                     {% csrf_token %}
-                    <input type="hidden" name="entity" value="um">
+                    <input type="hidden" name="entity" value="em">
                     <input type="hidden" name="type" value="upload_excel">
                     
                     <!-- Add Company Dropdown here -->
