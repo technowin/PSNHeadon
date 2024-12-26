@@ -608,7 +608,8 @@ def site_master(request):
                         # ReminderTime,
                         stateId,
                         cityId,
-                        companyId
+                        companyId,
+                        user
                         # rosterType
                     ]
                     
@@ -642,7 +643,7 @@ def site_master(request):
                     # Rostertype = request.POST.get('roster_type', '')
                     
                     params = [siteId,siteName,siteAddress,pincode,contactPersonName,contactPersonEmail,
-                                        contactPersonMobileNo,isActive,companyId,stateId,cityId]
+                                        contactPersonMobileNo,isActive,companyId,stateId,cityId,user]
                     cursor.callproc("stp_update_site_master",params) 
                     messages.success(request, "Data updated successfully...!")
 
