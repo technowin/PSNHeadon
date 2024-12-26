@@ -566,12 +566,8 @@ def site_master(request):
                         'contact_person_email': data[6],
                         'contact_person_mobile_no': data[7],
                         'is_active': data[8],
-                        'no_of_days': data[9],
-                        'notification_time': data[10],
-                        'reminder_time': data[11],
-                        'company_name': data[12],
-                        'city': data[13],
-                        'roster_type': data[14]
+                        'company_name': data[9],
+                        'city': data[10],
                     }
                 
             
