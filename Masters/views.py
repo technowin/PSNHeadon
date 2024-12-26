@@ -893,6 +893,7 @@ def employee_master(request):
                     esic,
                     gender,
                     handicapped,
+                    user
                     # employeeStatus,
                     # activebtn
                 ]
@@ -901,7 +902,7 @@ def employee_master(request):
                 for result in cursor.stored_results():
                         datalist = list(result.fetchall())
                 if datalist[0][0] == "success":
-                    messages.success(request, 'Data successfully entered !')
+                    messages.success(request, 'Data successfully Saved !')
                 else: messages.error(request, datalist[0][0])
             else:
                 id = request.POST.get('id', '')
@@ -929,7 +930,7 @@ def employee_master(request):
                 designation_list = request.POST.getlist('designation_name', '')
                 site_list = request.POST.getlist('site_name', '')
                             
-                params = [ id,employee_id, employee_name, mobile_no,email, address,city,state1,pincode,account_holder_name,account_no,bank_name,branch_name,ifsc_code,pf_no,uan_no,esic,gender,handicapped,company_id1,employee_status,is_active]    
+                params = [ id,employee_id, employee_name, mobile_no,email, address,city,state1,pincode,account_holder_name,account_no,bank_name,branch_name,ifsc_code,pf_no,uan_no,esic,gender,handicapped,company_id1,employee_status,is_active,user]    
                 # cursor.callproc("stp_update_employee_master",params) 
                 # messages.success(request, "Data successfully Updated!")
 
