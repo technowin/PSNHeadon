@@ -97,11 +97,6 @@ class site_master(models.Model):
     contact_person_email =models.TextField(null=True,blank=True)
     contact_person_mobile_no =models.TextField(null=True,blank=True)
     is_active =models.BooleanField(null=True,blank=True,default=True)
-    roster_type =models.TextField(null=True,blank=True)
-    # roster_type = models.ForeignKey(parameter_master, on_delete=models.CASCADE,related_name='company_relation',blank=True, null=True,db_column='roster_type')
-    no_of_days =models.BigIntegerField(null=True,blank=False)
-    notification_time=models.TimeField(null=True,blank=True)
-    reminder_time = models.TimeField(null=True,blank=True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='site_created',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
@@ -295,7 +290,6 @@ class employee_designation(models.Model):
     created_by = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     updated_by = models.TextField(null=True, blank=True)
-    state_status = models.BooleanField(null=True,blank=True,default=True)
     class Meta:
         db_table = 'employee_designation'
     def __str__(self):
@@ -311,7 +305,6 @@ class employee_site(models.Model):
     created_by = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     updated_by = models.TextField(null=True, blank=True)
-    state_status = models.BooleanField(null=True,blank=True,default=True)
     class Meta:
         db_table = 'employee_site'
     def __str__(self):
