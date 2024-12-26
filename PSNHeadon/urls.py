@@ -21,6 +21,7 @@ from Account.views import *
 from Dashboard.views import *
 # from Masters.models import site_master
 from Masters.views import *
+from Menu.views import *
 from Payroll.views import *
 from Reports.views import *
 from Masters.views import site_master as sm
