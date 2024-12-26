@@ -14,6 +14,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
 from pyparsing import str_type
+from Account.models import user_role_map
 from Masters.models import SlotDetails, UserSlotDetails, company_master, sc_employee_master, site_master
 from Masters.serializers import PaySlipSerializer, SalaryGeneratedSerializer
 from Payroll.models import payment_details as pay
@@ -263,16 +264,19 @@ def site_card_relation_index(request):
     return render(request, 'Payroll/SiteCardRelation/index.html', {'site_card_relations': site_card_relations})
 @login_required
 def site_card_relation_create(request):
+    user = request.session.get('user_id', '')  # Retrieve the logged-in user's ID
+
     if request.method == 'POST':
-        form = SiteCardRelationForm(request.POST)
+        form = SiteCardRelationForm(request.POST, user_id=user)  # Pass user_id to the form
         if form.is_valid():
             form.save()
             messages.success(request, 'Site Card Relation created successfully!')
             return redirect('site_card_relation_index')
     else:
-        form = SiteCardRelationForm()
+        form = SiteCardRelationForm(user_id=user)  # Pass user_id to the form
 
     return render(request, 'Payroll/SiteCardRelation/create.html', {'form': form})
+
 @login_required
 def site_card_relation_edit(request, pk):
     pk = decrypt_parameter(pk)
@@ -575,7 +579,8 @@ def upload_attendance(request):
                         employee_id=row['Employee Id'],
                         attendance_in=row['Attendance In'],
                         attendance_out=row['Attendance Out'],
-                        status_id=get_object_or_404(StatusMaster, status_id=1).status_id
+                        status_id=get_object_or_404(StatusMaster, status_id=1).status_id,
+                        created_by = get_object_or_404(CustomUser, id = user)
                     )
                     
                     attendance.save()
@@ -633,6 +638,9 @@ def upload_attendance(request):
 
         else:
             excel_form = ExcelUploadForm()
+            company = company_master.objects.filter(
+                company_id__in=user_role_map.objects.filter(user_id=user).values_list('company_id', flat=True)
+            )
 
         # Handling exceptions and cursor closing
     except Exception as e:
@@ -651,7 +659,7 @@ def upload_attendance(request):
     return render(request, 'Payroll/Attendance/create.html', {
         'type': type,
         'excel_form': excel_form,
-        'companies': company_master.objects.all(),
+        'companies': company,
     })
 
 
