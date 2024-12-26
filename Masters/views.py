@@ -1017,17 +1017,6 @@ def upload_excel(request):
                 c = list(result.fetchall())
             checksum_id = c[0][0]
 
-            # if entity == 'em':
-            #     for index,row in df.iterrows():
-            #         params = tuple(str(row.get(column, '')) for column in columns)
-            #         cursor.callproc('stp_insert_employee_master', params)
-            #         for result in cursor.stored_results():
-            #                 r = list(result.fetchall())
-            #         if r[0][0] not in ("success", "updated"):
-            #             cursor.callproc('stp_insert_error_log', [upload_for, company_id,'',file_name,datetime.now().date(),str(r[0][0]),checksum_id])
-            #         if r[0][0] == "success": success_count += 1 
-            #         elif r[0][0] == "updated": update_count += 1  
-            #         else: error_count += 1
             if entity == 'em':
                 success_count = 0
                 error_count = 0

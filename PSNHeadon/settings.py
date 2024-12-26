@@ -96,7 +96,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'Reports',
     'Dashboard',
-    'Payroll'
+    'Payroll',
+    'Menu'
 ]
 
 # SESSION_ENGINE ="django.contrib.sessions.backends.signed_cookies"
