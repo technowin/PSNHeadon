@@ -148,10 +148,12 @@
 
             $('#site_id').change(function() {
                 var site_id = $(this).val();
+                var company_id = $('#company_id').val();
                 $.ajax({
                     url: '{% url "get_slots" %}',
                     data: {
-                        'site_id': site_id
+                        'site_id': site_id,
+                        'company_id': company_id
                     },
                     success: function(data) {
                         $('#slot_id').empty();

@@ -672,8 +672,9 @@ def get_sites(request):
     return JsonResponse(list(sites), safe=False)
 @login_required
 def get_slots(request):
+    company_id = request.GET.get('company_id')
     site_id = request.GET.get('site_id')
-    slots = SlotDetails.objects.filter(site_id=site_id).values('slot_id', 'slot_name')
+    slots = SlotDetails.objects.filter(site_id=site_id, company_id=company_id).values('slot_id', 'slot_name')
     return JsonResponse(list(slots), safe=False)
 
 
