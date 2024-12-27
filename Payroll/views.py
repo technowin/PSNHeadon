@@ -400,8 +400,14 @@ def employee_rate_card_view(request, id):
 @login_required
 def attendance_index(request):
     try:
+        user = request.session.get('user_id', '')
         type = request.GET.get('type', '')
-        attendance_records = slot_attendance_details.objects.all()
+        attendance_records = slot_attendance_details.objects.filter(
+            company_id__in=user_role_map.objects.filter(
+                user_id=user
+            ).values('company_id')
+        )
+
         
         # Encrypt the ID for each record
         for record in attendance_records:

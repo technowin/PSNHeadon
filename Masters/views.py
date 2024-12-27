@@ -2106,9 +2106,10 @@ def edit_slot_details(request):
             cursor.callproc("stp_get_assigned_company", [user_id])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-            cursor.callproc("stp_get_dropdown_values", ['worksite'])
+            cursor.callproc("stp_get_graph_dropdown", [user_id,'site'])
             for result in cursor.stored_results():
                 site_names = list(result.fetchall())
+
             cursor.callproc("stp_get_dropdown_values", ['designation'])
             for result in cursor.stored_results():
                 designation = list(result.fetchall())
@@ -2120,7 +2121,7 @@ def edit_slot_details(request):
                 'slot_data': slot_data,
                 'company_names':company_names,
                 'designation':designation,
-                'site_names':site_names
+                'site_name':site_names
             }
         elif request.method == 'POST':
             slot_id = request.POST.get('slot_id')
