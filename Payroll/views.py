@@ -1134,7 +1134,7 @@ def view_approve_salary(request,slot_id):
 @login_required
 def user_slot_details_list(request, slot_id):
     slot = get_object_or_404(SlotDetails, slot_id=slot_id)
-    user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+    user_slot_details = slot_attendance_details.objects.filter(slot_id=slot_id)
 
     context = {
         'slot': slot,
