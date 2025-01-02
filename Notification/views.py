@@ -2,7 +2,7 @@ import traceback
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 from django.utils.timezone import now
-from datetime import time, timedelta
+from datetime import date, time, timedelta
 from django.utils.timezone import make_aware
 
 from Masters.models import *
@@ -27,7 +27,7 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from rest_framework import status
 
-from Masters.serializers import SlotDetailsSerializer, UserSlotDetailsSerializer1, UserSlotlistSerializer
+from Masters.serializers import SlotDetailsSerializer, UserNotificationLogSerializer, UserSlotDetailsSerializer1, UserSlotlistSerializer
 from Notification.models import notification_log, slot_notification_log, user_notification_log
 from datetime import datetime, timedelta
 
@@ -689,6 +689,46 @@ class DefaultRecords(APIView):
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+class show_notification(APIView):
+    
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def get(self, request):
+        # Get the employeeId from the request data
+        employee_id = request.data.get('employee_id')
+
+        if not employee_id:
+            return Response({"error": "employeeId is required"}, status=404)
+
+        try:
+            # Get the current date
+            current_date = date.today()
+
+            # Filter notifications
+            notifications = user_notification_log.objects.filter(
+                employee_id=employee_id,
+                noti_click_time__isnull=True,
+                noti_receive_time__isnull = False,
+                slot_id__shift_date__gte=current_date
+            ).exclude(
+                slot_id__in=UserSlotDetails.objects.filter(employee_id=employee_id).values_list('slot_id', flat=True)
+            )
+
+            # If no notifications are found for that employee, return a message
+            if not notifications.exists():
+                return Response({"message": "No notifications found for this employee"}, status=404)
+
+            # Serialize the data
+            serializer = UserNotificationLogSerializer(notifications, many=True)
+
+            # Return the serialized data
+            return Response(serializer.data, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
         
     
 class save_notification(APIView):
