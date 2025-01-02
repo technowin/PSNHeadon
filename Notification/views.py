@@ -702,7 +702,7 @@ class save_notification(APIView):
             employee_id = request.data.get('employee_id')
 
             number = sc_employee_master.objects.get(employee_id=employee_id).mobile_no
-            user = CustomUser.objects.get(mobile_no=number).id
+            user = CustomUser.objects.get(phone=number).id
             
 
             
@@ -717,7 +717,7 @@ class save_notification(APIView):
 
             # Update the `noti_click_time` to the current time
             notification.noti_click_time = now()
-            notification.updated_by = user
+            notification.updated_by = get_object_or_404(CustomUser, id = user)
             notification.save()
 
             return Response({"message": "Notification updated successfully."}, status=status.HTTP_200_OK)
