@@ -689,7 +689,34 @@ class DefaultRecords(APIView):
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+    
+class save_notification(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
+    def post(self, request):
+        try:
+            # Extract the notification ID from the request data
+            notification_id = request.data.get('id')
+            
+            if not notification_id:
+                return Response({"error": "Notification ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fetch the specific notification log entry
+            notification = user_notification_log.objects.filter(id=notification_id).first()
+
+            if not notification:
+                return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Update the `noti_click_time` to the current time
+            notification.noti_click_time = now()
+            notification.save()
+
+            return Response({"message": "Notification updated successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

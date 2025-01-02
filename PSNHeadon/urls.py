@@ -53,6 +53,7 @@ urlpatterns = [
     path('payment_details', payment_details.as_view(), name='payment_details'),
     path('payment_slip_details', payment_slip_details.as_view(), name='payment_slip_details'),
     path('show_notification', show_notification.as_view(), name='show_notification'),
+    path('save_notification', save_notification.as_view(), name='save_notification'),
     
     # Dashboard
     path("newdashboard",newdashboard,name='newdashboard'),
