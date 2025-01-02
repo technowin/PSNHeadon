@@ -699,6 +699,12 @@ class save_notification(APIView):
         try:
             # Extract the notification ID from the request data
             notification_id = request.data.get('id')
+            employee_id = request.data.get('employee_id')
+
+            number = sc_employee_master.objects.get(employee_id=employee_id).mobile_no
+            user = CustomUser.objects.get(mobile_no=number).id
+            
+
             
             if not notification_id:
                 return Response({"error": "Notification ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -711,6 +717,7 @@ class save_notification(APIView):
 
             # Update the `noti_click_time` to the current time
             notification.noti_click_time = now()
+            notification.updated_by = user
             notification.save()
 
             return Response({"message": "Notification updated successfully."}, status=status.HTTP_200_OK)
