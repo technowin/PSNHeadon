@@ -145,6 +145,7 @@ class SalaryGeneratedSerializer(serializers.ModelSerializer):
 
 class UserNotificationLogSerializer(serializers.ModelSerializer):
     slot_id = SlotDetailsSerializer()
+    type = ParameterMasterSerializer()
     class Meta:
         model = user_notification_log
         fields = '__all__' 
