@@ -1676,6 +1676,8 @@ class SlotDataAPIView(APIView):
  
             user_alloted_count = len(user_slot_data)
 
+            name = employee_data.employee_name
+
             user_attendance_details = slot_attendance_details.objects.filter(employee_id=employee_id)
             user_attendance_data = UserSlotAttendedSerializer(user_attendance_details, many=True).data
 
@@ -1755,6 +1757,7 @@ class SlotDataAPIView(APIView):
                         salary_data.extend(DailySalarySerializer(filtered_salaries, many=True).data)
 
             return {
+                'name':name,
                 'slot_alloted_count': user_alloted_count,
                 'slot_alloted_list': list(user_slot_data),
                 'user_attendance_count':user_attendance_count,
