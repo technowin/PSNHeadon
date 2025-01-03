@@ -379,6 +379,8 @@ def common_fun(columnName,filterid,SubFilterId,sft,entity,user):
             where_extra += "t2.company_id in (" + str(company) + ") and t3.worksite in (" + str(worksite) + ")"
         elif entity in ['ar']:
             where_extra += "t2.company_id in (" + str(company) + ") and t3.site_name in (" + str(worksite) + ")"
+        else:
+            where_extra += "t2.company_id in (" + str(company) + ") and t3.site_name in (" + str(worksite) + ")"
                             
             if join_query1[z] not in join_clause:
                 join_clause += join_query1[z]

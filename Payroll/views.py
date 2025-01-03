@@ -1501,6 +1501,7 @@ def create_payout(request):
                 payout = PayoutDetails.objects.create(
                     amount=salary,
                     company_id=get_object_or_404(company_master, company_id=slot_details.company.company_id),
+                    site_id=get_object_or_404(site_master, site_id=slot_details.site_id.site_id),
                     employee_id=employee_id,
                     slot_id=get_object_or_404(SlotDetails, slot_id=slot_details.slot_id),
                     payout_status=get_object_or_404(StatusMaster, status_id=5),
@@ -1910,6 +1911,7 @@ def create_new_payout(request, employee_id, slot_id):
         payout = PayoutDetails.objects.create(
             amount=salary,
             company_id=get_object_or_404(company_master, company_id=slot_details.company.company_id),
+            site_id=get_object_or_404(site_master, site_id=slot_details.site_id.site_id),
             employee_id=employee_id,
             slot_id=get_object_or_404(SlotDetails, slot_id=slot_details.slot_id),
             payout_status=get_object_or_404(StatusMaster, status_id=5),

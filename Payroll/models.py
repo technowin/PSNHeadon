@@ -217,8 +217,9 @@ class PayoutDetails(models.Model):
     payout_id = models.AutoField(primary_key=True)
     # employee_id = models.ForeignKey('Masters.sc_employee_master', on_delete=models.CASCADE, related_name='payout_employee')
     employee_id = models.TextField(null=True, blank=True)
-    company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='payout_company')
+    company_id = models.ForeignKey('Masters.company_master', on_delete=models.CASCADE, related_name='payout_company', db_column='company_id')
     slot_id = models.ForeignKey('Masters.SlotDetails', on_delete=models.CASCADE, related_name='payout_slot')
+    site_id = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='payout_site',blank=True, null=True, db_column='site_id')
     
     # Razorpay response fields
     razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True) 
