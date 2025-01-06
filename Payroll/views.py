@@ -561,6 +561,17 @@ def upload_attendance(request):
                         row_error_found = True
                         continue
 
+                    
+                    try:
+                        employee_id = row.get('Employee Id')
+                        employee = sc_employee_master.objects.get(employee_id=employee_id, company_id=comp)
+                    except sc_employee_master.DoesNotExist:
+                        error_message = f"Employee with ID {employee_id} does not belong to company name {comp.company_name}."
+                        cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, employee_id, user])
+                        error_count += 1
+                        row_error_found = True
+                        return error_count, row_error_found
+
                     # Validate Attendance In
                     if not row['Attendance In'] or str(row['Attendance In']).strip() == '':
                         error_message = f"Attendance In is missing for Employee ID {row['Employee Id']}"
@@ -2002,26 +2013,64 @@ class payment_slip_details(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            # Retrieve parameters from request data
             employee_id = request.data.get('employee_id')
             slot_id = request.data.get('slot_id')
 
+            # Validate input parameters
             if not employee_id or not slot_id:
                 return Response({"error": "employee_id and slot_id are required"}, status=400)
 
-            # Fetch the PaySlip record
-            payslip = PaySlip.objects.filter(employee_id=employee_id, slot_id=slot_id).first()
+            # Fetch salary, employee, and attendance details
+            salary_details = daily_salary.objects.filter(employee_id=employee_id, slot_id=slot_id)
+            employee = get_object_or_404(UserSlotDetails, employee_id=employee_id, slot_id=slot_id)
+            slot_attended = get_object_or_404(slot_attendance_details, employee_id=employee_id, slot_id=slot_id)
 
-            if not payslip:
-                return Response({"error": "No payslip found for the given employee_id and slot_id"}, status=404)
+            # Validate attendance times
+            attendance_in_str = slot_attended.attendance_in
+            attendance_out_str = slot_attended.attendance_out
+            if not attendance_in_str or not attendance_out_str:
+                return Response({"error": "Invalid attendance time data"}, status=400)
 
-            # Assuming `pdf_file` is the field in PaySlip model where the PDF is stored
-            if not payslip.pdf_file:
-                return Response({"error": "No PDF available for the selected payslip"}, status=404)
+            # Parse attendance times
+            time_format = "%H:%M:%S"
+            try:
+                attendance_in = datetime.strptime(attendance_in_str, time_format)
+                attendance_out = datetime.strptime(attendance_out_str, time_format)
+            except ValueError as e:
+                return Response({"error": f"Invalid time format: {str(e)}"}, status=400)
 
-            # Serve the PDF file
-            return FileResponse(payslip.pdf_file.open('rb'), content_type='application/pdf')
+            # Calculate time difference
+            time_difference = attendance_out - attendance_in
+            if time_difference >= timedelta(hours=9):
+                result = f"{attendance_in.strftime(time_format)} - {attendance_out.strftime(time_format)} (9 hours)"
+            else:
+                result = f"{attendance_in.strftime(time_format)} - {attendance_out.strftime(time_format)} (Less than 9 hours)"
+
+            # Fetch slot details
+            slot = get_object_or_404(SlotDetails, slot_id=slot_id)
+
+            # Prepare all salary elements in a single list
+            salary_elements = [
+                {'type': sd.pay_type, 'name': sd.element_name, 'amount': sd.amount}
+                for sd in salary_details
+            ]
+
+            # Generate response
+            context = {
+                'result': result,
+                'slot': {'slot_name': slot.slot_name, 'shift_date': slot.shift_date.strftime('%d-%m-%Y')},
+                'employee_name': employee.emp_id.employee_name if employee.emp_id else "N/A",
+                'employee_id': employee_id,
+                'salary_elements': salary_elements,
+                'date_generated': datetime.now().strftime('%d-%m-%Y'),
+            }
+
+            return Response(context)
+
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            print(f"Error: {str(e)}")  # Log error details
+            return Response({"error": "Internal server error. Please try again later."}, status=500)
 
 
 

@@ -2662,7 +2662,6 @@ class EmployeeData(APIView):
             return Response({"error": str(e)}, status=500)
 
     def put(self, request, *args, **kwargs):
-        # Get employee_id and company_id from the request
         employee_id = request.data.get('employee_id')
         company_id = request.data.get('company_id')
 
@@ -2681,7 +2680,6 @@ class EmployeeData(APIView):
             employee.pincode = request.data.get('pincode', employee.pincode)
             employee.state_id=cc
 
-            # Save the updated employee record
             employee.save()
 
             return Response({"success": "Employee data updated successfully"}, status=200)
