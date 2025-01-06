@@ -2792,7 +2792,7 @@ class delete_user_slot(APIView):
         cursor = m.cursor()
 
         try:
-            # Get the employee_id, slot_id, and record_id from the request
+            # Retrieve data from the request
             employee_id = request.data.get('employee_id')
             slot_id = request.data.get('slot_id')
             record_id = request.data.get('id')
@@ -2800,35 +2800,39 @@ class delete_user_slot(APIView):
             # Step 1: Retrieve the UserSlotDetails instance by id
             user_slot_instance = get_object_or_404(UserSlotDetails, id=record_id)
 
-            # Step 2: Prepare the data for inserting into the historical table
+            # Step 2: Prepare the data for insertion into HistUserSlotDetails
             historical_data = {
                 'employee_id': user_slot_instance.employee_id,
                 'slot_id': user_slot_instance.slot_id,
-                'site_id': user_slot_instance.site_id,  # Adjust according to your fields
-                'company_id': user_slot_instance.company_id,  # Adjust according to your fields
+                'site_id': user_slot_instance.site_id,
+                'company_id': user_slot_instance.company_id,
                 'created_by': user_slot_instance.created_by,
                 'emp_id': user_slot_instance.emp_id,
             }
 
-            # Step 3: Check if record exists for that slot_id and employee_id
-            existing_record = UserSlotDetails.objects.filter(employee_id=employee_id, slot_id=slot_id).first()
-            
-            if existing_record:
-                # If record exists, update it instead of deleting
-                existing_record.created_by = user_slot_instance.created_by  # You can update more fields if needed
-                existing_record.save()
-                return JsonResponse({'message': 'Record updated successfully'}, status=200)
+            # Step 3: Check if a record exists in HistUserSlotDetails for the same slot_id and employee_id
+            hist_instance = HistUserSlotDetails.objects.filter(
+                slot_id=slot_id,
+                employee_id=employee_id
+            ).first()
+
+            if hist_instance:
+                # If the record exists, update it
+                for field, value in historical_data.items():
+                    setattr(hist_instance, field, value)
+                hist_instance.save()
+                message = 'Historical record updated successfully.'
             else:
-                # Step 4: Insert the data into HistUserSlotDetails (historical table)
+                # If the record doesn't exist, create a new one
                 hist_instance = HistUserSlotDetails(**historical_data)
                 hist_instance.save()
+                message = 'Historical record created successfully.'
 
-                # Step 5: Now, delete the record from UserSlotDetails
-                delete_user_slot = get_object_or_404(UserSlotDetails, employee_id=employee_id, slot_id=slot_id, id=record_id)
-                delete_user_slot.delete()
+            # Step 4: Delete the record from UserSlotDetails
+            user_slot_instance.delete()
 
-                return JsonResponse({'message': 'Record archived and deleted successfully'}, status=200)
-            
+            return JsonResponse({'message': message}, status=200)
+
         except Exception as e:
             # Log the error using a stored procedure
             tb = traceback.extract_tb(e.__traceback__)
