@@ -2782,12 +2782,12 @@ class post_user_slot(APIView):
             return JsonResponse({'message': str(e)}, status=500)
         
 class delete_user_slot(APIView):
-
+    
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
-
+    
     def delete(self, request):
-        Db.closeConnection()  
+        Db.closeConnection()
         m = Db.get_connection()
         cursor = m.cursor()
 
@@ -2797,7 +2797,6 @@ class delete_user_slot(APIView):
             slot_id = request.data.get('slot_id')
             record_id = request.data.get('id')
 
-
             # Step 1: Retrieve the UserSlotDetails instance by id
             user_slot_instance = get_object_or_404(UserSlotDetails, id=record_id)
 
@@ -2806,27 +2805,36 @@ class delete_user_slot(APIView):
                 'employee_id': user_slot_instance.employee_id,
                 'slot_id': user_slot_instance.slot_id,
                 'site_id': user_slot_instance.site_id,  # Adjust according to your fields
-                'company_id': user_slot_instance.company_id,      # Adjust according to your fields
+                'company_id': user_slot_instance.company_id,  # Adjust according to your fields
                 'created_by': user_slot_instance.created_by,
-                'emp_id':user_slot_instance.emp_id,
-                # Add any other necessary fields
+                'emp_id': user_slot_instance.emp_id,
             }
 
-            # Step 3: Insert the data into HistUserSlotDetails (historical table)
-            hist_instance = HistUserSlotDetails(**historical_data)
-            hist_instance.save()
+            # Step 3: Check if record exists for that slot_id and employee_id
+            existing_record = UserSlotDetails.objects.filter(employee_id=employee_id, slot_id=slot_id).first()
+            
+            if existing_record:
+                # If record exists, update it instead of deleting
+                existing_record.created_by = user_slot_instance.created_by  # You can update more fields if needed
+                existing_record.save()
+                return JsonResponse({'message': 'Record updated successfully'}, status=200)
+            else:
+                # Step 4: Insert the data into HistUserSlotDetails (historical table)
+                hist_instance = HistUserSlotDetails(**historical_data)
+                hist_instance.save()
 
-            # Step 4: Now, delete the record from UserSlotDetails
-            delete_user_slot = get_object_or_404(UserSlotDetails, employee_id = employee_id,slot_id= slot_id,id=record_id)
-            delete_user_slot.delete()
+                # Step 5: Now, delete the record from UserSlotDetails
+                delete_user_slot = get_object_or_404(UserSlotDetails, employee_id=employee_id, slot_id=slot_id, id=record_id)
+                delete_user_slot.delete()
 
-            return JsonResponse({'message': 'Record archived and deleted successfully'}, status=200)
-    
+                return JsonResponse({'message': 'Record archived and deleted successfully'}, status=200)
+            
         except Exception as e:
             # Log the error using a stored procedure
             tb = traceback.extract_tb(e.__traceback__)
             cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
             return JsonResponse({'message': str(e)}, status=500)
+
 
 @login_required   
 def get_worksites(request):

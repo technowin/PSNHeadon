@@ -386,7 +386,6 @@ def common_fun(columnName,filterid,SubFilterId,sft,entity,user):
                 join_clause += join_query1[z]
 
         sql_query = "Select " + columns + " " + from_clause + " " + join_clause + " " + where_clause + " " + where_extra + " " + group_by + " " + order_by
-        print(sql_query)
         
         ch = 0
         for value in mandatory_arr:
