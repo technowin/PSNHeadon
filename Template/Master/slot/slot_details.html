@@ -96,7 +96,7 @@
     
         <div class="col-md-2">
             <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
-            <input type="text" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" required>
+            <input type="text" name="slot_name" class="form-control" id="slot_name" placeholder="Enter Slot Name" onchange="checkSlotName()" required>
         </div>
 
         <div class="col-md-2">
@@ -268,7 +268,7 @@
         <div class="row mb-3">
          <div class="col-md-2">
             <label for="slot_name" class="form-label">Slot Name<span style="color:red;"> *</span> :</label>
-            <input type="text"  name="new_slot_name" class="form-control" id="new_slot_name" placeholder="Enter Slot Name" required>
+            <input type="text"  name="new_slot_name" class="form-control" id="new_slot_name" placeholder="Enter Slot Name" onchange="checkSlotName1()" required>
         </div>
 
 
@@ -519,6 +519,101 @@
         }
     }); 
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function checkSlotName() {
+        var slotName = $('#slot_name').val().trim();
+        var submitBtn = $('#submitBtn');
+    
+        // Disable the button while checking
+        submitBtn.prop('disabled', true);
+    
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'check_slot_name' %}", // Ensure this matches your Django URL pattern
+            data: {
+                slot_name: slotName,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'  
+            },
+            success: function(response) {
+                if (response.exists) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Duplicate Slot Name',
+                        text: 'This slot name already exists. Please choose another name.',
+                    });
+    
+                    // Keep the button disabled
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // Enable the button since the slot name is valid
+                    submitBtn.prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+    
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while checking the slot name. Please try again later.',
+                });
+    
+                // Enable the button to allow retries in case of an error
+                submitBtn.prop('disabled', false);
+            }
+        });
+    }
+
+    function checkSlotName1() {
+        var slotName = $('#new_slot_name').val().trim();
+        var submitBtn = $('#submitBtn');
+    
+        // Disable the button while checking
+        submitBtn.prop('disabled', true);
+    
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'check_slot_name' %}", // Ensure this matches your Django URL pattern
+            data: {
+                slot_name: slotName,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'  
+            },
+            success: function(response) {
+                if (response.exists) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Duplicate Slot Name',
+                        text: 'This slot name already exists. Please choose another name.',
+                    });
+    
+                    // Keep the button disabled
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // Enable the button since the slot name is valid
+                    submitBtn.prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+    
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while checking the slot name. Please try again later.',
+                });
+    
+                // Enable the button to allow retries in case of an error
+                submitBtn.prop('disabled', false);
+            }
+        });
+    }
+    
+    
+</script>
+        
+
 
 
  {% endblock %} 

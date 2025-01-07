@@ -100,6 +100,7 @@ urlpatterns = [
     # path("view_employee",view_employee, name="view_employee"),
     path("view_designation",view_designation, name="view_designation"),
     path("get_worksites",get_worksites, name="get_worksites"),
+    path("check_slot_name",check_slot_name, name="check_slot_name"),
     # path("update_remaining_companies",update_remaining_companies, name="update_remaining_companies"),
     
 

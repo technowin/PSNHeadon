@@ -2965,4 +2965,33 @@ class update_bank_details(APIView):
             cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
             return JsonResponse({'message': str(e)}, status=500)
 
+@login_required
+def check_slot_name(request):
+    try:
+        # Close previous DB connection if any
+        Db.closeConnection()
+        m = Db.get_connection()
+        cursor = m.cursor()
+
+        if request.method == 'POST':
+            # Retrieve the slot name from the POST data
+            slot_name = request.POST.get('slot_name')
+
+            # Check if the slot name exists in the database
+            if SlotDetails.objects.filter(slot_name=slot_name).exists():
+                return JsonResponse({'exists': True})  # Slot name exists
+            else:
+                return JsonResponse({'exists': False})  # Slot name does not exist
+    except Exception as e:
+        # Log the exception using your stored procedure
+        print(e)
+        tb = traceback.extract_tb(e.__traceback__)
+        cursor.callproc("stp_error_log", [tb[0].name, str(e), request.user.username])
+
+        # Return an error response
+        return JsonResponse({'message': 'An error occurred while processing your request.'}, status=500)
+    finally:
+        # Always close the cursor and connection to prevent leaks
+        cursor.close()
+        Db.closeConnection()
 
