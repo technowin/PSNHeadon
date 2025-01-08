@@ -144,7 +144,7 @@
             <button type="button" value="Filter" class=" btn-success button_r " id="ddlfilter"> <i class="fa fa-filter"></i></button>
         </div>
     </div>
-    <div class=" partial" id="ddlfilterpartial" style="display: block;zoom: 95%;">
+    {% comment %} <div class="partial" id="ddlfilterpartial" style="display: block;zoom: 95%;">
         <div class="row">
             <div class="col-2 no-gutters padding-0" style="margin-top:0.3% ;">
                 <div class="form-outline inputcssf" >
@@ -181,7 +181,56 @@
                 <button type="button" value="" class=" btn-success button_r" id="ReportBtn"><i class="fa fa-search" aria-hidden="true" id="searchId"></i></button>
             </div>
         </div>
+    </div> {% endcomment %}
+
+    <div class="partial" id="ddlfilterpartial" style="display: block; zoom: 95%;">
+        <div class="row">
+            <div class="col-2 no-gutters padding-0" style="margin-top: 0.3%;">
+                <div class="form-outline inputcssf">
+                    <select name="FilterId" id="1filterId" class="filter" style="border-radius: 10px; padding: 1.5%; width: 100%;" required onchange="change(this.id)">
+                        {% for item1 in filter_name %}
+                        <option style="border-radius: 10px; padding: 0.5%; width: 100%" value="{{ item1.0 }}"> {{ item1.1 }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-2 no-gutters padding-0">
+                <div class="form-outline inputcss">
+                    <select name="SubFilterId" id="1subFilterId" class="subfilter" style="border-radius: 10px; padding: 1.5%; width: 100%; color: white;" required multiple>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2 no-gutters padding-0">
+                <div class="form-outline inputcss">
+                    <input type="date" name="fromDate" id="fromDate" class="subfilter" style="border-radius: 10px; padding: 1.5%; width: 100%;" placeholder="From Date" required>
+                </div>
+            </div>
+            <div class="col-2 no-gutters padding-0">
+                <div class="form-outline inputcss">
+                    <input type="date" name="toDate" id="toDate" class="subfilter" style="border-radius: 10px; padding: 1.5%; width: 100%;" placeholder="To Date" required>
+                </div>
+            </div>
+            <div class="col-1" hover-tooltip="add filter" tooltip-position="top" style="height: 0px; padding-bottom: 2px; padding-top: 2px;">
+                <button type="button" value="" class="btn-success button_r" id="AddFilters"> <i class='fa fa-plus'></i></button>
+            </div>
+            <div class="col-1" hover-tooltip="remove filter" tooltip-position="top" style="height: 0px; padding-bottom: 2px; padding-top: 2px;">
+                <button type="button" value="" class="btn-danger button_r" id="remove_filters"> <i class='fa fa-close'></i></button>
+            </div>
+            <div class="col-2 no-gutters padding-0" id="column">
+                <div class="form-outline inputcss" id="selectedoptions">
+                    <select name="ColumnId" id="ddlColumnId" class="" style="border-radius: 10px; padding: 1.5%; width: 100%; color: white;" required multiple>
+                        {% for item1 in column_name %}
+                        <option style="border-radius: 10px; padding: 0.5%; width: 100%; color: white;" value="{{ item1.0 }}"> {{ item1.1 }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-1 no-gutters padding-0" hover-tooltip="search report" tooltip-position="top">
+                <button type="button" value="" class="btn-success button_r" id="ReportBtn"><i class="fa fa-search" aria-hidden="true" id="searchId"></i></button>
+            </div>
+        </div>
     </div>
+    
  
     <div>
         <div style="display: none;" id="loderDiv" class="my-loader">
@@ -268,6 +317,24 @@
 <script src="https://cdn.datatables.net/fixedcolumns/4.1.0/js/dataTables.fixedColumns.min.js"></script>
 <script src="https://cdn.datatables.net/select/1.4.0/js/dataTables.select.min.js"></script>
 <script src="{% static 'js/selectize-bootstrap-4-style-master/dist/js/selectize/standalone/selectize.min.js' %}"></script>
+
+
+<script>
+    // Get today's date
+    const today = new Date();
+    
+    // Calculate yesterday's date
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    
+    // Format the dates in YYYY-MM-DD
+    const todayStr = today.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    // Set max attribute for both date inputs
+    document.getElementById('fromDate').setAttribute('max', yesterdayStr);
+    document.getElementById('toDate').setAttribute('max', todayStr);
+</script>
 
 <script type="text/javascript">
 
@@ -417,13 +484,15 @@
         }
     });
     $("#ReportBtn").click(function () {
-        
+        debugger;
         $("#partialcomponent").empty();
         document.getElementById("loderDiv").style.display = "block";
         var cNames = "";
         cNames = $("#ddlColumnId").val().map(item => item.replace(/,/g, '|')).join();
 
         var entity = $("#Entity1").val();
+        var fromDate = $('#fromDate').val();
+        var toDate = $('#toDate').val();
     
         var fid = "";
         var sfid = "";
@@ -466,6 +535,8 @@
                 'subFilterId': sfid,
                 'sft': sft,
                 'entity': entity,
+                'fromDate':fromDate,
+                'toDate':toDate
             },
             success: function (data) {
                 $("#partialcomponent").empty();

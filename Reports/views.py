@@ -218,10 +218,12 @@ def partial_report(request):
                 subFilterId =str(request.GET.get('subFilterId', ''))
                 sft =str(request.GET.get('sft', ''))
                 entity =str(request.GET.get('entity', ''))
+                fromDate = str(request.GET.get('fromDate',''))
+                toDate = str(request.GET.get('toDate',''))
                 filterid1 = filterid.split(',')
                 SubFilterId1 = subFilterId.split(',')
                 sft1 = sft.split(',')
-                data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user)
+                data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,fromDate,toDate)
                 headers = data['headers']
                 emptycheck = data['emptycheck']
                 data_list = data['data_list']
@@ -243,7 +245,7 @@ def partial_report(request):
         data = {'html': html}
         return JsonResponse(data, safe=False)
     
-def common_fun(columnName,filterid,SubFilterId,sft,entity,user):
+def common_fun(columnName,filterid,SubFilterId,sft,entity,user,fromDate,toDate):
     Db.closeConnection()
     m = Db.get_connection()
     cursor=m.cursor()
@@ -379,8 +381,25 @@ def common_fun(columnName,filterid,SubFilterId,sft,entity,user):
             where_extra += "t2.company_id in (" + str(company) + ") and t3.worksite in (" + str(worksite) + ")"
         elif entity in ['ar']:
             where_extra += "t2.company_id in (" + str(company) + ") and t3.site_name in (" + str(worksite) + ")"
+            if fromDate and toDate:
+                where_extra += " and t4.shift_date between '" + str(fromDate) + "' and '" + str(toDate) + "'"
+            elif fromDate:
+                where_extra += " and t4.shift_date = '" + str(fromDate) + "'"
+
+        elif entity in ['pr']:
+            where_extra += "t2.company_id in (" + str(company) + ") and t3.site_name in (" + str(worksite) + ")"
+            if fromDate and toDate:
+                where_extra += " and t5.shift_date between '" + str(fromDate) + "' and '" + str(toDate) + "'"
+            elif fromDate:
+                where_extra += " and t5.shift_date = '" + str(fromDate) + "'"
+
         else:
             where_extra += "t2.company_id in (" + str(company) + ") and t3.site_name in (" + str(worksite) + ")"
+            if fromDate and toDate:
+                where_extra += " and t1.shift_date between '" + str(fromDate) + "' and '" + str(toDate) + "'"
+            elif fromDate:
+                where_extra += " and t1.shift_date = '" + str(fromDate) + "'"
+
                             
             if join_query1[z] not in join_clause:
                 join_clause += join_query1[z]
