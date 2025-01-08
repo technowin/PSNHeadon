@@ -97,7 +97,8 @@ INSTALLED_APPS = [
     'Reports',
     'Dashboard',
     'Payroll',
-    'Menu'
+    'Menu',
+    'Tax'
 ]
 
 # SESSION_ENGINE ="django.contrib.sessions.backends.signed_cookies"
@@ -130,7 +131,7 @@ AUTO_LOGOUT = {
 }
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",fdv
+    BASE_DIR / "static",
    
 ]
 
@@ -143,8 +144,8 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            # 'filename': os.path.join(BASE_DIR, 'D:/Python Projects/PSN Logs', 'django.log'),  
-            'filename': os.path.join(BASE_DIR, '/home/ubuntu/PSN Logs', 'django.log'),  
+            #  'filename': os.path.join(BASE_DIR, 'D:/Python Projects/PSN Logs', 'django.log'),  
+             'filename': os.path.join(BASE_DIR, '/home/ubuntu/PSN Logs', 'django.log'),  
         },
     },
     'loggers': {
