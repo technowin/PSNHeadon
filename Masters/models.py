@@ -55,16 +55,16 @@ class parameter_master(models.Model):
     class Meta:
         db_table = 'parameter_master'
     def __str__(self):
-        return self.parameter_name
+        return self.parameter_value
     
 class StateMaster(models.Model):
     state_id =  models.AutoField(primary_key=True)
     state_name = models.TextField(null=True,blank=True) 
-    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
-    created_by = models.TextField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
-    updated_by = models.TextField(null=True, blank=True)
     state_status = models.BooleanField(null=True,blank=True,default=True)
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='state_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='state_updated',blank=True, null=True,db_column='updated_by')
     class Meta:
         db_table = 'tbl_state_master'
     def __str__(self):
@@ -73,16 +73,16 @@ class CityMaster(models.Model):
     id =  models.AutoField(primary_key=True)
     city_id =  models.IntegerField(null=True, blank=False)
     city_name = models.TextField(null=True,blank=True) 
-    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
-    created_by = models.TextField(null=True, blank=True)
-    state_id = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='state_city_id',blank=True, null=True,db_column='state_id')
-    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
-    updated_by = models.TextField(null=True, blank=True)
     city_status = models.BooleanField(null=True,blank=True,default=True)
+    state = models.ForeignKey(StateMaster, on_delete=models.CASCADE,related_name='state_city_id',blank=True, null=True,db_column='state_id')
+    created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='city_created',blank=True, null=True,db_column='created_by')
+    updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='city_updated',blank=True, null=True,db_column='updated_by')
     class Meta:
         db_table = 'tbl_city_master'
     def __str__(self):
-        return self.name       
+        return self.city_name       
 
 
 class site_master(models.Model):

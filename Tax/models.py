@@ -5,7 +5,7 @@ from Account.models import CustomUser
 
 class Slab(models.Model):
     id = models.AutoField(primary_key=True)
-    slab_id = models.ForeignKey('Tax.SlabMaster', on_delete=models.CASCADE,blank=True, null=True)
+    slab_id = models.ForeignKey('Tax.SlabMaster', on_delete=models.CASCADE,blank=True, null=True,db_column ='slab_id')
     salary_from =  models.FloatField(null=True,blank=True)
     salary_to =  models.FloatField(null=True,blank=True)
     salary_deduct =  models.FloatField(null=True,blank=True)
@@ -22,9 +22,9 @@ class Slab(models.Model):
     Lwf_Type =  models.CharField(max_length=255,null=True,blank=True)
     slab_applicable = models.CharField(max_length=255, null=True, blank=True)    
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slabb_created_by')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slabb_created_by',db_column='created_by')
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slabb_updated_by')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slabb_updated_by' ,db_column ='updated_by')
 
     class Meta:
         db_table = 'tbl_slab'
@@ -32,37 +32,22 @@ class Slab(models.Model):
 
 class SlabMaster(models.Model):
     slab_id = models.AutoField(primary_key=True)
-    act_id = models.ForeignKey('Tax.ActMaster', on_delete=models.CASCADE,blank=True, null=True)
+    act_id = models.ForeignKey('Tax.ActMaster', on_delete=models.CASCADE,blank=True, null=True,db_column='act_id')
     state = models.ForeignKey('Masters.StateMaster', on_delete=models.CASCADE,related_name='slab_tax_state',blank=True, null=True, db_column='state_id')
+    act_by = models.CharField(max_length=255,null=True, blank=True)
     city = models.ForeignKey('Masters.CityMaster', on_delete=models.CASCADE,related_name='slab_tax_city',blank=True, null=True, db_column='city_id')
-    challan_for =models.CharField(max_length=255)
     is_slab =models.CharField(max_length=255)
-    slab_note =models.CharField(max_length=255)
     slab_freq =models.CharField(max_length=255)
-    slab_freq_returns =models.CharField(max_length=255,null=True,blank=True)
-    slab_due =models.CharField(max_length=255)
-    slab_due_returns =models.CharField(max_length=255,null=True,blank=True)
-    slab_from =models.CharField(max_length=255, null=True, blank=True) 
-    slab_dd =models.CharField(max_length=255)
-    slab_interest =models.FloatField(null=True,blank=True)
-    slab_penalty =models.FloatField(null=True,blank=True)
     slab_status =models.FloatField(null=True,blank=True)
     slab_year =models.CharField(max_length=255)
     slab_months =models.CharField(max_length=255)
     slab_months_challan =models.CharField(max_length=255,null=True,blank=True)
-    slab_months_returns =models.CharField(max_length=255,null=True,blank=True)
-    LWF_Applicable =models.CharField(max_length=255,null=True,blank=True)
-    mode_Of_challan_generation =models.CharField(max_length=255,null=True,blank=True)
-    online_url =models.CharField(max_length=255,null=True,blank=True)
     period =models.CharField(max_length=255,null=True,blank=True)
-    slab_due_months =  models.IntegerField(null=True,blank=True)
-    slab_due_months_returns =  models.IntegerField(null=True,blank=True)
     exception_month = models.CharField(max_length=255, null=True, blank=True)
-    slab_months_for_returns =models.CharField(max_length=255,null=True)   
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slab_created_by')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slab_created_by',db_column='created_by')
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slab_updated_by') 
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='slab_updated_by',db_column ='updated_by') 
   
     class Meta:
         db_table = 'tbl_slab_master'
@@ -87,9 +72,9 @@ class TaxCalculation(models.Model):
     challan_period = models.CharField(max_length=500, null=True, blank=True)
     Employer_deduct = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='tax_created_by')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='tax_created_by',db_column='created_by')
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='tax_updated_by')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='tax_updated_by',db_column ='updated_by')
                          
     class Meta:
         db_table = 'tax_calculation' 
@@ -101,8 +86,19 @@ class ActMaster(models.Model):
     act_menu_name =  models.CharField(max_length=265,null=True,blank=True)
     act_status = models.IntegerField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='act_created_by')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='act_created_by', db_column='created_by')
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='act_updated_by')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='act_updated_by',db_column ='updated_by')
     class Meta:
         db_table = 'tbl_act_master'
+    def __str__(self):
+        return f"{self.act_menu_name} - {self.act_name}"
+    
+
+class FinancialYear(models.Model):
+    id = models.AutoField(primary_key=True)
+    year =  models.CharField(max_length=255,null=True,blank=True)
+    class Meta:
+        db_table = 'financial_year'
+    def __str__(self):
+        return self.year

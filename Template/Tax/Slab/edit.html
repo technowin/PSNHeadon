@@ -1,0 +1,127 @@
+<!-- templates/salary_element_master/edit.html -->
+ <!-- templates/salary_element_master/view.html -->
+ <!-- templates/salary_element_master/index.html -->
+ {% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+ {% block content %}
+ {% load static %}
+ {% csrf_token %}
+ 
+  <!-- Custom styles for this html-->
+  <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css" >
+  <link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+ 
+  <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+  <!-- Include DataTables CSS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+  <!-- Include DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+ 
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <title>Edit Slab</title>
+ </head>
+ <body>
+    <div class="container" style="max-width: 1800px;">
+        <div class="card">
+            <div class="card-header">
+                <h2>Create New Slab</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <!-- Hidden Field to Pass Act -->
+                    <input type="hidden" name="act" value="{{ act }}">
+                
+                    <!-- First Row with Effective Date and Salary Fields -->
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="effective_date" class="form-label">Effective Date</label>
+                            <input  type="date" id="effective_date" name="effective_date" class="form-control" value="{{ slab.effective_date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="salary_deduct" class="form-label">Salary Deduct</label>
+                            <input  type="number" id="salary_deduct" name="salary_deduct" class="form-control" value="{{ slab.salary_deduct }}" placeholder="Enter salary deduction" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="applicable_designation" class="form-label">Applicable Designation</label>
+                            <select  id="applicable_designation" name="applicable_designation"  class="form-control" required>
+                                <option value="" disabled>Select</option>
+                                {% for option in applicable_designation %}
+                                <option  value="{{ option }}" {% if slab.applicable_designation == option %}selected{% endif %}> {{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="slab_applicable" class="form-label">Slab Exception</label>
+                            <select id="slab_applicable" name="slab_applicable" class="form-control" required>
+                                <option value="" disabled>Select</option>{% for option in slab_applicable %}<option 
+                                    value="{{ option }}"  {% if slab.slab_applicable == option %}selected{% endif %}>{{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                
+                    <!-- Second Row with Employee Fields -->
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="lwf_applicable" class="form-label">Applicable Employee Count</label>
+                            <input type="number" id="lwf_applicable"  name="lwf_applicable" class="form-control"  value="{{ slab.lwf_applicable }}" placeholder="Enter employee count" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="employee_min_amount" class="form-label">Employee Max Amount</label>
+                            <input  type="number" id="employee_min_amount" name="employee_min_amount" class="form-control" value="{{ slab.employee_min_amount }}" placeholder="Enter max amount" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="special_LWF_calculation" class="form-label">Special LWF Calculation</label>
+                            <input type="number" id="special_LWF_calculation" name="special_LWF_calculation" class="form-control" placeholder="Enter calculation value" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="special_employer_contribution" class="form-label">Special Employer Contribution</label>
+                            <input  type="number" id="special_employer_contribution" name="special_employer_contribution"  class="form-control"  value="{{ slab.special_employer_contribution }}" 
+                                placeholder="Enter contribution"  required>
+                        </div>
+                    </div>
+                
+                    <!-- Third Row with Employer Amount -->
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="employer_min_amount" class="form-label">Employer Min Amount</label>
+                            <input type="number" id="employer_min_amount" name="employer_min_amount" class="form-control" value="{{ slab.employer_min_amount }}" 
+                                placeholder="Enter min amount" required>
+                        </div>
+                    </div>
+                
+                    <!-- Buttons -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Update Slab</button>
+                        <a href="{% url 'slab_master_index' %}" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+ 
+ 
+ 
+     <!-- Show success/error messages -->
+     {% if messages %}
+         <ul>
+             {% for message in messages %}
+                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+             {% endfor %}
+         </ul>
+     {% endif %}
+ </body>
+ </html>
+ {% endblock %}
+ 
+ 

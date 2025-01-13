@@ -1,0 +1,230 @@
+<!-- templates/salary_element_master/create.html -->
+ <!-- templates/salary_element_master/index.html -->
+ {% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+ {% block content %}
+ {% load static %}
+ {% csrf_token %}
+ 
+  <!-- Custom styles for this html-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create New Slab</title>
+    <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}">
+    
+    <!-- Selectize.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/selectize/dist/css/selectize.default.css">
+    
+    <!-- jQuery and Selectize.js -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/selectize/dist/js/standalone/selectize.min.js"></script>
+    
+    <style>
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1800px;">
+    <div class="card">
+        <div class="card-header">
+            <h2>Edit New Slab</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="slab_year">Slab Year</label>
+                        {{ form.slab_year }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="act_id">Act ID</label>
+                        {{ form.act_id }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="act_id">Period</label>
+                        {{ form.period }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="act_by">Act By</label>
+                        {{ form.act_by }}
+                    </div>
+                    
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label for="state">State</label>
+                        {{ form.state }}
+                    </div>
+                    <div class="col-md-3" id="city_field" hidden>
+                        <label for="city">City</label>
+                        {{ form.city }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="slab_freq">Frequency</label>
+                        {{ form.slab_freq }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="is_slab">Slab Applicable</label>
+                        {{ form.is_slab }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Slab Months -->
+                    <div class="col-md-3 mt-3">
+                        <label for="slab_months">Slab Months</label>
+                        <select id="slab_months" name="slab_months" multiple>
+                            {% for month in months %}
+                            <option value="{{ month }}" 
+                                    {% if month in slab_months %} selected {% endif %}>
+                                {{ month }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Exception Months Multi-Select -->
+                    <div class="col-md-3 mt-3" id="exception_month_field" hidden>
+                        <label for="exception_month">Exception Months</label>
+                        <select id="exception_month" name="exception_month" multiple>
+                            {% for month in months %}
+                            <option value="{{ month }}" 
+                                    {% if month in exception_months %} selected {% endif %}>
+                                {{ month }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    
+                    <div class="col-md-3 mt-3">
+                            <label for="slab_status">Slab Status</label>
+                            {{ form.slab_status }}
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary">Create Slab</button>
+                    <a href="{% url 'slab_master_index' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize Selectize for slab_months
+        const slabMonthsSelect = $('#slab_months').selectize({
+            plugins: ['remove_button'], // Allows removal of items
+            create: false,
+            sortField: 'text'
+        });
+
+        // Get Selectize control for slab_months
+        const slabMonthsControl = slabMonthsSelect[0].selectize;
+
+        // Get Frequency Dropdown
+        const frequencyDropdown = document.getElementById("id_slab_freq");
+
+        // List of all months (passed from Django)
+        const allMonths = {{ months|safe }};
+
+        // Update slab_months based on frequency selection
+        frequencyDropdown.addEventListener("change", function () {
+            if (this.options[this.selectedIndex].text === "Monthly") {
+                // Select all months
+                slabMonthsControl.setValue(allMonths);
+            } else {
+                // Clear selection
+                slabMonthsControl.clear();
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get the Act ID dropdown and Exception Month field
+        const actIdDropdown = document.querySelector('#id_act_id'); // Default id from Django forms
+        const exceptionMonthField = document.querySelector('#exception_month_field');
+
+        // Initialize Selectize for exception_month dropdown
+        const exceptionMonthSelect = $('#exception_month').selectize({
+            plugins: ['remove_button'], // Allows removal of items
+            create: false,
+            sortField: 'text'
+        });
+        
+        const exceptionMonthControl = exceptionMonthSelect[0].selectize;
+
+        // Function to toggle visibility of Exception Month field
+        function toggleExceptionField() {
+            const selectedText = actIdDropdown.options[actIdDropdown.selectedIndex].text;
+            if (selectedText.includes('PROFESSIONAL TAX ACT')) { // Check if selected text contains the required phrase
+                exceptionMonthField.removeAttribute('hidden');
+            } else {
+                exceptionMonthField.setAttribute('hidden', 'true');
+                exceptionMonthControl.clear(); // Clear the selected values when hidden
+            }
+        }
+
+        // Listen for changes on the Act ID dropdown
+        actIdDropdown.addEventListener('change', toggleExceptionField);
+
+        // Initial check in case the form is pre-selected
+        toggleExceptionField();
+    });
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get the Act By dropdown and City field
+        const actByDropdown = document.querySelector('#id_act_by'); // Default id from Django forms
+        const cityField = document.querySelector('#city_field');
+
+        // Function to toggle visibility of City field
+        function toggleCityField() {
+            const selectedText = actByDropdown.options[actByDropdown.selectedIndex].text;
+            if (selectedText === 'City') { // Compare with the actual displayed text
+                cityField.removeAttribute('hidden');
+            } else {
+                cityField.setAttribute('hidden', 'true');
+            }
+        }
+
+        // Listen for changes on the Act By dropdown
+        actByDropdown.addEventListener('change', toggleCityField);
+
+        // Initial check in case the form is pre-selected
+        toggleCityField();
+    });
+</script>
+
+  
+ 
+     <!-- Show success/error messages -->
+     {% if messages %}
+         <ul>
+             {% for message in messages %}
+                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+             {% endfor %}
+         </ul>
+     {% endif %}
+ </body>
+ </html>
+ {% endblock %}

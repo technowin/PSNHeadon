@@ -28,6 +28,7 @@ from Masters.views import site_master as sm
 from Masters.views import company_master as cm
 from django.urls import path
 from Notification.views import *
+from Tax.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -186,5 +187,33 @@ urlpatterns = [
     path('create_new_payout/<str:employee_id>/slot/<int:slot_id>', create_new_payout, name='create_new_payout'),
     path('generate_pay_slip', generate_pay_slip, name='generate_pay_slip'),
     path('refresh_payout_status', refresh_payout_status, name='refresh_payout_status'),
+
+
+    #TAX
+
+    path('state_master_index', state_master_index, name='state_master_index'),
+    path('state_edit/<str:pk>/', state_edit, name='state_edit'),
+    path('state_view/<str:pk>/', state_view, name='state_view'),
+    path('state_create', state_create, name='state_create'),
+
+    path('city_master_index/<str:pk>/', city_master_index, name='city_master_index'),
+    path('city_edit/<str:pk>', city_edit, name='city_edit'),
+    path('city_view/<str:pk>', city_view, name='city_view'),
+    path('city_create/<str:state_id>/', city_create, name='city_create'),
+
+    path('act_master_index', act_master_index, name='act_master_index'),
+    path('act_edit/<str:pk>/', act_edit, name='act_edit'),
+    path('act_view/<str:pk>/', act_view, name='act_view'),
+    path('act_create', act_create, name='act_create'),
+
+    path('slab_index/<str:pk>/', slab_index, name='slab_index'),
+    path('slab_edit/<str:pk>/', slab_edit, name='slab_edit'),
+    path('slab_view/<str:pk>/', slab_view, name='slab_view'),
+    path('slab_create', slab_create, name='slab_create'),
+
+    path('slab_master_index', slab_master_index, name='slab_master_index'),
+    path('slab_master_edit/<str:pk>/', slab_master_edit, name='slab_master_edit'),
+    path('slab_master_view/<str:pk>/', slab_master_view, name='slab_master_view'),
+    path('slab_master_create', slab_master_create, name='slab_master_create'),
 
 ]

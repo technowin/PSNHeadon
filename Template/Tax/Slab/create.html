@@ -1,0 +1,152 @@
+<!-- templates/salary_element_master/create.html -->
+ <!-- templates/salary_element_master/index.html -->
+ {% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+ {% block content %}
+ {% load static %}
+ {% csrf_token %}
+ 
+  <!-- Custom styles for this html-->
+  <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
+  <link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css" >
+  <link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+ 
+  <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+  <!-- Include DataTables CSS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+  <!-- Include DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+ 
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <title>Create New State</title>
+     <style>
+         .form-control {
+             width: 100%;
+             padding: 8px;
+             font-size: 14px;
+             margin-bottom: 10px;
+         }
+     </style>
+ </head>
+ <body>
+     
+    <div class="container" style="max-width: 1800px;">
+        <div class="card">
+            <div class="card-header">
+                <h2>Create New {% if type == "Employer" %}Employer{% else %}Employee{% endif %} Slab</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type ="hidden"  name ="type" value={{ type }} >
+                    <input type ="hidden"  name ="slab_id" value={{ slab_id }} >
+                    
+                    <!-- First Row with Salary Fields -->
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="effective_date" class="form-label">Effective Date</label>
+                            <input type="date" id="effective_date" name="effective_date" class="form-control">
+                        </div>
+                        {% if act == "1" %}
+                        <div class="col-md-3 mb-3">
+                            <label for="salary_from" class="form-label">Salary From</label>
+                            <input type="number" id="salary_from" name="salary_from" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="salary_to" class="form-label">Salary To</label>
+                            <input type="number" id="salary_to" name="salary_to" class="form-control">
+                        </div>
+                        {% endif %}
+                        <div class="col-md-3 mb-3">
+                            <label for="salary_deduct" class="form-label">Salary Deduct</label>
+                            <input type="number" id="salary_deduct" name="salary_deduct" class="form-control">
+                        </div>
+                    </div>
+    
+                    <!-- Second Row with Slab Fields -->
+                    <div class="row">
+                        
+                        {% if act == "1" %}
+                        <div class="col-md-3 mb-3">
+                            <label for="slab_for" class="form-label">Slab Type</label>
+                            <select id="dropdown" name="slab_for" class="form-control">
+                                <option value="" selected disabled>Select</option>
+                                {% for option in slab_for %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                        {% if act == "2" %}
+                        <div class="col-md-3 mb-3">
+                            <label for="applicable_designation" class="form-label">Applicable Designation</label>
+                            <select id="dropdown" name="applicable_designation" class="form-control">
+                                <option value="" selected disabled>Select</option>
+                                {% for option in applicable_designation %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-3 mb-3">
+                            <label for="slab_applicable" class="form-label">Slab Exception</label>
+                            <select id="dropdown" name="slab_applicable" class="form-control">
+                                <option value="" selected disabled>Select</option>
+                                {% for option in slab_applicable %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+    
+                    {% if act == "2" %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="employee_min_amount" class="form-label">Employee Min Amount</label>
+                            <input type="number" id="employee_min_amount" name="employee_min_amount" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="special_LWF_calculation" class="form-label">Special LWF Calculation</label>
+                            <input type="number" id="special_LWF_calculation" name="special_LWF_calculation" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="special_employer_contribution" class="form-label">Special Employer Contribution</label>
+                            <input type="number" id="special_employer_contribution" name="special_employer_contribution" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="employer_min_amount" class="form-label">Employer Min Amount</label>
+                            <input type="number" id="employer_min_amount" name="employer_min_amount" class="form-control">
+                        </div>
+                    </div>
+                    {% endif %}
+    
+                    <br>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Create {% if type == "Employer" %}Employer{% else%} Employee{% endif %} Slab</button>
+                        <a href="{% url 'state_master_index' %}" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+ 
+ <br>
+ 
+     <!-- Show success/error messages -->
+     {% if messages %}
+         <ul>
+             {% for message in messages %}
+                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+             {% endfor %}
+         </ul>
+     {% endif %}
+ </body>
+ </html>
+ {% endblock %}

@@ -1,0 +1,57 @@
+{% extends "Shared/Layout.html" %} {% block username %}{{username}}{% endblock %}
+{% block content %}
+{% load static %}
+{% csrf_token %}
+
+ <!-- Custom styles for this html-->
+ <link href="{% static 'css/masters.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/table.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/uploadExcel.css' %}" rel="stylesheet" type="text/css" >
+ <link href="{% static 'css/uploadModal.css' %}" rel="stylesheet" type="text/css" >
+ <link rel="stylesheet" type="text/css" href="{% static 'css/tooltips.css' %}" />
+
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+ <!-- Include DataTables CSS -->
+ <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+ <!-- Include DataTables JS -->
+ <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>View State</title>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>State Master Details</h2>
+            </div>
+            <div class="card-body">
+                <!-- Row displaying State Name and State Status -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>State Name:</strong> {{ state.state_name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>State Status:</strong> {% if state.state_status == 1 %}Active{% else %}Inactive{% endif %}</p>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <a href="{% url 'state_master_index' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+
+
+</body>
+</html>
+{% endblock %}
