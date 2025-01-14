@@ -51,9 +51,7 @@
             <tr>
                 <td>{{ forloop.counter }}</td> <!-- Automatically generates Sr No -->
                 <td>{{ state.state_name }}</td>
-                <td>
-                    <a href="{% url 'city_master_index' state.pk %}">View Cities</a>
-                </td> <!-- "View Cities" link added -->
+                <td><a href="{% url 'city_master_index' state.pk %}">{{ state.city_count}}</a></td> 
                 <td>{{ state.state_status|yesno:"Active,Inactive" }}</td>
                 <td>
                     <a href="{% url 'state_view' state.pk %}">View</a> |

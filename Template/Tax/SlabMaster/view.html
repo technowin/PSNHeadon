@@ -65,23 +65,28 @@
     
                 <!-- Third Row displaying Slab Months and Exception Months -->
                 <div class="row mb-4">
-                    <div class="col-md-3">
-                        <p><strong>Slab Months:</strong> 
-                            {% for month in slab.slab_months.all %}
+                    <div class="col-md-12">
+                        <p><strong>Slab Months:</strong>
+                            {% for month in slab_month_names %}
                                 {{ month }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </p>
                     </div>
-    
-                    <div class="col-md-3" id="exception_month_field" {% if not slab.exception_months %}hidden{% endif %}>
-                        <p><strong>Exception Months:</strong> 
-                            {% for month in slab.exception_months.all %}
+                    
+                </div>
+                    
+                <div class="row mb-4">
+
+                    <div class="col-md-6" {% if not exception_month_names %}hidden{% endif %}>
+                        <p><strong>Exception Months:</strong>
+                            {% for month in exception_month_names %}
                                 {{ month }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </p>
                     </div>
+                    
     
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <p><strong>Slab Status:</strong> {% if slab.slab_status == 1 %}Active{% else %}Inactive{% endif %}</p>
                     </div>
                 </div>
@@ -92,9 +97,6 @@
         </div>
     </div>
     
-    
-
-
 </body>
 </html>
 {% endblock %}

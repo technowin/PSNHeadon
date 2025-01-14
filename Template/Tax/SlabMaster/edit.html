@@ -117,7 +117,7 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary">Create Slab</button>
+                    <button type="submit" class="btn btn-primary">Update Slab</button>
                     <a href="{% url 'slab_master_index' %}" class="btn btn-secondary">Back to List</a>
                 </div>
             </form>
@@ -131,7 +131,8 @@
         const slabMonthsSelect = $('#slab_months').selectize({
             plugins: ['remove_button'], // Allows removal of items
             create: false,
-            sortField: 'text'
+            sortField: 'text',
+            maxItems: null // Allow multiple selections initially
         });
 
         // Get Selectize control for slab_months
@@ -145,16 +146,48 @@
 
         // Update slab_months based on frequency selection
         frequencyDropdown.addEventListener("change", function () {
-            if (this.options[this.selectedIndex].text === "Monthly") {
+            const selectedFrequency = this.options[this.selectedIndex].text;
+
+            if (selectedFrequency === "Monthly") {
                 // Select all months
                 slabMonthsControl.setValue(allMonths);
             } else {
-                // Clear selection
+                // Clear selection for other frequencies
+                slabMonthsControl.clear();
+            }
+        });
+
+        // Check the number of selected months when the user changes selection
+        slabMonthsSelect.on('change', function () {
+            const selectedMonths = slabMonthsControl.getValue();
+            const selectedFrequency = frequencyDropdown.options[frequencyDropdown.selectedIndex].text;
+
+            let minMonths = 1;
+            let maxMonths = allMonths.length;
+
+            // Adjust conditions based on frequency
+            if (selectedFrequency === "Yearly") {
+                minMonths = maxMonths = 1;
+            } else if (selectedFrequency === "Half Yearly") {
+                maxMonths = 2;
+            } else if (selectedFrequency === "Quarterly") {
+                maxMonths = 4;
+            }
+
+            // If selected months exceed max allowed or less than min allowed
+            if (selectedMonths.length > maxMonths) {
+                // Limit to max allowed
+                slabMonthsControl.setValue(selectedMonths.slice(0, maxMonths));
+            } else if (selectedMonths.length < minMonths) {
+                // If less than minimum, reset
                 slabMonthsControl.clear();
             }
         });
     });
 </script>
+
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -166,9 +199,10 @@
         const exceptionMonthSelect = $('#exception_month').selectize({
             plugins: ['remove_button'], // Allows removal of items
             create: false,
-            sortField: 'text'
+            sortField: 'text',
+            maxItems: 2 // Limit to 2 selection
         });
-        
+
         const exceptionMonthControl = exceptionMonthSelect[0].selectize;
 
         // Function to toggle visibility of Exception Month field
@@ -189,6 +223,7 @@
         toggleExceptionField();
     });
 </script>
+
 
 
 <script>
@@ -214,6 +249,47 @@
         toggleCityField();
     });
 </script>
+
+<script>
+    function validateSlabData(event) {
+        const freq = document.querySelector('[name="slab_freq"]').value;  // Get the selected frequency
+        const slabMonthsSelect = document.getElementById('slab_months');
+        const selectedMonths = Array.from(slabMonthsSelect.selectedOptions).map(option => option.value); // Get selected months
+
+        let expectedMonthsCount = 0;
+
+        // Set the expected months count based on frequency
+        if (freq === 'Monthly') {
+            expectedMonthsCount = 12;
+        } else if (freq === 'Quarterly') {
+            expectedMonthsCount = 4;
+        } else if (freq === 'Yearly') {
+            expectedMonthsCount = 1;
+        } else if (freq === 'Half Yearly') {
+            expectedMonthsCount = 2;
+        } else {
+            // If the frequency is not one of the expected values, prevent form submission
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Please select a valid frequency.',
+            });
+            event.preventDefault();  // Prevent form submission if the frequency is invalid
+            return; // Exit the function to prevent further execution
+        }
+
+        // Check if the number of selected months matches the expected count
+        if (selectedMonths.length !== expectedMonthsCount) {
+            // Show SweetAlert if the condition is not satisfied
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: `Please select ${expectedMonthsCount} months for the ${freq} frequency.`,
+            });
+            event.preventDefault();  // Prevent form submission if the condition is not satisfied
+        }
+    }
+</script> 
 
   
  

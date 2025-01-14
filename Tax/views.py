@@ -60,10 +60,13 @@ def state_master_index(request):
     try:
         states = StateMaster.objects.all()
         for state in states:
+            state.city_count = CityMaster.objects.filter(state_id=state.state_id).count()
             state.pk = encrypt_parameter(str(state.state_id))
         return render(request, 'Tax/StateMaster/index.html', {'states': states})
     except Exception as e:
         return JsonResponse({'message': str(e)}, status=500)
+
+
     
 def state_create(request):
     if request.method == 'POST':
@@ -312,13 +315,31 @@ def slab_view(request, pk):
     slab = get_object_or_404(Slab, pk=pk)
     return render(request, 'Tax/Slab/view.html', {'slab': slab,'act':act})
 
+# def slab_master_index(request):
+#     try:
+#         # Fetching slabs with the related models using select_related for optimization
+#         slabs = SlabMaster.objects.all()
+        
+#         # Encrypting pk if needed
+#         for slab in slabs:
+#             slab.pk = encrypt_parameter(str(slab.slab_id))
+        
+#         return render(request, 'Tax/SlabMaster/index.html', {'slabs': slabs})
+#     except Exception as e:
+#         return JsonResponse({'message': str(e)}, status=500)
+
 def slab_master_index(request):
     try:
         # Fetching slabs with the related models using select_related for optimization
-        slabs = SlabMaster.objects.select_related('state', 'city', 'act_id').all()
+        slabs = SlabMaster.objects.all()
         
-        # Encrypting pk if needed
+        # Adding the count for employee and employer slabs
         for slab in slabs:
+            # slab.pk = encrypt_parameter(str(slab.slab_id))
+            employee_slab_count = Slab.objects.filter(slab_id=slab.slab_id, slab_type='Employee').count()
+            employer_slab_count = Slab.objects.filter(slab_id=slab.slab_id, slab_type='Employer').count()
+            slab.employee_slab_count = employee_slab_count
+            slab.employer_slab_count = employer_slab_count
             slab.pk = encrypt_parameter(str(slab.slab_id))
         
         return render(request, 'Tax/SlabMaster/index.html', {'slabs': slabs})
@@ -326,38 +347,188 @@ def slab_master_index(request):
         return JsonResponse({'message': str(e)}, status=500)
 
 
-def slab_master_create(request):
-    months = [month for month in month_name if month]  # Generate month names, excluding the first empty string
-    month_mapping = {month: i + 1 for i, month in enumerate(months)}  # Map month names to numbers
+# def slab_master_create(request):
+#     months = [month for month in month_name if month]  # Generate month names, excluding the first empty string
+#     month_mapping = {month: i + 1 for i, month in enumerate(months)}  # Map month names to numbers
 
+#     if request.method == 'POST':
+#         form = SlabMasterForm(request.POST)
+#         try:
+#             if form.is_valid():
+#                 try:
+#                     slab = form.save(commit=False)  
+#                     slab.slab_year = form.cleaned_data['slab_year'] 
+#                     slab.act_id = form.cleaned_data['act_id'] 
+#                     slab.period = form.cleaned_data['period']
+#                     slab.state = form.cleaned_data['state']
+#                     slab.city = form.cleaned_data.get('city')  
+#                     slab.slab_freq = form.cleaned_data['slab_freq']
+#                     slab.is_slab = form.cleaned_data['is_slab']
+#                     slab_months = request.POST.getlist('slab_months')  
+#                     slab.slab_months = ",".join(str(month_mapping[month]) for month in slab_months)
+#                     exception_months = request.POST.getlist('exception_month')
+#                     if exception_months:
+#                         slab.exception_month = ",".join(str(month_mapping[month]) for month in exception_months)
+#                     else:
+#                         slab.exception_month = None
+#                     slab.slab_status = form.cleaned_data['slab_status']
+#                     slab.created_by = request.user
+#                     slab.save()
+#                     messages.success(request, "Slab created successfully!")
+#                     return redirect('slab_master_index')
+
+#                 except Exception as e:
+#                     return JsonResponse({'message': str(e)}, status=500)
+#             else:
+#                 print(form.errors)
+#                 messages.error(request, "Error creating Slab.")
+#         except Exception as e:
+#             return JsonResponse({'message': str(e)}, status=500)
+#     else:
+#         form = SlabMasterForm()  # Instantiate an empty form for GET requests
+
+#     return render(request, 'Tax/SlabMaster/create.html', {'form': form, 'months': months})
+
+
+
+def slab_master_create(request):
+
+    months = [month for month in month_name if month] 
+    month_mapping = {month: i + 1 for i, month in enumerate(months)}
     if request.method == 'POST':
         form = SlabMasterForm(request.POST)
         try:
             if form.is_valid():
-                try:
-                    slab = form.save(commit=False)  
-                    slab.slab_year = form.cleaned_data['slab_year'] 
-                    slab.act_id = form.cleaned_data['act_id'] 
-                    slab.period = form.cleaned_data['period']
-                    slab.state = form.cleaned_data['state']
-                    slab.city = form.cleaned_data.get('city')  
-                    slab.slab_freq = form.cleaned_data['slab_freq']
-                    slab.is_slab = form.cleaned_data['is_slab']
-                    slab_months = request.POST.getlist('slab_months')  
-                    slab.slab_months = ",".join(str(month_mapping[month]) for month in slab_months)
-                    exception_months = request.POST.getlist('exception_month')
-                    if exception_months:
-                        slab.exception_month = ",".join(str(month_mapping[month]) for month in exception_months)
-                    else:
-                        slab.exception_month = None
-                    slab.slab_status = form.cleaned_data['slab_status']
-                    slab.created_by = request.user
-                    slab.save()
-                    messages.success(request, "Slab created successfully!")
-                    return redirect('slab_master_index')
+                slab_year = form.cleaned_data['slab_year']
+                act_id = form.cleaned_data['act_id']
+                state = form.cleaned_data['state']
+                city = form.cleaned_data.get('city')
+                slab_freq = form.cleaned_data['slab_freq'].parameter_value
 
-                except Exception as e:
-                    return JsonResponse({'message': str(e)}, status=500)
+                # Check if record already exists
+                existing_record = SlabMaster.objects.filter(
+                    Q(act_id=act_id) & Q(state=state) & Q(city=city) & Q(slab_year=slab_year)
+                ).exists()
+
+                if existing_record:
+                    messages.error(request, "A slab for the given criteria already exists.")
+                    return redirect('slab_master_index')
+                
+                slab_months1 = request.POST.getlist("slab_months")
+                slab_months1_nums = sorted(
+                    [int(month_mapping[month]) for month in slab_months1]
+                )
+                def get_previous_months(start_month, num_months=6):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]  # Return in ascending order
+
+                def get_previous_months_quarterly(start_month, num_months=3):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]
+
+                def get_previous_months_yearly(start_month, num_months=12):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]  # Return in ascending order
+
+                def format_half_yearly(months):
+                    if len(months) == 2:
+                        month_ranges = []
+                        for month in months:
+                            month_range = get_previous_months(month, num_months=5) + [
+                                str(month)
+                            ]
+                            month_ranges.append(",".join(month_range))
+                        return " - ".join(month_ranges)
+                    return " - ".join(
+                        [
+                            ",".join(map(str, slab_months1_nums[i : i + 6]))
+                            for i in range(0, len(slab_months1_nums), 6)
+                        ]
+                    )
+
+                def format_quarterly(months):
+                    if len(months) == 4:
+                        month_ranges = []
+                        for month in months:
+                            quarter_range = get_previous_months_quarterly(
+                                month, num_months=2
+                            ) + [str(month)]
+                            month_ranges.append(",".join(quarter_range))
+                        return " - ".join(month_ranges)
+                    return ",".join(map(str, months))
+
+                def format_yearly(months):
+                    if len(months) == 1:
+                        year_ranges = []
+                        for month in months:
+                            year_range = get_previous_months_yearly(
+                                month, num_months=11
+                            ) + [str(month)]
+                            year_ranges.append(",".join(year_range))
+                        return " - ".join(year_ranges)
+                    return ",".join(map(str, months))
+
+                slab_months1 = request.POST.getlist("slab_months")
+                slab_months1_nums = sorted(
+                    [int(month_mapping[month]) for month in slab_months1]
+                )
+
+
+                if slab_freq == "Half Yearly":
+                    slab_months_challan_str = format_half_yearly(slab_months1_nums)
+                elif slab_freq == "Quarterly":
+                    slab_months_challan_str = format_quarterly(slab_months1_nums)
+                elif slab_freq == "Yearly":
+                    slab_months_challan_str = format_yearly(slab_months1_nums)
+                else:
+                    slab_months_challan_str = ",".join(map(str, slab_months1_nums))
+
+
+                slab_months_str = ",".join(map(str, slab_months1_nums))
+
+
+                # Create the slab instance
+                slab = form.save(commit=False)
+                slab.slab_year = slab_year
+                slab.act_id = act_id
+                slab.period = form.cleaned_data['period']
+                slab.state = state
+                slab.city = city
+                slab.slab_freq = slab_freq
+                slab.is_slab = form.cleaned_data['is_slab']
+                slab.slab_months = slab_months_str
+                slab.slab_months_challan = slab_months_challan_str
+
+                exception_months = request.POST.getlist('exception_month')
+                if exception_months:
+                    slab.exception_month = ",".join(
+                        str(month_mapping[month]) for month in exception_months
+                    )
+                else:
+                    slab.exception_month = None
+
+                slab.slab_status = form.cleaned_data['slab_status']
+                slab.created_by = request.user
+
+                slab.save()
+                messages.success(request, "Slab created successfully!")
+                return redirect('slab_master_index')
+
             else:
                 print(form.errors)
                 messages.error(request, "Error creating Slab.")
@@ -369,81 +540,16 @@ def slab_master_create(request):
     return render(request, 'Tax/SlabMaster/create.html', {'form': form, 'months': months})
 
 
-# def slab_master_edit(request, pk):
-#     # Decrypt the primary key and get the SlabMaster object
-#     pk = decrypt_parameter(pk)
-#     slab = get_object_or_404(SlabMaster, pk=pk)  # Fetch the SlabMaster object using the primary key
-#     months = [month for month in month_name if month]  # Generate month names, excluding the first empty string
-#     month_mapping = {month: i + 1 for i, month in enumerate(months)}  # Map month names to numbers
-
-#     # Get the slab_months and exception_months from the slab object
-#     slab_months = slab.slab_months.split(",") if slab.slab_months else []
-#     exception_months = slab.exception_month.split(",") if slab.exception_month else []
-
-#     if request.method == 'POST':
-#         form = SlabMasterForm(request.POST, instance=slab)  # Pass the existing instance to the form
-#         try:
-#             if form.is_valid():
-#                 # Save the form but don't commit yet
-#                 slab = form.save(commit=False)
-
-#                 # Update the fields with the cleaned data from the form
-#                 slab.slab_year = form.cleaned_data['slab_year']
-#                 slab.act_id = form.cleaned_data['act_id']
-#                 slab.period = form.cleaned_data['period']
-#                 slab.state = form.cleaned_data['state']
-#                 slab.city = form.cleaned_data.get('city')  # Get city, if available
-#                 slab.slab_freq = form.cleaned_data['slab_freq']
-#                 slab.is_slab = form.cleaned_data['is_slab']
-#                 slab.slab_status = form.cleaned_data['slab_status']
-#                 slab.updated_by = request.user  # Update the updated_by field
-
-#                 # Process the months and exception months
-#                 slab_months = request.POST.getlist('slab_months')
-#                 slab.slab_months = ",".join(str(month_mapping[month]) for month in slab_months)
-                
-#                 exception_months = request.POST.getlist('exception_month')
-#                 if exception_months:
-#                     slab.exception_months = ",".join(str(month_mapping[month]) for month in exception_months)
-#                 else:
-#                     slab.exception_months = None
-
-#                 # Save the updated slab instance
-#                 slab.save()
-#                 messages.success(request, "Slab updated successfully!")
-#                 return redirect('slab_master_index')
-
-#             else:
-#                 # Handle form errors
-#                 messages.error(request, "Error updating Slab.")
-#         except Exception as e:
-#             return JsonResponse({'message': str(e)}, status=500)
-#     else:
-#         form = SlabMasterForm(instance=slab)
-
-#     return render(request, 'Tax/SlabMaster/edit.html', {
-#         'form': form,
-#         'id': slab.slab_id,
-#         'city_id': slab.city,
-#         'months': months,
-#         'slab_months': slab_months,
-#         'exception_months': exception_months,
-#     })
-
-# Map numbers to month names
-
 
 def slab_master_edit(request, pk):
     month_names = [
     "", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
     ]
-    months = [month for month in month_name if month]  # Generate month names, excluding the first empty string
+    months = [month for month in month_name if month]  
     month_mapping = {month: i + 1 for i, month in enumerate(months)}
-    # Decrypt the primary key and get the SlabMaster object
+    
     pk = decrypt_parameter(pk)
-    slab = get_object_or_404(SlabMaster, pk=pk)  # Fetch the SlabMaster object using the primary key
-
-    # Split the month strings into lists based on the numeric values
+    slab = get_object_or_404(SlabMaster, pk=pk)  
     slab_months = slab.slab_months.split(",") if slab.slab_months else []
     exception_months = slab.exception_month.split(",") if slab.exception_month else []
 
@@ -458,32 +564,125 @@ def slab_master_edit(request, pk):
         try:
             if form.is_valid():
                 # Save the form but don't commit yet
-                slab = form.save(commit=False)
+                slab_year = form.cleaned_data['slab_year'].year
+                act_id = form.cleaned_data['act_id']
+                state = form.cleaned_data['state']
+                city = form.cleaned_data.get('city')
+                slab_freq = form.cleaned_data['slab_freq'].parameter_value
+                period = form.cleaned_data['period'].parameter_value
 
-                # Update the fields with the cleaned data from the form
-                slab.slab_year = form.cleaned_data['slab_year']
-                slab.act_id = form.cleaned_data['act_id']
-                slab.period = form.cleaned_data['period']
-                slab.state = form.cleaned_data['state']
-                slab.city = form.cleaned_data.get('city')  # Get city, if available
-                slab.slab_freq = form.cleaned_data['slab_freq']
-                slab.is_slab = form.cleaned_data['is_slab']
-                slab.slab_status = form.cleaned_data['slab_status']
-                slab.updated_by = request.user  # Update the updated_by field
-
-                # Process the months and exception months
-                slab_months = request.POST.getlist('slab_months')
-                slab.slab_months = ",".join(str(month_mapping[month]) for month in slab_months)
                 
+                slab_months1 = request.POST.getlist("slab_months")
+                slab_months1_nums = sorted(
+                    [int(month_mapping[month]) for month in slab_months1]
+                )
+                def get_previous_months(start_month, num_months=6):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]  # Return in ascending order
+
+                def get_previous_months_quarterly(start_month, num_months=3):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]
+
+                def get_previous_months_yearly(start_month, num_months=12):
+                    result = []
+                    for i in range(num_months):
+                        month = (start_month - i - 1) % 12
+                        if month == 0:
+                            month = 12
+                        result.append(str(month))
+                    return result[::-1]  # Return in ascending order
+
+                def format_half_yearly(months):
+                    if len(months) == 2:
+                        month_ranges = []
+                        for month in months:
+                            month_range = get_previous_months(month, num_months=5) + [
+                                str(month)
+                            ]
+                            month_ranges.append(",".join(month_range))
+                        return " - ".join(month_ranges)
+                    return " - ".join(
+                        [
+                            ",".join(map(str, slab_months1_nums[i : i + 6]))
+                            for i in range(0, len(slab_months1_nums), 6)
+                        ]
+                    )
+
+                def format_quarterly(months):
+                    if len(months) == 4:
+                        month_ranges = []
+                        for month in months:
+                            quarter_range = get_previous_months_quarterly(
+                                month, num_months=2
+                            ) + [str(month)]
+                            month_ranges.append(",".join(quarter_range))
+                        return " - ".join(month_ranges)
+                    return ",".join(map(str, months))
+
+                def format_yearly(months):
+                    if len(months) == 1:
+                        year_ranges = []
+                        for month in months:
+                            year_range = get_previous_months_yearly(
+                                month, num_months=11
+                            ) + [str(month)]
+                            year_ranges.append(",".join(year_range))
+                        return " - ".join(year_ranges)
+                    return ",".join(map(str, months))
+
+                slab_months1 = request.POST.getlist("slab_months")
+                slab_months1_nums = sorted(
+                    [int(month_mapping[month]) for month in slab_months1]
+                )
+
+
+                if slab_freq == "Half Yearly":
+                    slab_months_challan_str = format_half_yearly(slab_months1_nums)
+                elif slab_freq == "Quarterly":
+                    slab_months_challan_str = format_quarterly(slab_months1_nums)
+                elif slab_freq == "Yearly":
+                    slab_months_challan_str = format_yearly(slab_months1_nums)
+                else:
+                    slab_months_challan_str = ",".join(map(str, slab_months1_nums))
+
+
+                slab_months_str = ",".join(map(str, slab_months1_nums))
+                
+                slab = form.save(commit=False)
+                slab.slab_year = slab_year
+                slab.act_id = act_id
+                slab.period = period
+                slab.state = state
+                slab.city = city
+                slab.slab_freq = slab_freq
+                slab.is_slab = form.cleaned_data['is_slab']
+                slab.slab_months = slab_months_str
+                slab.slab_months_challan = slab_months_challan_str
+
                 exception_months = request.POST.getlist('exception_month')
                 if exception_months:
-                    slab.exception_month = ",".join(str(month_mapping[month]) for month in exception_months)
+                    slab.exception_month = ",".join(
+                        str(month_mapping[month]) for month in exception_months
+                    )
                 else:
                     slab.exception_month = None
 
-                # Save the updated slab instance
+                slab.slab_status = form.cleaned_data['slab_status']
+                slab.created_by = request.user
+
                 slab.save()
-                messages.success(request, "Slab updated successfully!")
+                messages.success(request, "Slab Updated successfully!")
                 return redirect('slab_master_index')
 
             else:
@@ -506,9 +705,69 @@ def slab_master_edit(request, pk):
 
 
 
+# def slab_master_view(request, pk):
+#     pk = decrypt_parameter(pk)
+#     slab = get_object_or_404(SlabMaster, pk=pk)
+#     return render(request, 'Tax/SlabMaster/view.html', {'slab': slab})
 def slab_master_view(request, pk):
     pk = decrypt_parameter(pk)
     slab = get_object_or_404(SlabMaster, pk=pk)
-    return render(request, 'Tax/SlabMaster/view.html', {'slab': slab})
+    
+    # Mapping month numbers (1-12) to month names (January - December)
+    month_mapping = {i: month for i, month in enumerate(month_name[1:], start=1)}
+
+    # Debugging: Check the data type and contents of slab_months
+    print(f"slab_months: {slab.slab_months}")
+    print(f"Type of slab_months: {type(slab.slab_months)}")
+    
+    # Ensure slab_months is a list of integers
+    if isinstance(slab.slab_months, list):
+        slab_months = slab.slab_months  # If it's already a list
+    elif isinstance(slab.slab_months, str):
+        # If it's a comma-separated string, convert it to a list of integers
+        slab_months = [int(month) for month in slab.slab_months.split(',')]
+    else:
+        # Handle other cases like a queryset or other types
+        slab_months = list(slab.slab_months.values_list('month_field', flat=True))
+    
+    # Convert the month numbers into month names
+    slab_month_names = [month_mapping[month] for month in slab_months]
+
+
+    if slab.exception_month is None or not slab.exception_month:
+        exception_month_names = None  # No exception months, set to None
+    else:
+        # Process exception_month if it is provided
+        if isinstance(slab.exception_month, list):
+            exception_month = slab.exception_month  # If it's already a list
+        elif isinstance(slab.exception_month, str):
+            exception_month = [int(month) for month in slab.exception_month.split(',')]  # Convert comma-separated string
+        else:
+            exception_month = list(slab.exception_month.values_list('month_field', flat=True))  # Handle other cases
+
+        # Convert exception month numbers into month names
+        exception_month_names = [month_mapping[month] for month in exception_month]
+    
+    # Pass the data to the template
+    return render(request, 'Tax/SlabMaster/view.html', {
+        'slab': slab,
+        'slab_month_names': slab_month_names,
+        'exception_month_names':exception_month_names
+    })
+
+    
+
+
+def check_slab_combination(request):
+    if request.method == 'POST':
+        state_id = request.POST.get('state_id')
+        city_id = request.POST.get('city_id') or None
+        act_id = request.POST.get('act_id')
+        slab_freq = request.POST.get('slab_freq')
+
+        # Query to check if the combination exists
+        exists = SlabMaster.objects.filter(state=state_id, city=city_id, act_id=act_id, slab_freq=slab_freq).exists()
+
+    return JsonResponse({'exists': exists})
 
 

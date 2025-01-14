@@ -215,5 +215,6 @@ urlpatterns = [
     path('slab_master_edit/<str:pk>/', slab_master_edit, name='slab_master_edit'),
     path('slab_master_view/<str:pk>/', slab_master_view, name='slab_master_view'),
     path('slab_master_create', slab_master_create, name='slab_master_create'),
+    path('check_slab_combination', check_slab_combination, name='check_slab_combination'),
 
 ]

@@ -60,8 +60,8 @@
                     <td>{{ slab.city.city_name }}</td> 
                     <td>{{ slab.act_id.act_name }}</td>  <!-- Updated to match the field name -->
                     <td>{{ slab.slab_freq }}</td> <!-- Assuming you have slab_freq field -->
-                    <td><a href="{% url 'slab_index' slab.pk %}?type=Employee&act_id={{slab.act_id.act_id}}">View Employee</a></td> 
-                    <td><a href="{% url 'slab_index' slab.pk %}?type=Employer&act_id={{slab.act_id.act_id}}">View Employer</a></td>
+                    <td><a href="{% url 'slab_index' slab.pk %}?type=Employee&act_id={{slab.act_id.act_id}}">{{slab.employee_slab_count}}</a></td> 
+                    <td><a href="{% url 'slab_index' slab.pk %}?type=Employer&act_id={{slab.act_id.act_id}}">{{slab.employer_slab_count}}</a></td>
                     <td>
                         <a href="{% url 'slab_master_view' slab.pk %}?">View</a> |
                     
