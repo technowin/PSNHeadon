@@ -59,13 +59,14 @@ class TaxCalculation(models.Model):
     company = models.ForeignKey('Masters.company_master', blank=True, null=True,on_delete=models.CASCADE, related_name='tax_company')
     site = models.ForeignKey('Masters.site_master', on_delete=models.CASCADE,related_name='tax_site',blank=True, null=True, db_column='site_id')
     state = models.ForeignKey('Masters.StateMaster', on_delete=models.CASCADE,related_name='tax_state',blank=True, null=True, db_column='state_id')
-    city = models.ForeignKey('Masters.CityMaster', on_delete=models.CASCADE,related_name='tax_city',blank=True, null=True, db_column='city_id')
-    act = models.IntegerField(null=True, blank=True)
+    city = models.IntegerField(null=True,blank=True)
+    act = models.ForeignKey('Tax.ActMaster', on_delete=models.CASCADE,related_name='tax_act',blank=True, null=True, db_column='act_id')
     month = models.CharField(max_length=50, null=True, blank=True)
     year = models.CharField(max_length=50, null=True, blank=True)
     slab_freq = models.CharField(max_length=50, null=True, blank=True)
-    gross_salary = models.FloatField(null=True, blank=True)
+    gross_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     employee_tax = models.FloatField(null=True, blank=True)
+    tax_deducted = models.IntegerField(null=True,blank=True)
     remarks = models.CharField(max_length=500, null=True, blank=True)
     challan_month = models.CharField(max_length=50, null=True, blank=True)
     challan_year = models.CharField(max_length=50, null=True, blank=True)
@@ -92,7 +93,7 @@ class ActMaster(models.Model):
     class Meta:
         db_table = 'tbl_act_master'
     def __str__(self):
-        return f"{self.act_menu_name} - {self.act_name}"
+        return self.act_name
     
 
 class FinancialYear(models.Model):

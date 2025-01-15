@@ -161,6 +161,7 @@ urlpatterns = [
     path('employee_rate_card_create/', employee_rate_card_create, name='employee_rate_card_create'),
     
     path('slots', SlotListView.as_view(), name='slot_list'),
+    path('slots', SlotListView.as_view(), name='slot_list'),
     path('approveslots', ApproveSlotListView.as_view(), name='approveslots'),
     path('update_payout_status', UpdatePayoutStatus.as_view(), name='update_payout_status'),
 
