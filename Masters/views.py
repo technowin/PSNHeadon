@@ -2109,9 +2109,12 @@ def edit_slot_details(request):
             cursor.callproc("stp_get_assigned_company", [user_id])
             for result in cursor.stored_results():
                 company_names = list(result.fetchall())
-            cursor.callproc("stp_get_graph_dropdown", [user_id,'site'])
-            for result in cursor.stored_results():
-                site_names = list(result.fetchall())
+
+            # cursor.callproc("stp_get_graph_dropdown", [user_id,'site'])
+            # for result in cursor.stored_results():
+            #     site_names = list(result.fetchall())
+
+        
 
             cursor.callproc("stp_get_dropdown_values", ['designation'])
             for result in cursor.stored_results():
@@ -2119,6 +2122,11 @@ def edit_slot_details(request):
             slot_id = request.GET.get('slot_id')
             slot_idd = decrypt_parameter(slot_id)
             slot_data = get_object_or_404(SlotDetails, slot_id=slot_idd)
+            print(slot_data.company.company_id)
+
+            cursor.callproc("stp_get_slot_master_worksite", [user_id,slot_data.company.company_id])
+            for result in cursor.stored_results():
+                site_names = list(result.fetchall())
           
             context = {
                 'slot_data': slot_data,

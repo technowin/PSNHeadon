@@ -705,6 +705,8 @@ def calculate_daily_salary(request,slot_id):
     slot = SlotDetails.objects.get(slot_id=slot_id)
     print(slot.night_shift)
     employees = UserSlotDetails.objects.filter(slot_id=slot_id)
+    user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+    
     print(employees)
     generated_logs = salary_generated_log.objects.filter(
     slot_id=slot_id,
@@ -719,6 +721,15 @@ def calculate_daily_salary(request,slot_id):
     print(filtered_employees)
     for employee in filtered_employees:
         employee_id = employee.employee_id
+
+        for employee in filtered_employees:
+            employee_id = employee.employee_id
+            try:
+                gender = sc_employee_master.objects.get(employee_id=employee_id).gender
+                state = sc_employee_master.objects.get(employee_id=employee_id).state_id
+                print(f"Gender for employee {employee_id}: {gender}")
+            except sc_employee_master.DoesNotExist:
+                print(f"No employee found with ID {employee_id}")
         
         # Step 3: Check attendance for the employee in the given slot
         attendance = slot_attendance_details.objects.filter(
@@ -843,7 +854,31 @@ def calculate_daily_salary(request,slot_id):
                                         else:
                                             amount = (basic_amount * element.nine_hour_amount) / 100
                                     elif element.item_name == 'Professional Tax':
-                                        # Calculate percentage based on BASIC
+                                        gross_earning = daily_salary.objects.filter(
+                                            employee_id=employee_id,
+                                            slot_id=slot_id,
+                                            attendance_date=attendance.attendance_date,
+                                            element_name='Gross Earning',  # Add filter for element_name
+                                            pay_type='Total Earning'  # Retain pay_type filter if necessary
+                                        ).aggregate(
+                                            total_gross_earning=Sum('amount')  # Use Sum to aggregate the 'amount' column
+                                        )['total_gross_earning'] or 0
+                                        comp_id_in = slot.company
+                                        re_year_in = '2025'
+                                        re_month_in = 1
+                                        act_id_id_in = 1
+                                        user_id_in = 6
+                                        emp_code_in = employee_id
+                                        gross_salary_in = gross_earning
+                                        emp_gender_in = gender
+                                        city_id_id_in = 45
+                                        state_id_id_in = state
+                                        site_id_in= slot.site_id
+                                        comp_id_out, state_id_out, city_id_out, act_id_out, site_id_out, re_year_out, re_month_out, emp_code_out, gross_salary_out, pt_actual_out, salary_period_out = pt_calculation(user_id_in,comp_id_in, re_year_in,re_month_in,act_id_id_in,emp_code_in,gross_salary_in,emp_gender_in,city_id_id_in,state_id_id_in,site_id_in)
+
+                                        gross =gross_salary_out
+                                        pt=pt_actual_out
+                                        sal_p = salary_period_out
                                         if working_hours < 9:
                                             amount = (basic_amount * element.four_hour_amount) / 100
                                         else:
@@ -2073,8 +2108,393 @@ class payment_slip_details(APIView):
             return Response({"error": "Internal server error. Please try again later."}, status=500)
 
 
+def pt_calculation(user_id_in, comp_id_in, re_year_in, re_month_in, act_id_id_in, emp_code_in, gross_salary_in, emp_gender_in, city_id_id_in, state_id_id_in, site_id_in):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+
+    try:
+
+        user = user_id_in if user_id_in is not None else None
+        comp_id = comp_id_in if comp_id_in is not None else None
+        re_year = re_year_in if re_year_in is not None else None
+        re_month = re_month_in if re_month_in is not None else None
+        act_id_id = act_id_id_in if act_id_id_in is not None else None
+        emp_code = emp_code_in if emp_code_in is not None else None
+        gross_salary = gross_salary_in if gross_salary_in is not None else None
+        emp_gender = emp_gender_in if emp_gender_in is not None else None
+        city_id_id = city_id_id_in if city_id_id_in is not None else None
+        state_id_id = state_id_id_in if state_id_id_in is not None else None
+
+        slab_type = "Employee"  # this function only calculates for PT EMPLOYEE
+        salary_period = "" # declared variable             
+
+# -----------  Out Parameters ---------------
+      
+        comp_id_out = comp_id_in
+        state_id_out = state_id_id_in
+        city_id_out = city_id_id_in
+        act_id_out = act_id_id_in        
+        site_id_out = site_id_in                       
+        re_year_out = re_year_in
+        re_month_out = re_month_in
+        emp_code_out = emp_code_in
+        gross_salary_out = gross_salary_in        
+                
+                                                         
+        parameters2 = [state_id_id, act_id_id, city_id_id]
+        cursor.callproc("stp_getCheckSlabForStateCity", parameters2)
+        for result2 in cursor.stored_results():
+            rows2 = result2.fetchall()
+            for row3 in rows2:  # slab frequency & month for loop
+                slab_freq = row3[0]
+                slab_months = row3[1]
+                slab_id = row3[2]
+                slab_months_challan = row3[3]
+                exception_month = row3[4]
+                  
+
+# ----------------------- slab not applicable (is_slab is No)---------------------------                                                                                                    
+                if (slab_freq == "NA" or slab_months == "NA" or slab_months_challan == "NA"):      
+                    salary_period_out = None
+                    pt_actual_out = 0
+# ---------------------- slab does not exist ----------------------------               
+                if (slab_freq == "No" or slab_months == "No" or slab_months_challan == "No"):  
+                    salary_period_out = None
+                    pt_actual_out = 0
+# ---------------------- slab exist (is_slab is Yes)----------------------------                 
+                if slab_freq not in ["No","NA"] and slab_months not in ["No","NA"] and slab_months_challan not in ["No","NA"]:
+
+                    if exception_month:
+                        # Split the exception_month string by comma to get individual months
+                        exception_months = exception_month.split(',')
+                        
+                        # Initialize status as 'all'
+                        slab_applicable_status = 'all'
+                        
+                        for idx, ex_month in enumerate(exception_months):
+                            ex_month1 = int(ex_month)                             
+                            if ex_month1 == re_month:
+                                # Assign different statuses based on the index
+                                if idx == 0:
+                                    slab_applicable_status = 'exception'
+                                else:
+                                    slab_applicable_status = 'exception2'
+                                break  # Exit the loop once a match is found
+                    else:
+                        # If exception_month is null or empty
+                        slab_applicable_status = 'all'
+
+                    if slab_freq == "Monthly":
+                        checkmonth_formonthly=int(re_month)                                         
+                        parameters3 = [slab_id,checkmonth_formonthly,re_year,emp_gender,slab_type,gross_salary,slab_applicable_status]
+                        cursor.callproc("stp_getSlabForEmployee", parameters3)
+                        for result23 in cursor.stored_results():
+                            my = list(result23.fetchall())
+                            pt_actual = my[0][0]
+                            statuscheck = my[0][1] # this tells if slab found or not
+                            
+                            if statuscheck == "yes":
+                                                  
+                                # GET START AND END PERIOD LOGIC 
+                                checkmonth_str = str(checkmonth_formonthly)                                                                                                
+                                salary_period_out = (checkmonth_str + "-" + re_year)
+                                
+                                pt_actual_out = pt_actual
+
+                            if statuscheck == "noslabdefined":
+                                salary_period_out = None                                
+                                pt_actual_out = 0
+
+                    if slab_freq == "Quarterly":
+                        checkmonth=int(re_month)
+                        checkyear=int(re_year)
+                        slab_terms = slab_months_challan
+                        matching_period = None
+                        new_list_qu = []
+                               
+# ---------------------  TO CHECK WHICH SLAB MASTER PERIOD IT BELONGS  ------------------------------------------
+
+                        periods = [period.split(',') for period in slab_months_challan.split(' - ')]
+                        for period in periods:
+                            period_months = list(map(int, period))
+                            
+                            if checkmonth in period_months:
+                                matching_period = period_months
+                                break
+                        if matching_period:
+                            selected_period = matching_period
+
+# ---------------------  TO ASSIGN YEAR TO THE MONTHS  ------------------------------------------
+
+                        if checkmonth == 1:
+                            if 1 in selected_period:
+                                
+                                month_position_1_qu = selected_period.index(1)
+                                
+                                # Iterate over the list and assign the year based on the position of the month 1                                                
+                                for i1, month_qu in enumerate(selected_period):
+                                    if i1 >= month_position_1_qu:
+                                        # If the month is at or after the position of 1, assign the current year
+                                        new_list_qu.append(f'{month_qu}-{checkyear}')
+                                    else:
+                                        # If the month is before the position of 1, assign the previous year
+                                        new_list_qu.append(f'{month_qu}-{checkyear - 1}')                                                
+                                                                                                                                                
+                        if checkmonth == 12:
+                            if 12 in selected_period:
+                                
+                                month_position_12_qu = selected_period.index(12)
+
+                                # Iterate over the list and assign the year based on the position of the month 12
+                                for i2, month_qu in enumerate(selected_period):
+                                    if i2 <= month_position_12_qu:
+                                        # If the month is at or before the position of 12, assign the current year
+                                        new_list_qu.append(f'{month_qu}-{checkyear}')
+                                    else:
+                                        # If the month is after the position of 12, assign the next year
+                                        new_list_qu.append(f'{month_qu}-{checkyear + 1}')                                                
+                                                                            
+                        if checkmonth != 1 and checkmonth != 12:
+                            if 1 in selected_period:
+                                index_of_1 = selected_period.index(1)
+                                index_of_checkmonth = selected_period.index(checkmonth)
+                                if index_of_checkmonth < index_of_1: # for ex take 11
+                                    # Values before 1 have the same year
+                                    for month_all in selected_period[:index_of_1]:
+                                        new_list_qu.append(f"{month_all}-{checkyear}")
+                                    # Values from 1 to the right have year + 1
+                                    for month_all in selected_period[index_of_1:]:
+                                        new_list_qu.append(f"{month_all}-{checkyear + 1}")
+                                elif index_of_checkmonth > index_of_1: #for ex take 2
+                                # Values to the right of 1 and 1 itself have the same year
+                                    for month_all in selected_period[index_of_1:]:
+                                        new_list_qu.append(f"{month_all}-{checkyear}")
+                                    # Values to the left of 1 have year - 1
+                                    for month_all in selected_period[:index_of_1]:
+                                        new_list_qu.append(f"{month_all}-{checkyear - 1}")
+
+                            else:
+                                for month_all in selected_period:
+                                    new_list_qu.append(f"{month_all}-{checkyear}")
+
+                        ordered_list_qu = []
+                        for month_qz1 in selected_period:
+                            # Find the corresponding year-month combination for each month in selected_period_hy
+                            for item_qz1 in new_list_qu:
+                                if item_qz1.startswith(f"{month_qz1}-"):
+                                    ordered_list_qu.append(item_qz1)
+                                    break                                
+                        new_list_qu = ordered_list_qu
+
+                                                                                                               
+                        parameters3Q = [slab_id,re_month,re_year,emp_gender,slab_type,gross_salary,slab_applicable_status]
+                        cursor.callproc("stp_getSlabForEmployee",parameters3Q)
+                        for result23Q in cursor.stored_results():
+                            myQ = list(result23Q.fetchall())
+                            pt_actualQ = myQ[0][0]
+                            statuscheckQ = myQ[0][1]
+                            # IF SLAB EXISTS THEN SENDING yes ELSE noslabdefined
+                            if (statuscheckQ == "yes"):                                              
+                                
+                                # GET START AND END PERIOD LOGIC                                                
+                                last_period_qu = new_list_qu[-1]
+                                first_period_qu = new_list_qu[0]                                 
+                                                                                               
+                                salary_period2 = (first_period_qu + " to " + last_period_qu)
+                                salary_period_out = salary_period2                                
+                                pt_actual_out = pt_actualQ                                
+                            
+                            if (statuscheckQ == "noslabdefined"):                                            
+                                salary_period_out = None                                
+                                pt_actual_out = 0
+
+                    if slab_freq == "Half Yearly":
+                        checkmonth_hy=int(re_month)                                     
+                        checkyear_hy=int(re_year)
+                        matching_period_hy = None
+                        new_list_hy = []
+                                    
+                                                        
+# ---------------------  TO CHECK WHICH SLAB MASTER PERIOD IT BELONGS  ------------------------------------------
+
+                        periods_hy = [period_hy.split(',') for period_hy in slab_months_challan.split(' - ')]
+                        for period_hy in periods_hy:
+                            period_months_hy = list(map(int, period_hy))
+                            
+                            if checkmonth_hy in period_months_hy:
+                                matching_period_hy = period_months_hy
+                                break
+                        if matching_period_hy:
+                            selected_period_hy = matching_period_hy
+
+# ---------------------  TO ASSIGN YEAR TO THE MONTHS  ------------------------------------------
+
+                        if checkmonth_hy == 1:
+                            if 1 in selected_period_hy:
+                                month_position_1_hy = selected_period_hy.index(1)
+                                
+                                # Iterate over the list and assign the year based on the position of the month 1                                                
+                                for i, m_var in enumerate(selected_period_hy):
+                                    if i >= month_position_1_hy:
+                                        # If the month is at or after the position of 1, assign the current year
+                                        new_list_hy.append(f'{m_var}-{checkyear_hy}')
+                                    else:
+                                        # If the month is before the position of 1, assign the previous year
+                                        new_list_hy.append(f'{m_var}-{checkyear_hy - 1}')
+
+                        if checkmonth_hy == 12:
+                            if 12 in selected_period_hy:
+                                month_position_12_hy = selected_period_hy.index(12)
+
+                                # Iterate over the list and assign the year based on the position of the month 12
+                                for i, m_var in enumerate(selected_period_hy):
+                                    if i <= month_position_12_hy:
+                                        # If the month is at or before the position of 12, assign the current year
+                                        new_list_hy.append(f'{m_var}-{checkyear_hy}')
+                                    else:
+                                        # If the month is after the position of 12, assign the next year
+                                        new_list_hy.append(f'{m_var}-{checkyear_hy + 1}')
+                                                                            
+                        if checkmonth_hy != 1 and checkmonth_hy != 12:
+                            if 1 in selected_period_hy:
+                                index_of_1_hy = selected_period_hy.index(1)
+                                index_of_checkmonth_hy = selected_period_hy.index(checkmonth_hy)
+                                if index_of_checkmonth_hy < index_of_1_hy: #for ex take 11
+                                    # Values before 1 have the same year
+                                    for month_hy in selected_period_hy[:index_of_1_hy]:
+                                        new_list_hy.append(f"{month_hy}-{checkyear_hy}")
+                                    # Values from 1 to the right have year + 1
+                                    for month_hy in selected_period_hy[index_of_1_hy:]:
+                                        new_list_hy.append(f"{month_hy}-{checkyear_hy + 1}")
+                                elif index_of_checkmonth_hy > index_of_1_hy: # for ex take 2
+                                # Values to the right of 1 and 1 itself have the same year
+                                    for month_hy in selected_period_hy[index_of_1_hy:]:
+                                        new_list_hy.append(f"{month_hy}-{checkyear_hy}")
+                                    # Values to the left of 1 have year - 1
+                                    for month_hy in selected_period_hy[:index_of_1_hy]:
+                                        new_list_hy.append(f"{month_hy}-{checkyear_hy - 1}")
+                                
+                            else:
+                                for month_hy in selected_period_hy:
+                                    new_list_hy.append(f"{month_hy}-{checkyear_hy}")
+                                    
+                        ordered_list_hy = []
+                        for month_z1 in selected_period_hy:
+                            # Find the corresponding year-month combination for each month in selected_period_hy
+                            for item_z1 in new_list_hy:
+                                if item_z1.startswith(f"{month_z1}-"):
+                                    ordered_list_hy.append(item_z1)
+                                    break
+                                
+                        new_list_hy = ordered_list_hy                                                                                                
+                                                                                                                                                                                                              
+                        parameters3H = [slab_id,re_month,re_year,emp_gender,slab_type,gross_salary,slab_applicable_status]
+                        cursor.callproc("stp_getSlabForEmployee",parameters3H)
+                        for result23H in cursor.stored_results():
+                            myH = list(result23H.fetchall())
+                            pt_actualH = myH[0][0]
+                            statuscheckH = myH[0][1]
+                            # IF SLAB EXISTS THEN SENDING yes ELSE noslabdefined
+                            if (statuscheckH == "yes"):
+                                                                                
+                                # GET START AND END PERIOD LOGIC                                                
+                                last_period_hy = new_list_hy[-1]
+                                first_period_hy = new_list_hy[0]                                                
+                                
+                                salary_period_hy = (first_period_hy + " to " + last_period_hy)
+                                salary_period_out = salary_period_hy
+                                pt_actual_out = pt_actualH
+
+                            if (statuscheckH == "noslabdefined"):                                            
+                                salary_period_out = None                                
+                                pt_actual_out = 0
+
+                    if slab_freq == "Yearly":
+                        checkmonth_y=int(re_month)                                     
+                        checkyear_y=int(re_year)
+                        matching_period_y = None
+                        new_list_y = []
+
+                        parametersY = [slab_id]
+                        cursor.callproc("stp_getperiodforYearly",parametersY)
+                        for result23Y in cursor.stored_results():
+                            myY = list(result23Y.fetchall())
+                            periodSE = myY[0][0] if myY[0][0] is not None else None
+                                                                                                                                                                                                    
+                            
+                        if periodSE:                                           
+                            slab_months_listY = slab_months_challan.split(',')
+                            slab_months_listY = list(map(int, slab_months_listY))
+                            
+                            start_monthYY, end_monthYY = map(int, periodSE.split('-'))                                            
+                            for monthYY in slab_months_listY:
+                                if checkmonth_y < start_monthYY:
+                                    # Assign checkyear_y to months less than basemonth, year - 1 to basemonth and months greater than it
+                                    if monthYY < start_monthYY:
+                                        new_list_y.append(f"{monthYY}-{checkyear_y}")
+                                    else:
+                                        new_list_y.append(f"{monthYY}-{checkyear_y - 1}")
+                                else:
+                                    # Assign the same year to basemonth and months greater than it, year +1 to months less than it
+                                    if monthYY >= start_monthYY:
+                                        new_list_y.append(f"{monthYY}-{checkyear_y}")
+                                    else:
+                                        new_list_y.append(f"{monthYY}-{checkyear_y + 1}")                                                                                          
+
+                            # Initialize startperiodz and endperiodz to None
+                            startperiodz = None
+                            endperiodz = None
+
+                            # Iterate through new_list_y to find the matching values
+                            for period_y1 in new_list_y:
+                                month_y1, year_y1 = map(int, period_y1.split('-'))
+                                
+                                # Check if the month matches the start period
+                                if month_y1 == start_monthYY:
+                                    startperiodz = period_y1
+                                
+                                # Check if the month matches the end period
+                                if month_y1 == end_monthYY:
+                                    endperiodz = period_y1 
+                            
+                                            
+                            parameters3Y = [slab_id,re_month,re_year,emp_gender,slab_type,gross_salary,slab_applicable_status]
+                            cursor.callproc("stp_getSlabForEmployee",parameters3Y)
+                            for result23YY in cursor.stored_results():
+                                myYY = list(result23YY.fetchall())
+                                pt_actualYY = myYY[0][0]
+                                statuscheckYY = myYY[0][1]
+                        # IF SLAB EXISTS THEN SENDING yes ELSE noslabdefined 
+                                if (statuscheckYY == "yes"):
+                                                        
+                            # GET START AND END PERIOD LOGIC                                                        
+                                                                                  
+                                    salary_period_y = (startperiodz + " to " + endperiodz)
+                                    salary_period_out = salary_period_y
+                                    pt_actual_out = pt_actualYY 
+                                                                       
+                                if (statuscheckYY == "noslabdefined"):                                                    
+                                    salary_period_out = None                                
+                                    pt_actual_out = 0                                                                                                  
+                        
+                        else:
+                            salary_period_out = None                                
+                            pt_actual_out = 0
+                                                                                                                                                                                                                                                                
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        cursor.callproc("stp_error_log",[fun,str(e),user])         
+        print("error-" + e)
+    finally:
+        cursor.close()
+        m.commit()
+        m.close()
+        Db.closeConnection()
+        return comp_id_out, state_id_out, city_id_out, act_id_out, site_id_out, re_year_out, re_month_out, emp_code_out, gross_salary_out, pt_actual_out, salary_period_out
 
 
-           
+        
 
 
