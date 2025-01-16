@@ -538,7 +538,7 @@ def site_master(request):
             # site_id = decrypt_parameter(str(site_id))
             if site_id == "0":
                 if request.method == "GET":
-                    context = {'company_names': company_names, 'state_names': state_names, 'city_names': city_names,'site_id':site_id}
+                    context = {'company_names': company_names, 'state_names': state_names,'site_id':site_id}
 
             else:
                 # site_id1 = request.GET.get('site_id', '')
@@ -769,7 +769,8 @@ def employee_master(request):
             for result in cursor.stored_results():
                 employee_status = list(result.fetchall())
             if id != 0:
-                cursor.callproc("stp_get_userwise_dropdown",[user,'site'])
+                id1 = decrypt_parameter(id)
+                cursor.callproc("sto_get_employee_site",[id1,])
                 for result in cursor.stored_results():
                     site_name = list(result.fetchall())
             cursor.callproc("stp_get_company_site_name",[user])
@@ -3002,4 +3003,16 @@ def check_slot_name(request):
         # Always close the cursor and connection to prevent leaks
         cursor.close()
         Db.closeConnection()
+
+
+def fetch_cities(request):
+    try:
+        if request.method == "GET":
+            state_id = request.GET.get('state_id')
+            # Query city names based on the state_id
+            city_names = CityMaster.objects.filter(state_id=state_id).values_list('city_id', 'city_name')
+            return JsonResponse({'city_names': list(city_names)})
+    except Exception as e:
+        # Log the exception using your stored procedure
+        print(e)
 

@@ -102,6 +102,7 @@ urlpatterns = [
     path("view_designation",view_designation, name="view_designation"),
     path("get_worksites",get_worksites, name="get_worksites"),
     path("check_slot_name",check_slot_name, name="check_slot_name"),
+    path('fetch-cities/', fetch_cities, name='fetch_cities'),
     # path("update_remaining_companies",update_remaining_companies, name="update_remaining_companies"),
     
 

@@ -109,22 +109,11 @@
                         
                          <div class="col-md-3">
                             <label for="state_id" class="form-label">State <span style="color:red;"> *</span> :</label>
-                            <select name="state_id" id="dropdown" class="form-control" required>
-                                {% if site_id == '0' %}
-                                    <!-- For adding a new entry -->
-                                    <option value="" selected disabled>Select</option>
-                                    {% for item in state_names %}
-                                        <option value="{{ item.0 }}">{{ item.1 }}</option>
-                                    {% endfor %}
-                                {% else %}
-                                    <!-- For editing an existing entry with pre-selected state -->
-                                    <option disabled>Select</option>
-                                    {% for item in state_names %}
-                                        <option value="{{ item.0 }}" {% if item.0 == state_id %}selected{% endif %}>
-                                            {{ item.1 }}
-                                        </option>
-                                    {% endfor %}
-                                {% endif %}
+                            <select name="state_id" id="state_id" class="form-control" required onchange="fetchCities(this.value)">
+                                <option value="" disabled {% if site_id == '0' %}selected{% endif %}>Select</option>
+                                {% for item in state_names %}
+                                    <option value="{{ item.0 }}" {% if item.0 == state_id %}selected{% endif %}>{{ item.1 }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         
@@ -132,31 +121,20 @@
                         
                         <div class="row mb-3">
 
-                        <div class="col-md-3">
-                            <label for="city_id" class="form-label">City <span style="color:red;"> *</span> :</label>
-                            <select name="city_id" id="dropdown" class="form-control" required>
-                                {% if site_id == '0' %}
-                                    <!-- For adding a new entry -->
-                                    <option value="" selected disabled>Select</option>
+                            <div class="col-md-3">
+                                <label for="city_id" class="form-label">City <span style="color:red;"> *</span> :</label>
+                                <select name="city_id" id="city_id" class="form-control" required>
+                                    <option value="" disabled {% if site_id == '0' %}selected{% endif %}>Select</option>
                                     {% for item in city_names %}
-                                        <option value="{{ item.0 }}">{{ item.1 }}</option>
+                                        <option value="{{ item.0 }}" {% if item.0 == city %}selected{% endif %}>{{ item.1 }}</option>
                                     {% endfor %}
-                                {% else %}
-                                    <!-- For editing an existing entry -->
-                                    <option disabled>Select</option>
-                                    {% for item in city_names %}
-                                        <option value="{{ item.0 }}" {% if item.0 == city %}selected{% endif %}>
-                                            {{ item.1 }}
-                                        </option>
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                        </div>
+                                </select>
+                            </div>
             
                 
                     <div class="col-md-3">
                         <label for="pincode" class="form-label">Pincode<span style="color:red;"> *</span> :</label>
-                        <input type="text" value="{{ pincode }}" name="pincode" class="form-control" id="pincode" placeholder="Enter Pincode">
+                        <input type="text" value="{{ pincode }}"  maxlength="6" name="pincode" class="form-control" id="pincode" placeholder="Enter Pincode">
                     </div>
                     <div class="col-md-3">
                         <label for="contactPersonName" class="form-label">Contact Person Name<span style="color:red;"> *</span> :</label>
@@ -170,7 +148,7 @@
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <label for="Number" class="form-label">Contact Person Mobile<span style="color:red;"> *</span></label>
-                            <input type="text" value="{{ contact_person_mobile_no }}" name="Number" class="form-control" id="Number" placeholder="Enter Mobile Number">
+                            <input type="text" value="{{ contact_person_mobile_no }}"  maxlength="10" name="Number" class="form-control" id="Number" placeholder="Enter Mobile Number">
                         </div>
                     
                     
@@ -232,5 +210,36 @@
         statusValue.value = checkBox.checked ? "1" : "0";
     }
 </script>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function fetchCities(stateId) {
+        if (stateId) {
+            $.ajax({
+                url: "{% url 'fetch_cities' %}", // Django URL name for fetching cities
+                type: "GET",
+                data: {
+                    state_id: stateId
+                },
+                success: function(response) {
+                    // Clear existing options in the city dropdown
+                    const cityDropdown = $('#city_id');
+                    cityDropdown.empty();
+                    cityDropdown.append('<option value="" disabled selected>Select</option>');
+
+                    // Populate city dropdown with the received data
+                    response.city_names.forEach(function(city) {
+                        cityDropdown.append(`<option value="${city[0]}">${city[1]}</option>`);
+                    });
+                },
+                error: function() {
+                    alert("Error fetching cities. Please try again.");
+                }
+            });
+        }
+    }
+</script>
+
 
  {% endblock %} 
