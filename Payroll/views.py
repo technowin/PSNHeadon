@@ -71,147 +71,199 @@ def parse_challan_period(challan_period):
             return start_date, start_date
     except ValueError as e:
         raise ValueError("Invalid challan_period format") from e
+    
+def get_employer_deduct(comp_id_in, act_id_in, user_id_in, emp_code_in, 
+                        city_id_in, state_id_in, site_id_in, month_in, year_in):
+    
+    employer_deduct = 0  # Default amount if no valid record is found
+    
+    # Step 1: Check record existence in tax_calculation
+    record = TaxCalculation.objects.filter(
+        act_id=act_id_in,
+        city=city_id_in,
+        state_id=state_id_in,
+        employee_id=emp_code_in
+    ).first()
+    
+    if not record:
+        return employer_deduct
+    else:
+        challan_period = record.challan_period # No record exists, return 0
+    
+    # Step 2: Parse and validate challan_period
+    try:
+        start_date, end_date = parse_challan_period(challan_period)
+        challan_date = datetime(month_in, month_in, 1)
+
+        if start_date <= challan_date <= end_date:
+            print("Challan period already includes the given month and year.")
+            return employer_deduct
+    except ValueError as e:
+        print(f"Error parsing challan_period: {e}")
+        return employer_deduct
+    
+    # Step 3: Get employer deduct from the record
+    employer_deduct = record.employer_deduct  # Retrieve the amount directly from the table
+    
+    return employer_deduct
 
 
 # PT calculation logic
 def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month_in, state_id_in, city_id_in, site_id_in, gross_salary_in, emp_gender_in, comp_id_in):
     try:
-        
-        tax_record = TaxCalculation.objects.filter(
+        slab = SlabMaster.objects.filter(
+                state_id=state_id_in,
+                city_id=city_id_in,
+                act_id=act_id_in
+            ).first()
+
+            # If no slab is found, fall back to checking only state_id
+        if not slab:
+                slab = SlabMaster.objects.filter(
+                    state_id=state_id_in,
+                    act_id=act_id_in
+                ).first()
+
+        if not slab :
+            return 0
+
+        if slab:
+
+            tax_record = TaxCalculation.objects.filter(
             employee_id=emp_code_in,
             state_id=state_id_in,
             city=city_id_in,
             act=act_id_in
-        ).first()
-
-        if tax_record:
+            ).first()
+    
+            if tax_record:
             # Check existing slab_freq and process based on its value
-            slab_freq = tax_record.slab_freq
-            if slab_freq == "Monthly":
-                tax_record = TaxCalculation.objects.filter(
-                    employee_id=emp_code_in,
-                    state_id=state_id_in,
-                    city=city_id_in,
-                    act=act_id_in,
-                    year=re_year_in,
-                    month=re_month_in
-                ).first()
-                if int(tax_record.year) == int(re_year_in) and int(tax_record.month) == int(re_month_in):
-                    tax_record.gross_salary += gross_salary_in  # Update the gross_salary field
-                    gross_salary_in = tax_record.gross_salary  # Assign the updated value to gross_salary (if needed)
-
-                else:
-                    tax_record = TaxCalculation.objects.create(
+                slab_freq = tax_record.slab_freq
+                if slab_freq == "Monthly":
+                    tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
-                        state=get_object_or_404(StateMaster, state_id=state_id_in),
-                        act=get_object_or_404(ActMaster, act_id=act_id_in),
+                        state_id=state_id_in,
                         city=city_id_in,
-                        company=get_object_or_404(company_master, company_id=comp_id_in),
-                        updated_by=get_object_or_404(CustomUser, id=user_session),
-                        created_by=get_object_or_404(CustomUser, id=user_session),
-                        gross_salary=gross_salary_in,
-                        employee_tax=0,
-                        challan_month=re_month_in,
-                        challan_year=re_year_in,
-                        challan_period=f"{re_month_in}-{re_year_in}",
+                        act=act_id_in,
                         year=re_year_in,
-                        month=re_month_in,
-                        slab_freq=slab_freq,
-                        tax_deducted=0,
-                        site=get_object_or_404(site_master, site_id=site_id_in)
-                    )
-            elif slab_freq == "Quarterly":
-                challan_period = tax_record.challan_period
-                start_date, end_date = parse_challan_period(challan_period)
+                        month=re_month_in
+                    ).first()
+                    if int(tax_record.year) == int(re_year_in) and int(tax_record.month) == int(re_month_in):
+                        tax_record.gross_salary += gross_salary_in  # Update the gross_salary field
+                        gross_salary_in = tax_record.gross_salary  # Assign the updated value to gross_salary (if needed)
 
-                # Check if a record exists for the given challan period
-                tax_record = TaxCalculation.objects.filter(
-                    employee_id=emp_code_in,
-                    state_id=state_id_in,
-                    city=city_id_in,
-                    act=act_id_in,
-                    year__gte=start_date.year,
-                    year__lte=end_date.year,
-                    challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
-                ).first()
+                    else:
+                        tax_record = TaxCalculation.objects.create(
+                            employee_id=emp_code_in,
+                            state=get_object_or_404(StateMaster, state_id=state_id_in),
+                            act=get_object_or_404(ActMaster, act_id=act_id_in),
+                            city=city_id_in,
+                            company=get_object_or_404(company_master, company_id=comp_id_in),
+                            updated_by=get_object_or_404(CustomUser, id=user_session),
+                            created_by=get_object_or_404(CustomUser, id=user_session),
+                            gross_salary=gross_salary_in,
+                            employee_tax=0,
+                            challan_month=re_month_in,
+                            challan_year=re_year_in,
+                            challan_period=f"{re_month_in}-{re_year_in}",
+                            year=re_year_in,
+                            month=re_month_in,
+                            slab_freq=slab_freq,
+                            tax_deducted=0,
+                            site=get_object_or_404(site_master, site_id=site_id_in)
+                        )
+                elif slab_freq == "Quarterly":
+                    challan_period = tax_record.challan_period
+                    start_date, end_date = parse_challan_period(challan_period)
 
-                if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
-                    # Update gross_salary if the record exists and matches the period
-                    tax_record.gross_salary += gross_salary_in
-                    gross_salary_in = tax_record.gross_salary
-                    tax_record.save()
-                else:
-                    tax_record = TaxCalculation.objects.create(
+                    # Check if a record exists for the given challan period
+                    tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
-                        state=get_object_or_404(StateMaster, state_id=state_id_in),
-                        act=get_object_or_404(ActMaster, act_id=act_id_in),
+                        state_id=state_id_in,
                         city=city_id_in,
-                        company=get_object_or_404(company_master, company_id=comp_id_in),
-                        updated_by=get_object_or_404(CustomUser, id=user_session),
-                        created_by=get_object_or_404(CustomUser, id=user_session),
-                        gross_salary=gross_salary_in,
-                        employee_tax=0,
-                        challan_period=challan_period,
-                        year=re_year_in,
-                        month=re_month_in,
-                        slab_freq=slab_freq,
-                        tax_deducted=0,
-                        site=get_object_or_404(site_master, site_id=site_id_in)
-                    )
+                        act=act_id_in,
+                        year__gte=start_date.year,
+                        year__lte=end_date.year,
+                        challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
+                    ).first()
 
-            elif slab_freq == "Half Yearly":
-                challan_period = tax_record.challan_period
-                start_date, end_date = parse_challan_period(challan_period)
+                    if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
+                        # Update gross_salary if the record exists and matches the period
+                        tax_record.gross_salary += gross_salary_in
+                        gross_salary_in = tax_record.gross_salary
+                        tax_record.save()
+                    else:
+                        tax_record = TaxCalculation.objects.create(
+                            employee_id=emp_code_in,
+                            state=get_object_or_404(StateMaster, state_id=state_id_in),
+                            act=get_object_or_404(ActMaster, act_id=act_id_in),
+                            city=city_id_in,
+                            company=get_object_or_404(company_master, company_id=comp_id_in),
+                            updated_by=get_object_or_404(CustomUser, id=user_session),
+                            created_by=get_object_or_404(CustomUser, id=user_session),
+                            gross_salary=gross_salary_in,
+                            employee_tax=0,
+                            challan_period=challan_period,
+                            year=re_year_in,
+                            month=re_month_in,
+                            slab_freq=slab_freq,
+                            tax_deducted=0,
+                            site=get_object_or_404(site_master, site_id=site_id_in)
+                        )
 
-                # Check if a record exists for the given challan period
-                tax_record = TaxCalculation.objects.filter(
-                    employee_id=emp_code_in,
-                    state_id=state_id_in,
-                    city=city_id_in,
-                    act=act_id_in,
-                    year__gte=start_date.year,
-                    year__lte=end_date.year,
-                    challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
-                ).first()
+                elif slab_freq == "Half Yearly":
+                    challan_period = tax_record.challan_period
+                    start_date, end_date = parse_challan_period(challan_period)
 
-                if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
-                    # Update gross_salary if the record exists and matches the period
-                    tax_record.gross_salary += gross_salary_in
-                    gross_salary_in = tax_record.gross_salary
-                    tax_record.save()
-                else:
-                    tax_record = TaxCalculation.objects.create(
+                    # Check if a record exists for the given challan period
+                    tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
-                        state=get_object_or_404(StateMaster, state_id=state_id_in),
-                        act=get_object_or_404(ActMaster, act_id=act_id_in),
+                        state_id=state_id_in,
                         city=city_id_in,
-                        company=get_object_or_404(company_master, company_id=comp_id_in),
-                        updated_by=get_object_or_404(CustomUser, id=user_session),
-                        created_by=get_object_or_404(CustomUser, id=user_session),
-                        gross_salary=gross_salary_in,
-                        employee_tax=0,
-                        challan_period=challan_period,
-                        year=re_year_in,
-                        month=re_month_in,
-                        slab_freq=slab_freq,
-                        tax_deducted=0,
-                        site=get_object_or_404(site_master, site_id=site_id_in)
-                    )
+                        act=act_id_in,
+                        year__gte=start_date.year,
+                        year__lte=end_date.year,
+                        challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
+                    ).first()
 
-            elif slab_freq == "Yearly":
-                challan_period = tax_record.challan_period
-                start_date, end_date = parse_challan_period(challan_period)
+                    if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
+                        # Update gross_salary if the record exists and matches the period
+                        tax_record.gross_salary += gross_salary_in
+                        gross_salary_in = tax_record.gross_salary
+                        tax_record.save()
+                    else:
+                        tax_record = TaxCalculation.objects.create(
+                            employee_id=emp_code_in,
+                            state=get_object_or_404(StateMaster, state_id=state_id_in),
+                            act=get_object_or_404(ActMaster, act_id=act_id_in),
+                            city=city_id_in,
+                            company=get_object_or_404(company_master, company_id=comp_id_in),
+                            updated_by=get_object_or_404(CustomUser, id=user_session),
+                            created_by=get_object_or_404(CustomUser, id=user_session),
+                            gross_salary=gross_salary_in,
+                            employee_tax=0,
+                            challan_period=challan_period,
+                            year=re_year_in,
+                            month=re_month_in,
+                            slab_freq=slab_freq,
+                            tax_deducted=0,
+                            site=get_object_or_404(site_master, site_id=site_id_in)
+                        )
 
-                # Check if a record exists for the given challan period
-                tax_record = TaxCalculation.objects.filter(
-                    employee_id=emp_code_in,
-                    state_id=state_id_in,
-                    city=city_id_in,
-                    act=act_id_in,
-                    year__gte=start_date.year,
-                    year__lte=end_date.year,
-                    challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
-                ).first()
+                elif slab_freq == "Yearly":
+                    challan_period = tax_record.challan_period
+                    start_date, end_date = parse_challan_period(challan_period)
+
+                    # Check if a record exists for the given challan period
+                    tax_record = TaxCalculation.objects.filter(
+                        employee_id=emp_code_in,
+                        state_id=state_id_in,
+                        city=city_id_in,
+                        act=act_id_in,
+                        year__gte=start_date.year,
+                        year__lte=end_date.year,
+                        challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
+                    ).first()
 
                 if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
                     # Update gross_salary if the record exists and matches the period
@@ -237,9 +289,9 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         site=get_object_or_404(site_master, site_id=site_id_in)
                     )
             # Additional logic for Quarterly, Half-Yearly, and Yearly can be added here
-        else:
-            # Create new record if not found
-            tax_record = TaxCalculation.objects.create(
+            else:
+                # Create new record if not found
+                tax_record = TaxCalculation.objects.create(
                 employee_id=emp_code_in,
                 state=get_object_or_404(StateMaster, state_id=state_id_in),
                 act=get_object_or_404(ActMaster, act_id=act_id_in),
@@ -257,46 +309,46 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                 tax_deducted=0,
                 site=get_object_or_404(site_master, site_id=site_id_in)
             )
-
-        # Call pt_calculation
-        (
-            comp_id_out, state_id_out, city_id_out, act_id_out, site_id_out,
-            re_year_out, re_month_out, emp_code_out, gross_salary_out,
-            pt_actual_out, salary_period_out, slab_freq_out
-        ) = pt_calculation(
-            user_session, tax_record.company.company_id, tax_record.year,
-            tax_record.month, tax_record.act.act_id, emp_gender_in,
-            tax_record.employee_id, gross_salary_in, tax_record.city,
-            tax_record.state_id, tax_record.site.site_id
-        )
-
-        # Tax deduction logic
-        current_tax_deducted = tax_record.tax_deducted
-
-        if current_tax_deducted == 0:
-            return_value = pt_actual_out
-        elif current_tax_deducted == pt_actual_out:
-            return_value = 0
-        elif current_tax_deducted < pt_actual_out:
-            return_value = pt_actual_out - current_tax_deducted
-        else:
-            print("Invalid tax data: current tax deducted exceeds actual tax.")
-            return_value = None
-
-        # Update tax record with new values
-        tax_record.gross_salary = gross_salary_out
-        tax_record.employee_tax = pt_actual_out
-        tax_record.challan_period = salary_period_out
-        tax_record.slab_freq = slab_freq_out
-        tax_record.tax_deducted = pt_actual_out
-        tax_record.save()
-
-        return return_value
+    
+            # Call pt_calculation
+            (
+                comp_id_out, state_id_out, city_id_out, act_id_out, site_id_out,
+                re_year_out, re_month_out, emp_code_out, gross_salary_out,
+                pt_actual_out, salary_period_out, slab_freq_out
+            ) = pt_calculation(
+                user_session, tax_record.company.company_id, tax_record.year,
+                tax_record.month, tax_record.act.act_id, emp_gender_in,
+                tax_record.employee_id, gross_salary_in, tax_record.city,
+                tax_record.state_id, tax_record.site.site_id
+            )
+    
+            # Tax deduction logic
+            current_tax_deducted = tax_record.tax_deducted
+    
+            if current_tax_deducted == 0:
+                return_value = pt_actual_out
+            elif current_tax_deducted == pt_actual_out:
+                return_value = 0
+            elif current_tax_deducted < pt_actual_out:
+                return_value = pt_actual_out - current_tax_deducted
+            else:
+                print("Invalid tax data: current tax deducted exceeds actual tax.")
+                return_value = None
+    
+            # Update tax record with new values
+            tax_record.gross_salary = gross_salary_out
+            tax_record.employee_tax = pt_actual_out
+            tax_record.challan_period = salary_period_out
+            tax_record.slab_freq = slab_freq_out
+            tax_record.tax_deducted = pt_actual_out
+            tax_record.save()
+    
+            return return_value
 
     except Exception as e:
         print(f"Error in PT calculation: {e}")
         return None
-
+print
 
 def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month_in, state_id_in, city_id_in, site_id_in, gross_salary_in, emp_gender_in, comp_id_in):
     try:
@@ -305,10 +357,21 @@ def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month
             employee_id=emp_code_in,
             state_id=state_id_in,
             city=city_id_in,
-            act=act_id_in,
-            year=re_year_in,
-            month=re_month_in
+            act=act_id_in
         ).first()
+
+        if tax_record:
+        # Parse challan_period to check if re_month_in and re_year_in are within the range
+            try:
+                start_date, end_date = parse_challan_period(tax_record.challan_period)
+                challan_date = datetime(re_year_in, re_month_in, 1)
+
+                if start_date <= challan_date <= end_date:
+                    print("Challan period already includes the given month and year.")
+                    return 0
+            except ValueError as e:
+                print(f"Error parsing challan_period: {e}")
+                return None
 
         if not tax_record:
             # If record doesn't exist, check in SlabMaster
@@ -342,7 +405,7 @@ def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month
                 print(f"Month {re_month_in} is not valid in slab_months.")
                 employee_deduct = 0
                 employer_deduct = 0
-                return employee_deduct,employer_deduct
+                return employee_deduct
             
             slab_id = slab.slab_id
             period = slab.period
@@ -1242,29 +1305,23 @@ def calculate_daily_salary(request,slot_id):
 
 
                                     elif element.item_name == 'LWF Employer':
-                                        # gross_earning = daily_salary.objects.filter(
-                                        #     employee_id=employee_id,
-                                        #     slot_id=slot_id,
-                                        #     attendance_date=attendance.attendance_date,
-                                        #     element_name='Gross Earning',  # Add filter for element_name
-                                        #     pay_type='Total Earning'  # Retain pay_type filter if necessary
-                                        # ).aggregate(
-                                        #     total_gross_earning=Sum('amount')  # Use Sum to aggregate the 'amount' column
-                                        # )['total_gross_earning'] or 0
+                                       
                                     
-                                        # shift_date = slot.shift_date
-                                        # re_year_in = shift_date.year
-                                        # re_month_in = shift_date.month
+                                        shift_date = slot.shift_date
+                                        re_year_in = shift_date.year
+                                        re_month_in = shift_date.month
 
-                                        # comp_id_in = slot.company.company_id
-                                        # act_id_in = 1
-                                        # user_id_in = user_session
-                                        # emp_code_in = employee_id
-                                        # gross_salary_in = gross_earning
-                                        # emp_gender_in = gender
-                                        # city_id_in = city_id
-                                        # state_id_in = state_id
-                                        # site_id_in = slot.site_id.site_id  
+                                        comp_id_in = slot.company.company_id
+                                        act_id_in = 2
+                                        user_id_in = user_session
+                                        emp_code_in = employee_id
+                                        gross_salary_in = gross_earning
+                                        emp_gender_in = gender
+                                        city_id_in = city_id
+                                        state_id_in = state_id
+                                        site_id_in = slot.site_id.site_id  
+
+                                        employer_amount = get_employer_deduct(comp_id_in, act_id_in, user_id_in, emp_code_in, city_id_in, state_id_in, site_id_in, re_month_in, re_year_in)
 
 
                                         # return_value= calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month_in, state_id_in, city_id_in, site_id_in, gross_salary_in,emp_gender_in,comp_id_in)
@@ -1275,9 +1332,9 @@ def calculate_daily_salary(request,slot_id):
                                         #     amount = return_value
                                        #  Calculate percentage based on BASIC
                                         if working_hours < 9:
-                                            amount = (basic_amount * element.four_hour_amount) / 100
+                                            amount = employer_amount
                                         else:
-                                            amount = (basic_amount * element.nine_hour_amount) / 100
+                                            amount = employer_amount
                                     elif element.item_name == 'Income Tax':
                                         try:
                                             deduction = income_tax_deduction.objects.get(
