@@ -1725,7 +1725,6 @@ def handle_card_name_change(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 @login_required
-@login_required
 def download_sample(request):
     user = request.session.get('user_id', '')
 
