@@ -1058,12 +1058,22 @@ def upload_excel(request):
                                 row_error_found = True 
 
                     if not row_error_found:
+
+                        employee_exists = sc_employee_master.objects.filter(employee_id=employee_id1).exists()
                         # Check if the row is an update or a new insert
-                        cursor.callproc('stp_employeeinsertexcel', params)
-                        for result in cursor.stored_results():
-                            update_result = result.fetchone()
+
+                        if employee_exists:
+                            cursor.callproc('stp_update_employee_master_excel', params)
+                            for result in cursor.stored_results():
+                                update_result = result.fetchone()
+                        else:
+                            cursor.callproc('stp_employeeinsertexcel', params)
+                            for result in cursor.stored_results():
+                                update_result = result.fetchone()
+
+                        
                             if update_result == "Updated":
-                                update_count += 1  # Increment update count
+                                update_count += 1  
                                 row_was_updated = True
                             elif update_result == "Success":
                                 success_count += 1  
