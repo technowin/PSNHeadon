@@ -1108,13 +1108,7 @@ def calculate_daily_salary(request,slot_id):
     for employee in filtered_employees:
         employee_id = employee.employee_id
 
-        for employee in filtered_employees:
-            employee_id = employee.employee_id
-            try:
-                gender = sc_employee_master.objects.get(employee_id=employee_id).gender
-                print(f"Gender for employee {employee_id}: {gender}")
-            except sc_employee_master.DoesNotExist:
-                print(f"No employee found with ID {employee_id}")
+           
         
         # Step 3: Check attendance for the employee in the given slot
         attendance = slot_attendance_details.objects.filter(
@@ -1246,6 +1240,13 @@ def calculate_daily_salary(request,slot_id):
                                         shift_date = slot.shift_date
                                         re_year_in = shift_date.year
                                         re_month_in = shift_date.month
+
+                                        employee_id = employee.employee_id
+                                        try:
+                                            gender = sc_employee_master.objects.get(employee_id=employee_id).gender
+                                            print(f"Gender for employee {employee_id}: {gender}")
+                                        except sc_employee_master.DoesNotExist:
+                                            print(f"No employee found with ID {employee_id}")
 
                                         comp_id_in = slot.company.company_id
                                         act_id_in = 2
@@ -1531,11 +1532,11 @@ class ApproveSlotListView(ListView):
     model = SlotDetails
     template_name = 'Payroll/Slot/approve_index.html'
     context_object_name = 'slots'
-    paginate_by = 50  
+    paginate_by = 150  
 
-    def get_queryset(self):
-        # Exclude SlotDetails with status_id = 1 or 2
-        return SlotDetails.objects.exclude(status_id__in=[1, 2])
+    # def get_queryset(self):
+    #     # Exclude SlotDetails with status_id = 1 or 2
+    #     return SlotDetails.objects.exclude(status__in=[1, 2])
 
 
     
