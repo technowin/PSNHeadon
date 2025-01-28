@@ -1286,6 +1286,13 @@ def calculate_daily_salary(request,slot_id):
                                         re_year_in = shift_date.year
                                         re_month_in = shift_date.month
 
+                                        employee_id = employee.employee_id
+                                        try:
+                                            gender = sc_employee_master.objects.get(employee_id=employee_id).gender
+                                            print(f"Gender for employee {employee_id}: {gender}")
+                                        except sc_employee_master.DoesNotExist:
+                                            print(f"No employee found with ID {employee_id}")
+
                                         comp_id_in = slot.company.company_id
                                         act_id_in = 1
                                         user_id_in = user_session
