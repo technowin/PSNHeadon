@@ -2,6 +2,7 @@ from django import forms
 
 from Account.models import user_role_map
 from Masters.models import CityMaster, StateMaster, parameter_master
+from Payroll.models import IncomeTaxMaster
 from .models import *
 
 
@@ -176,6 +177,27 @@ class SlabMasterForm(forms.ModelForm):
             'act_id': forms.Select(attrs={'class': 'form-control'}),
             'state': forms.Select(attrs={'class': 'form-control'}),
             'city': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class IncomeTaxMasterForm(forms.ModelForm):
+
+    financial_year = forms.ModelChoiceField(
+        queryset=FinancialYear.objects.all(),
+        empty_label="Select a year",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Slab Year",
+        to_field_name='year' 
+    )
+
+    class Meta:
+        
+        model = IncomeTaxMaster
+        fields = ['financial_year', 'tax_slab_from', 'tax_slab_to', 'tax_rate']
+        widgets = {
+            'tax_slab_from': forms.TextInput(attrs={'class': 'form-control'}),
+            'tax_slab_to': forms.TextInput(attrs={'class': 'form-control'}),
+            'tax_rate': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 

@@ -306,6 +306,46 @@ class PaySlip(models.Model):
     class Meta:
         db_table = 'pay_slip_data'
 
+class IncomeTaxMaster(models.Model):
+    id = models.AutoField(primary_key=True)
+    financial_year = models.TextField(null=True,blank=True)
+    tax_slab_from = models.TextField(null=True,blank=True)
+    tax_slab_to = models.TextField(null=True,blank=True)
+    tax_rate = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_master_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_master_updated_by', blank=True, null=True, db_column='updated_by')
+    class Meta:
+        db_table = 'income_tax_master'
+
+class IncomeTaxCalculation(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.TextField(null=True,blank=True)
+    financial_year = models.TextField(null=True,blank=True)
+    total_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    standard_deduction = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_pt = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    taxable_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_80c = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    remaining_taxable_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rebate_under_87a = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    edu_cess = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    pending_tax_mount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    last_tax_paid = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_updated_by', blank=True, null=True, db_column='updated_by')
+    class Meta:
+        db_table = 'income_tax_calculation'
+
+
+
+
 
 
 

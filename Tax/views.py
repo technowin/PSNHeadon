@@ -17,7 +17,7 @@ from pyparsing import str_type
 from Account.models import user_role_map
 from Masters.models import CityMaster, SlotDetails, StateMaster, UserSlotDetails, company_master, sc_employee_master, site_master
 from Masters.serializers import PaySlipSerializer, SalaryGeneratedSerializer
-from Payroll.models import payment_details as pay
+from Payroll.models import IncomeTaxMaster, payment_details as pay
 from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
 from .models import *
 from .forms import *
@@ -769,5 +769,60 @@ def check_slab_combination(request):
         exists = SlabMaster.objects.filter(state=state_id, city=city_id, act_id=act_id, slab_freq=slab_freq).exists()
 
     return JsonResponse({'exists': exists})
+
+
+def income_tax_master_index(request):
+    try:
+        incomeTax = IncomeTaxMaster.objects.all()
+        for income in incomeTax:
+            income.pk = encrypt_parameter(str(income.id))  # Add encrypted ID dynamically
+        
+        return render(request, 'Tax/IncomeTax/index.html', {'incomeTax': incomeTax})  # Pass incomeTax
+    except Exception as e:
+        return JsonResponse({'message': str(e)}, status=500)
+
+
+
+    
+def income_tax_create(request):
+    if request.method == 'POST':
+        form = IncomeTaxMasterForm(request.POST)
+        if form.is_valid():
+            income = form.save(commit=False)  # Don't save to the database yet
+            income.created_by = request.user   # Also set updated_by initially
+            income.save()  # Now save to the database
+            messages.success(request, "Income Slab created successfully!")
+            return redirect('income_tax_master_index')
+        else:
+            messages.error(request, "Error creating Salary Element.")
+    else:
+        form = IncomeTaxMasterForm()
+    return render(request, 'Tax/IncomeTax/create.html', {'form': form})
+
+def income_tax_edit(request, pk):
+    pk = decrypt_parameter(pk)
+    id = get_object_or_404(IncomeTaxMaster, pk=pk)
+
+    if request.method == 'POST':
+        form = IncomeTaxMasterForm(request.POST, instance=id)
+        if form.is_valid():
+            income = form.save(commit=False)  # Don't save to the database yet
+            income.updated_by = request.user  # Also set updated_by initially
+            income.save()  # Now save to the database
+            messages.success(request, "Income slab Updated successfully!")
+            return redirect('income_tax_master_index')
+        else:
+            messages.error(request, "Error updating Salary Element.")
+    else:
+        form = IncomeTaxMasterForm(instance=id)
+    
+    return render(request, 'Tax/IncomeTax/edit.html', {'form': form, 'id': id})
+
+def income_tax_view(request, pk):
+    pk = decrypt_parameter(pk)
+    income = get_object_or_404(IncomeTaxMaster, pk=pk)
+    return render(request, 'Tax/IncomeTax/view.html', {'income': income})
+
+
 
 

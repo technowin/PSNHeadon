@@ -986,4 +986,23 @@
 });
 
   </script>
+
+
+<script>
+    // Example slot dates in dd-mm-yyyy format
+    let slotDateFrom = "15-01-2024"; // Replace with actual slot date from
+    let slotDateTo = "20-01-2024"; // Replace with actual slot date to
+
+    // Function to format date for placeholder (dd-mm-yyyy)
+    function formatPlaceholder(dateStr) {
+        return dateStr; // No conversion needed, already in dd-mm-yyyy format
+    }
+
+    // Setting placeholders for input fields
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("fromDate").setAttribute("placeholder", formatPlaceholder(slotDateFrom));
+        document.getElementById("toDate").setAttribute("placeholder", formatPlaceholder(slotDateTo));
+    });
+</script>
+
 {% endblock %}

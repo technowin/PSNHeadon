@@ -218,4 +218,9 @@ urlpatterns = [
     path('slab_master_create', slab_master_create, name='slab_master_create'),
     path('check_slab_combination', check_slab_combination, name='check_slab_combination'),
 
+    path('income_tax_master_index', income_tax_master_index, name='income_tax_master_index'),
+    path('income_tax_edit/<str:pk>/', income_tax_edit, name='income_tax_edit'),
+    path('income_tax_view/<str:pk>/', income_tax_view, name='income_tax_view'),
+    path('income_tax_create', income_tax_create, name='income_tax_create'),
+
 ]
