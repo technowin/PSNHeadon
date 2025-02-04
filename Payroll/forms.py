@@ -8,11 +8,12 @@ from .models import *
 class SalaryElementMasterForm(forms.ModelForm):
     class Meta:
         model = salary_element_master
-        fields = ['item_name', 'pay_type', 'classification']
+        fields = ['item_name', 'pay_type', 'classification','tax_parameter']
         widgets = {
             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
             'pay_type': forms.Select(attrs={'class': 'form-control'}),
             'classification': forms.Select(attrs={'class': 'form-control'}),
+            'tax_parameter': forms.Select(attrs={'class': 'form-control'}),
         }
 
 

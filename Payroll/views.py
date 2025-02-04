@@ -553,7 +553,8 @@ def rate_card_create(request):
                     pay_type=item.pay_type,
                     classification=item.classification,
                     four_hour_amount=four_hour_amount,
-                    nine_hour_amount=nine_hour_amount
+                    nine_hour_amount=nine_hour_amount,
+                    tax_parameter=item.tax_parameter if item.tax_parameter is not None else None
                 )
 
             messages.success(request, 'Rate Card created successfully!')
@@ -596,7 +597,8 @@ def rate_card_edit(request, card_id):
                     pay_type=item.pay_type,
                     classification=item.classification,
                     four_hour_amount=four_hour_amount,
-                    nine_hour_amount=nine_hour_amount
+                    nine_hour_amount=nine_hour_amount,
+                    tax_parameter=item.tax_parameter if item.tax_parameter is not None else None
                 )
 
             messages.success(request, 'Rate Card updated successfully!')

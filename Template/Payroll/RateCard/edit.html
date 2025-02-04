@@ -39,7 +39,7 @@
             {% for item in form.item_ids.field.queryset %}
                 <div class="checkbox-container row"   >
                     <div class="col-md-3" style="text-align: center; border:1px solid black; padding:10px; margin:10px;">
-                        <input type="checkbox" name="item_ids" class=" form-control" value="{{ item.pk }}"  style="font-size: 3px;"
+                        <input type="checkbox" name="item_ids" class=" form-control" value="{{ item.pk }}"  style="font-size: 3px;" readonly="true"
                         {% if item.pk in selected_item_ids %} checked {% endif %}>
                         <br>
 

@@ -9,7 +9,8 @@ class salary_element_master(models.Model):
     item_name = models.TextField(null=True,blank=True)
     pay_type = models.ForeignKey('Payroll.pay_type', on_delete=models.CASCADE,related_name='salary_pay_relation',blank=True, null=True,db_column='pay_type')
     classification = models.ForeignKey('Payroll.basis_type', on_delete=models.CASCADE,related_name='salary_basis_relation',blank=True, null=True,db_column='classification')
-    is_active =models.BooleanField(null=True,blank=True,default=True)
+    is_active = models.BooleanField(null=True,blank=True,default=True)
+    tax_parameter = models.ForeignKey('Payroll.income_tax_parameter', on_delete=models.CASCADE,related_name='salary_income_related',blank=True, null=True,db_column='tax_parameter')
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='salary_item_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now=True)
@@ -71,6 +72,7 @@ class RateCardSalaryElement(models.Model):
     item_name = models.TextField(null=True, blank=True)
     pay_type = models.TextField(null=True, blank=True)
     classification = models.TextField(null=True, blank=True)
+    tax_parameter = models.ForeignKey('Payroll.income_tax_parameter', on_delete=models.CASCADE,related_name='rate_card_income_related',blank=True, null=True,db_column='tax_parameter')
     four_hour_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     nine_hour_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
@@ -342,6 +344,19 @@ class IncomeTaxCalculation(models.Model):
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_updated_by', blank=True, null=True, db_column='updated_by')
     class Meta:
         db_table = 'income_tax_calculation'
+
+class income_tax_parameter(models.Model):
+    id = models.AutoField(primary_key=True)
+    tax_parameter = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_parameter_created_by', blank=True, null=True, db_column='created_by')
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_parameter_updated_by', blank=True, null=True, db_column='updated_by')
+    class Meta:
+        db_table = 'income_tax_parameter'
+    def __str__(self):
+        return f"{self.tax_parameter}"  
+
 
 
 
