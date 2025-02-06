@@ -166,7 +166,8 @@ class daily_salary(models.Model):
     work_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Total working hours
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Salary amount for the day
     element_name = models.TextField(null=True, blank=True)  # From salary elements
-    pay_type = models.TextField(null=True, blank=True)  # From salary elements
+    pay_type = models.TextField(null=True, blank=True) 
+    tax_parameter = models.ForeignKey('Payroll.income_tax_parameter', on_delete=models.CASCADE,related_name='daily_salary_income_related',blank=True, null=True,db_column='tax_parameter') # From salary elements
     classification = models.TextField(null=True, blank=True)  # From salary elements
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='daily_salary_created_by', blank=True, null=True, db_column='created_by')
@@ -324,6 +325,7 @@ class IncomeTaxMaster(models.Model):
 class IncomeTaxCalculation(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.TextField(null=True,blank=True)
+    period = models.TextField(null=True,blank=True)
     financial_year = models.TextField(null=True,blank=True)
     total_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     standard_deduction = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

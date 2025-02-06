@@ -48,6 +48,7 @@ class parameter_master(models.Model):
     parameter_id = models.AutoField(primary_key=True)
     parameter_name =models.TextField(null=True,blank=True)
     parameter_value =models.TextField(null=True,blank=True)
+    is_active = models.BooleanField(default=True,null = True, blank= True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='parameter_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)

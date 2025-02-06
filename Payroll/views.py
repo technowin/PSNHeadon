@@ -100,7 +100,6 @@ def get_employer_deduct(comp_id_in, act_id_in, user_id_in, emp_code_in,
             return employer_deduct
     except ValueError as e:
         print(f"Error parsing challan_period: {e}")
-        return employer_deduct
     
     # Step 3: Get employer deduct from the record
     employer_deduct = record.employer_deduct  # Retrieve the amount directly from the table
@@ -187,8 +186,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
                     ).first()
 
-                    if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
-                        # Update gross_salary if the record exists and matches the period
+                    if tax_record  and start_date <= date(re_year_in, re_month_in, 1) <= end_date:
                         tax_record.gross_salary += gross_salary_in
                         gross_salary_in = tax_record.gross_salary
                         tax_record.save()
@@ -226,8 +224,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
                     ).first()
 
-                    if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
-                        # Update gross_salary if the record exists and matches the period
+                    if tax_record and start_date <= date(re_year_in, re_month_in, 1) <= end_date:
                         tax_record.gross_salary += gross_salary_in
                         gross_salary_in = tax_record.gross_salary
                         tax_record.save()
@@ -265,11 +262,10 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
                     ).first()
 
-                if tax_record and start_date <= datetime(re_year_in, re_month_in, 1) <= end_date:
-                    # Update gross_salary if the record exists and matches the period
-                    tax_record.gross_salary += gross_salary_in
-                    gross_salary_in = tax_record.gross_salary
-                    tax_record.save()
+                    if tax_record and start_date <= date(re_year_in, re_month_in, 1) <= end_date:
+                            tax_record.gross_salary += gross_salary_in
+                            gross_salary_in = tax_record.gross_salary
+                            tax_record.save()
                 else:
                     tax_record = TaxCalculation.objects.create(
                         employee_id=emp_code_in,
@@ -349,6 +345,65 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
         print(f"Error in PT calculation: {e}")
         return None
 print
+
+
+
+def get_total_income(emp_code_in, re_year_in, re_month_in):
+    try:
+        re_year_in = int(re_year_in)
+        start_date = date(re_year_in, 4, 1)  # April 1st of given year
+        end_date = date(re_year_in + 1, 3, 31)  # March 31st of next year
+
+        # Filter data based on the financial year range
+        total_income = (
+            daily_salary.objects.filter(
+                employee_id=emp_code_in,
+                attendance_date__gte=start_date,
+                attendance_date__lte=end_date,
+                attendance_date__month=re_month_in,
+                tax_parameter=1
+            ).aggregate(total=Sum('amount'))['total']
+        )
+
+        return float(total_income) if total_income is not None else 0.0
+    except Exception as e:
+        print(f"Error in Total income calculation: {e}")
+        return None
+    # Return 0 if no data is found
+
+def get_total_80C(emp_code_in, re_year_in, re_month_in):
+    re_year_in = int(re_year_in)
+    start_date = date(re_year_in, 4, 1)  # April 1st of given year
+    end_date = date(re_year_in + 1, 3, 31) # Inclusive range
+
+    total_80C = (
+        daily_salary.objects.filter(
+            employee_id=emp_code_in,
+                attendance_date__gte=start_date,
+                attendance_date__lte=end_date,
+                attendance_date__month=re_month_in,
+            tax_parameter=2
+        ).aggregate(total=Sum('amount'))['total']
+    )
+    return float(total_80C) if total_80C is not None else 0.0
+
+def get_pt_value(emp_code_in, re_year_in, re_month_in):
+    re_year_in = int(re_year_in)
+    start_date = date(re_year_in, 4, 1)  # April 1st of given year
+    end_date = date(re_year_in + 1, 3, 31) # Inclusive range
+
+    total_pt = (
+        daily_salary.objects.filter(
+                employee_id=emp_code_in,
+                attendance_date__gte=start_date,
+                attendance_date__lte=end_date,
+                attendance_date__month=re_month_in,
+                tax_parameter=3
+        ).aggregate(total=Sum('amount'))['total']
+    )
+
+    return float(total_pt) if total_pt is not None else 0.0
+
 
 def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month_in, state_id_in, city_id_in, site_id_in, gross_salary_in, emp_gender_in, comp_id_in):
     try:
@@ -459,6 +514,265 @@ def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month
     except Exception as e:
         print(f"Error in LWF calculation: {e}")
         return None
+    
+# def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
+#     try:
+        
+        
+#         total_income = get_total_income(emp_code_in, re_year_in, re_month_in)
+#         total_80c = get_total_80C(emp_code_in, re_year_in, re_month_in)
+#         pt_value = get_pt_value(emp_code_in, re_year_in, re_month_in)
+#         financial_year_obj = parameter_master.objects.filter(parameter_name='financial year', is_active=1).first()
+#         if not financial_year_obj:
+#             return {'error': 'Financial year not found'}
+        
+#         financial_year = financial_year_obj.parameter_value  
+
+#         # Convert input month and year to period format
+#         input_period = f"4-{re_year_in} to 3-{re_year_in + 1}"
+
+#         # Fetch standard deduction
+#         standard_deduction_obj = parameter_master.objects.filter(parameter_name='Standard Deduction').first()
+#         standard_deduction = Decimal(standard_deduction_obj.parameter_value) if standard_deduction_obj else Decimal('0')
+
+#         income_tax_standard_obj = parameter_master.objects.filter(parameter_name='Standard Deduction').first()
+#         income_tax_standard = Decimal(income_tax_standard_obj.parameter_value) if income_tax_standard_obj else Decimal('0')
+
+#         edu_cess_obj = parameter_master.objects.filter(parameter_name='Edu Cess').first()
+#         edu_cess = Decimal(edu_cess_obj.parameter_value) if edu_cess_obj else Decimal('0')
+
+#         # Fetch or create the tax record for the given employee and period
+#         tax_record, created = IncomeTaxCalculation.objects.get_or_create(
+#             employee_id=emp_code_in,
+#             period=input_period,
+#             defaults={
+#                 'financial_year': financial_year,
+#                 'total_income': Decimal(total_income),
+#                 'total_80c': Decimal(total_80c),
+#                 'total_pt': Decimal(pt_value),
+#                 'standard_deduction': standard_deduction,
+#                 'created_by': get_object_or_404(CustomUser, id=user_session),
+#             }
+#         )
+
+#         if not created:
+#             # Update existing record
+#             tax_record.total_income += Decimal(total_income)
+#             tax_record.total_80c += Decimal(total_80c)
+#             tax_record.total_pt += Decimal(pt_value)
+#             tax_record.updated_by = get_object_or_404(CustomUser, id=user_session)
+#             tax_record.save()
+
+
+
+# # Compute taxable income after deductions
+#         taxable_income = max(Decimal('0'), tax_record.total_income - standard_deduction)
+
+#         # Condition: If taxable income is ≤ 700,000, return 0
+#         if taxable_income <= income_tax_standard:
+#             tax_record.tax_amount = Decimal('0')
+#             tax_record.save()
+#             return Decimal('0')
+#  # Cumulative tax
+#         remaining_income = taxable_income  # Your actual taxable_income value
+#         total_tax = Decimal('0')  # Initialize total tax
+#         tax_slab_details = []  # List to store details of each slab tax
+
+#         # Fetching tax slabs
+#         tax_slabs = IncomeTaxMaster.objects.filter(
+#             financial_year=financial_year
+#         ).order_by('id')
+
+#         cumulative_slab_to = Decimal('0')  # Cumulative upper limit for slabs
+
+#         for index, slab in enumerate(tax_slabs):
+#             slab_from = Decimal(slab.tax_slab_from)
+#             slab_to = Decimal(slab.tax_slab_to) if slab.tax_slab_to else Decimal('Infinity')
+#             tax_rate = Decimal(slab.tax_rate) / Decimal('100') 
+#             edu_cess_percent = Decimal(edu_cess) / Decimal('100')
+
+#             # Compute the correct slab income
+#             if index == 0:
+#                 # First slab, taxable amount is within the limit of slab_to
+#                 slab_income = min(remaining_income, slab_to)
+#             else:
+#                 # For subsequent slabs, calculate only the portion exceeding previous slabs
+#                 adjusted_slab_limit = slab_to - cumulative_slab_to
+#                 slab_income = min(remaining_income, adjusted_slab_limit)
+
+#             # Ensure slab income is non-negative
+#             slab_income = max(Decimal('0'), slab_income)
+
+#             if index == 0:
+#                 slab_tax = slab_income * tax_rate
+#             else:
+#                 slab_tax = slab_income * tax_rate
+
+#             edu_cess_amount = taxable_income * edu_cess_percent
+#             total_tax += slab_tax 
+#             income_tax  = total_tax + edu_cess_amount
+#             # Store details of this slab
+#             tax_slab_details.append({
+#                 'slab': index + 1,
+#                 'taxable_income': slab_income,
+#                 'tax_rate': tax_rate,
+#                 'slab_tax': slab_tax
+#             })
+
+#             # Update cumulative slab limit
+#             cumulative_slab_to = slab_to
+
+#             # Deduct slab income from remaining taxable income **AFTER tax is computed**
+#             remaining_income -= slab_income
+
+#             # Stop if there is no remaining income
+#             if remaining_income <= 0:
+#                 break
+
+
+#         # Store calculated tax
+#         tax_record.tax_amount = income_tax
+#         tax_record.save()
+
+#         return float(income_tax)
+
+    
+#     except Exception as e:
+#         return {'error': str(e)}
+
+
+def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
+    try:
+        total_income = get_total_income(emp_code_in, re_year_in, re_month_in)
+        total_80c = get_total_80C(emp_code_in, re_year_in, re_month_in)
+        pt_value = get_pt_value(emp_code_in, re_year_in, re_month_in)
+
+        financial_year_obj = parameter_master.objects.filter(parameter_name='financial year', is_active=1).first()
+        if not financial_year_obj:
+            return {'error': 'Financial year not found'}
+        
+        financial_year = financial_year_obj.parameter_value  
+        input_period = f"4-{re_year_in} to 3-{re_year_in + 1}"
+
+        # Fetch standard deduction, income tax standard, and edu cess
+        standard_deduction = Decimal(parameter_master.objects.filter(parameter_name='Standard Deduction').first().parameter_value or '0')
+        income_tax_standard = Decimal(parameter_master.objects.filter(parameter_name='Income Tax Standard').first().parameter_value or '0')
+        edu_cess = Decimal(parameter_master.objects.filter(parameter_name='Edu Cess').first().parameter_value or '0')
+
+        
+
+        tax_record, created = IncomeTaxCalculation.objects.get_or_create(
+            employee_id=emp_code_in,
+            period=input_period,
+            defaults={
+                'financial_year': financial_year,
+                'taxable_income': Decimal(total_income),
+                'total_80c': Decimal(total_80c),
+                'total_pt': Decimal(pt_value),
+                'standard_deduction': standard_deduction,
+                'created_by': get_object_or_404(CustomUser, id=user_session),
+            }
+        )
+
+        if not created:
+            # Add new values to existing record before updating
+            tax_record.taxable_income += Decimal(total_income)
+            tax_record.total_80c += Decimal(total_80c)
+            tax_record.total_pt += Decimal(pt_value)
+
+            tax_record.updated_by = get_object_or_404(CustomUser, id=user_session)
+            tax_record.save()
+
+
+        print(f"Taxable Income: {tax_record.taxable_income}")
+
+
+        taxable_income = tax_record.taxable_income - standard_deduction
+        tax_record.total_income = taxable_income
+        tax_record.tax_paid = 0
+        tax_record.save()
+        taxable_income = tax_record.total_income
+        if taxable_income < 0:
+            tax_record.tax_amount = Decimal('0')
+            tax_record.total_tax_amount = Decimal('0')
+            tax_record.save()
+            return Decimal('0')
+
+        taxable_income -= tax_record.total_pt
+        if taxable_income < 0:
+            tax_record.tax_amount = Decimal('0')
+            tax_record.total_tax_amount = Decimal('0')
+            tax_record.save()
+            return Decimal('0')
+
+        taxable_income -= tax_record.total_80c
+        if taxable_income < 0:
+            tax_record.tax_amount = Decimal('0')
+            tax_record.total_tax_amount = Decimal('0')
+            tax_record.save()
+            return Decimal('0')
+
+        if taxable_income <= income_tax_standard:
+            tax_record.tax_amount = Decimal('0')
+            tax_record.rebate_under_87a = Decimal('0')
+            tax_record.save()
+            return Decimal('0')
+
+        # Tax Calculation
+        remaining_income = taxable_income
+        total_tax = Decimal('0')
+        tax_slabs = IncomeTaxMaster.objects.filter(financial_year=financial_year).order_by('id')
+        cumulative_slab_to = Decimal('0')
+
+        for index, slab in enumerate(tax_slabs):
+            slab_from = Decimal(slab.tax_slab_from)
+            slab_to = Decimal(slab.tax_slab_to) if slab.tax_slab_to else Decimal('Infinity')
+            tax_rate = Decimal(slab.tax_rate) / Decimal('100')
+            edu_cess_percent = Decimal(edu_cess) / Decimal('100')
+
+            if index == 0:
+                slab_income = min(remaining_income, slab_to)
+            else:
+                adjusted_slab_limit = slab_to - cumulative_slab_to
+                slab_income = min(remaining_income, adjusted_slab_limit)
+
+            slab_income = max(Decimal('0'), slab_income)
+            slab_tax = slab_income * tax_rate
+            
+            total_tax += slab_tax 
+
+            # Update cumulative slab limit
+            cumulative_slab_to = slab_to
+            remaining_income -= slab_income
+
+            if remaining_income <= 0:
+                break
+
+        edu_cess_amount = total_tax * edu_cess_percent
+        tax = total_tax + edu_cess_amount
+        tax_record.save()
+
+        # Calculate the income tax
+        tax_paid = tax_record.tax_paid
+        income_tax = tax - tax_paid  # This gives the remaining tax after deducting tax paid
+
+        # Update the tax_paid with the calculated income_tax
+        tax_record.tax_paid = income_tax
+
+        # Update the tax_record with remaining taxable income
+        tax_record.remaining_taxable_income = income_tax
+
+        # Save the updated record
+        tax_record.save()
+
+
+        return float(income_tax)
+
+    except Exception as e:
+        return {'error': str(e)}
+
+    
+
 
 
 
@@ -1160,9 +1474,10 @@ def calculate_daily_salary(request,slot_id):
                                 When(pay_type='Other Earning', then=2),
                                 When(pay_type='Total Earning', then=3),
                                 When(pay_type='Deduction', then=4),
-                                When(pay_type='Employer Contribution', then=5),
-                                When(pay_type='Employer Total', then=6),
-                                When(pay_type='Total', then=7),
+                                When(pay_type='Income Tax', then=5),
+                                When(pay_type='Employer Contribution', then=6),
+                                When(pay_type='Employer Total', then=7),
+                                When(pay_type='Total', then=8),
                                 default=8,  # For any other pay types that are not specified
                                 output_field=models.IntegerField(),
                                 )
@@ -1346,17 +1661,30 @@ def calculate_daily_salary(request,slot_id):
                                         else:
                                             amount = employer_amount
                                     elif element.item_name == 'Income Tax':
-                                        try:
-                                            deduction = income_tax_deduction.objects.get(
-                                                employee_id=employee_id,
-                                                company_id=employee.company_id.company_id,
-                                                deduction_month=attendance.attendance_date.month,
-                                                deduction_year = attendance.attendance_date.year,
-                                                is_deducted = 0
-                                            )
-                                            amount = deduction.deduction_amount
-                                        except income_tax_deduction.DoesNotExist:
-                                            amount = 0
+
+                                        re_year_in = shift_date.year
+                                        re_month_in = shift_date.month
+                                        emp_code_in = employee_id
+
+                                        
+                                        income_tax = calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in)
+
+                                        if working_hours < 9:
+                                            amount = income_tax
+                                        else:
+                                            amount = income_tax
+
+                                    #     try:
+                                    #         deduction = income_tax_deduction.objects.get(
+                                    #             employee_id=employee_id,
+                                    #             company_id=employee.company_id.company_id,
+                                    #             deduction_month=attendance.attendance_date.month,
+                                    #             deduction_year = attendance.attendance_date.year,
+                                    #             is_deducted = 0
+                                    #         )
+                                    #         amount = deduction.deduction_amount
+                                    #     except income_tax_deduction.DoesNotExist:
+                                    #         amount = 0
                                     else:
                                         if working_hours < 9:
                                             amount = element.four_hour_amount
@@ -1384,7 +1712,15 @@ def calculate_daily_salary(request,slot_id):
                                             attendance_date=attendance.attendance_date,
                                             pay_type='Deduction'
                                         ).aggregate(Sum('amount'))['amount__sum'] or 0
-                                        amount = total_deduction
+
+                                        income_tax = daily_salary.objects.filter(
+                                            employee_id=employee_id,
+                                            slot_id=slot_id,
+                                            attendance_date=attendance.attendance_date,
+                                            pay_type='Income Tax'
+                                        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+                                        amount = total_deduction + income_tax
                                     
                                     elif element.item_name == 'Net Salary':
                                         total_earnings = daily_salary.objects.filter(
@@ -1473,6 +1809,7 @@ def calculate_daily_salary(request,slot_id):
                                         employee_id=employee_id,
                                         company_id = employee.company_id,
                                         attendance_date=attendance.attendance_date,
+                                        tax_parameter = element.tax_parameter,
                                         work_hours=working_hours,
                                         amount=amount,
                                         element_name=element.item_name,
@@ -1668,7 +2005,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
 
         # Separate daily_salary data into two lists: earnings and deductions
         earnings = daily_salary_data.filter(pay_type__in=['Earning','Total Earning','Other Earning'])
-        deductions = daily_salary_data.filter(pay_type__in=['Deduction'])
+        deductions = daily_salary_data.filter(pay_type__in=['Deduction','Income Tax'])
         employer_contribution = daily_salary_data.filter(pay_type__in=['Employer Contribution'])
         employer_contribution_total = daily_salary_data.filter(pay_type__in=['Employer Total'])
 
@@ -2281,7 +2618,9 @@ def generate_pay_slip(request):
         
         # Filter earnings and deductions
         earnings = salary_details.filter(pay_type__in=['Earning', 'Other Earning', 'Total Earning'])
-        deductions = salary_details.filter(Q(pay_type='Deduction') | Q(element_name='Gross Deduction'))
+        # deductions = salary_details.filter(Q(pay_type='Deduction') | Q(element_name='Gross Deduction'))
+        deductions = salary_details.filter(Q(pay_type='Deduction') | Q(element_name='Income Tax') | Q(element_name='Gross Deduction'))
+
 
         total_earnings = salary_details.filter(pay_type='Total', element_name='Total Earning').first()
         gross_earnings = salary_details.filter(pay_type='Total Earning', element_name='Gross Earning').first()
