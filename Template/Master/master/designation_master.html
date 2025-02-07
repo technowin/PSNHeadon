@@ -29,7 +29,7 @@
                   <u>{% if designation_id == '0' %} Create {% else %} Edit {% endif %}Designation  Master</u>
                 </h2>
                 <br>
-                
+                <br>
                 <form id ="form_id" method="POST" action="{% url 'designation_master1' %}">
                 
                     {% csrf_token %}
@@ -38,15 +38,20 @@
 
                     <div class="row mb-3">
                         
+                        
                     
                         <div class="col-md-3">  
                             <label for="Desgination" class="form-label"> Designation Name <span style="color:red;"> *</span> :</label>
+                        </div>
+                            <div class="col-md-3">  
+                        
                             <input type="text" value="{{ designation_name }}" name="designation_name" class="form-control" id="designation_name" placeholder="Enter Your Desgination" required>
                         </div>
                         {% if designation_id != "0" %}
                             <div class="col-md-3">  
                                 <label for="activeBtn" class="form-label">Is Active<span style="color:red;"> *</span> :</label>
-                                <br>
+                            </div>
+                                <div class="col-md-3">  
                                 <label class="switch">
                                     <input type="checkbox" values ="{{ is_active }}" id="statusSwitch" name="is_active" 
                                            {% if is_active == "1" %} checked {% endif %} 
@@ -58,7 +63,7 @@
                             </div>
                         </div>
                   
-                    
+                        <br>
                    
 
                     <div class="text-center">

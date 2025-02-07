@@ -70,12 +70,20 @@
             </div>
 
             <!-- Status -->
-           <div class="row mb-3">
+            <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="status">Status</label>
-                    <input type="text" id="status" class="form-control" value="{{ slot_attendance.slot_id.status.status_name }}" readonly/>
+                    <select id="status" name="status" class="form-control">
+                        {% for status in status_values %}
+                            <option value="{{ status.status_id }}" {% if status.status_id == slot_attendance.status.status_id %}selected{% endif %}>
+                                {{ status.status_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
+            
+            
 
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Update </button>

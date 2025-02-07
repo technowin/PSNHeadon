@@ -1308,7 +1308,9 @@ def calculate_daily_salary(request,slot_id):
             site_id=slot.site_id,
             slot_id=slot_id,
             employee_id=employee_id,
-            attendance_date = slot.shift_date
+            attendance_date = slot.shift_date,
+            status = 2
+
         ).first()
         
         if attendance:
@@ -1680,7 +1682,7 @@ def calculate_daily_salary(request,slot_id):
                                         amount = element.nine_hour_amount
                                 
                                 try:
-                                    amount = math.ceil(amount)
+                                    # amount = math.ceil(amount)
                                     daily_salary.objects.create(
                                         slot_id=slot,
                                         employee_id=employee_id,
@@ -2111,6 +2113,10 @@ def edit_attendance(request , encrypted_id):
         if request.method == "GET":
             id = decrypt_parameter(encrypted_id)
             slot_attendance = get_object_or_404(slot_attendance_details, id=id)
+            # print(slot_attendance.status)
+            status_values = StatusMaster.objects.filter(status_type='Attendance').values('status_id', 'status_name')
+
+
 
             # Step 2: Retrieve the employee details based on the employee_id from SlotAttendanceDetails
             employee_id = slot_attendance.employee_id
@@ -2120,6 +2126,7 @@ def edit_attendance(request , encrypted_id):
             context = {
                 'slot_attendance': slot_attendance,
                 'employee_details': employee_details,
+                'status_values':status_values
             }
 
             return render(request, 'Payroll/Attendance/edit_attendance.html', context)
@@ -2128,6 +2135,7 @@ def edit_attendance(request , encrypted_id):
             # Step 2: Retrieve the corresponding slot attendance details using the id
             slot_attendance = get_object_or_404(slot_attendance_details, id=id)
             employee_name = request.POST.get('employee_name', '')
+            status = request.POST.get('status', '')
 
             # Step 3: Retrieve the attendance_in and attendance_out from the form (POST request)
             attendance_in = request.POST.get('attendance_in')  # Ensure this field is in your form
@@ -2136,6 +2144,7 @@ def edit_attendance(request , encrypted_id):
             # Step 4: Update the attendance_in and attendance_out fields
             slot_attendance.attendance_in = attendance_in
             slot_attendance.attendance_out = attendance_out
+            slot_attendance.status = get_object_or_404(StatusMaster, status_id = status)
 
             # Step 5: Save the updated record
             slot_attendance.save()
