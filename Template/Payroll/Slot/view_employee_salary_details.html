@@ -12,7 +12,10 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h2>Net Salary Details</h2>
-            <button class="btn btn-primary" onclick = "generatePaySlip()">Payment Slip</button>
+            {% comment %} {% if status_id == '6' or status_id == '7' %} {% endcomment %}
+                <button class="btn btn-primary" onclick="generatePaySlip()">Payment Slip</button>
+            {% comment %} {% endif %} {% endcomment %}
+        
         </div>
         
         <div class="card-body">

@@ -1876,7 +1876,9 @@ def view_employee_salary_details(request, employee_id, slot_id):
         date = slot.shift_date
 
         # Retrieve user slot details for the given slot ID
-        user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id)
+        user_slot_details = UserSlotDetails.objects.filter(slot_id=slot_id).first()
+        status_id = user_slot_details.status.status_id if user_slot_details else None  # Handle case when no data found
+
         if user_slot_details:
     # Fetch the employee record based on employee_id
             employee = sc_employee_master.objects.filter(employee_id=employee_id).first()
@@ -1913,6 +1915,7 @@ def view_employee_salary_details(request, employee_id, slot_id):
         # Prepare the context for rendering the template
         context = {
             'slot_id':slot_id,
+            'status_id':status_id,
             'date':date,
             'employee_id':employee_id,
             'employee_name':employee_name,

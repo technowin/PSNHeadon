@@ -182,7 +182,7 @@ def menu_master(request):
 
             if menu_id == '0':
                 menu_count = MenuMaster.objects.count() + 1
-                icon = 'fas fa ' + request.POST.get('menu_icon','')
+                icon = 'fas ' + request.POST.get('menu_icon','')
 
                 try:
                     MenuMaster.objects.create(
@@ -194,6 +194,7 @@ def menu_master(request):
                     print(f"An error occurred: {e}")
             else:
                 try:
+                    icon = 'fas ' + request.POST.get('menu_icon','')
                     MenuMaster.objects.filter(menu_id=menu_id1).update(
                         menu_name=menu_name,
                         menu_action=menu_action_value,
@@ -203,6 +204,7 @@ def menu_master(request):
                         sub_menu=sub_menu_id,
                         is_sub_menu2=sub_parent1,
                         sub_menu2=sub_menu_id1,
+                        menu_icon = icon,
                         updated_by=user_id
                     )
                     messages.success(request, "Menu Successfully Updated!")
