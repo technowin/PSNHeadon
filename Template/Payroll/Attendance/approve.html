@@ -50,10 +50,12 @@
                   <th>Site</th>
                   <th>Date</th>
                   <th>Shift Time</th>
+                  <th>Status</th>
                   <th>Action</th>
                 </tr>
                 <tr>
                 <td hidden ></td>
+                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -73,6 +75,7 @@
                   <td>{{ record.site_id.site_name }}</td> 
                   <td>{{ record.shift_date }}</td>  
                   <td>{{ record.start_time}} - {{record.end_time}}</td>  
+                  <td>{{ record.status.status_name }}</td>
                   <td>
                     <form method="POST" action="{% url 'approve_attendance' %}">
                         {% csrf_token %}

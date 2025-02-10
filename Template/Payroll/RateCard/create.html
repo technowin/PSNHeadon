@@ -110,6 +110,15 @@
                                 class="form-control amount-field" placeholder="9-Hour Amount" min="0" 
                                 id="nine_hour_amount_{{ item.pk }}" style="width: 90%;" step="0.01" disabled>
                         </div>
+                        <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                            <label for="tax_parameter_{{ item.pk }}" class="form-label">Tax Parameter</label>
+                            <select name="tax_parameter_{{ item.pk }}" id="tax_parameter_{{ item.pk }}" class="form-control" style="width: 90%;" disabled>
+                                <option value="">Select Tax</option>
+                                {% for tax in tax_parameter %}
+                                    <option value="{{ tax.id }}">{{ tax.tax_parameter }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -171,25 +180,55 @@
     });
     </script>
 
+     
+
     <script>
-        function toggleAmountFields(checkbox, itemId) {
+        {% comment %} function toggleAmountFields(checkbox, itemId) {
+            debugger;
             var fourHourInput = document.getElementById("four_hour_amount_" + itemId);
             var nineHourInput = document.getElementById("nine_hour_amount_" + itemId);
+            var taxParameter =  document.getElementById("tax_parameter_" +  itemId);
     
             if (checkbox.checked) {
                 // Enable input fields and set default value to 0
                 fourHourInput.disabled = false;
                 nineHourInput.disabled = false;
+                taxParameter.disabled = false;
                 fourHourInput.value = 0;
                 nineHourInput.value = 0;
             } else {
                 // Disable input fields and clear values
                 fourHourInput.disabled = true;
                 nineHourInput.disabled = true;
+                taxParameter.disabled = true;
                 fourHourInput.value = "";
                 nineHourInput.value = "";
             }
+        } {% endcomment %}
+
+        function toggleAmountFields(checkbox, itemId) {
+            var fourHourInput = document.getElementById("four_hour_amount_" + itemId);
+            var nineHourInput = document.getElementById("nine_hour_amount_" + itemId);
+            var taxParameter = document.getElementById("tax_parameter_" + itemId);
+        
+            if (checkbox.checked) {
+                // Enable all fields and set default values
+                fourHourInput.disabled = false;
+                nineHourInput.disabled = false;
+                taxParameter.disabled = false; // Enable tax parameter
+                fourHourInput.value = 0;
+                nineHourInput.value = 0;
+            } else {
+                // Disable all fields and clear values
+                fourHourInput.disabled = true;
+                nineHourInput.disabled = true;
+                taxParameter.disabled = true; // Keep tax parameter disabled
+                fourHourInput.value = "";
+                nineHourInput.value = "";
+                taxParameter.value = ""; // Optionally clear tax parameter field
+            }
         }
+        
     </script>
     
 {% endblock %}

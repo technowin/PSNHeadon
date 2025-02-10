@@ -73,9 +73,11 @@
                 <th>Date</th>
                 <th>In</th>
                 <th>Out</th>
+                <th>Status</th>
                 <th>Action</th>
             </tr>
               <td hidden></td>
+              <td></td>
               <td></td>
               <td></td>
               <td></td>
@@ -97,6 +99,7 @@
                 <td>{{ record.attendance_date }}</td>
                 <td>{{ record.attendance_in }}</td>
                 <td>{{ record.attendance_out }}</td>
+                <td>{{ record.status.status_name }}</td>
                   <td style="display: flex; gap: 10px;">
                     <a href="{% url 'edit_attendance' record.encrypted_id %}" class="edit-button">
                       <svg class="edit-svgIcon" viewBox="0 0 512 512">

@@ -152,6 +152,20 @@
                                                disabled value="" 
                                            {% endif %}>
                                 </div>
+
+                                <div class="col-md-2 text-center" style="border:1px solid black; padding:10px; margin:10px;">
+                                    <label for="tax_parameter_{{ item.pk }}" class="form-label">Tax Parameter</label>
+                                    <select name="tax_parameter_{{ item.pk }}" id="tax_parameter_{{ item.pk }}" class="form-control" style="width: 90%;">
+                                        <option value="">Select Tax</option>
+                                        {% for tax in tax_parameter %}
+                                            <option value="{{ tax.id }}"
+                                                    {% if prefilled_data|get_item:item.pk|get_item:'tax_parameter' == tax %} selected {% endif %}>
+                                                {{ tax.tax_parameter }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
                                 
                             </div>
                         {% endfor %}

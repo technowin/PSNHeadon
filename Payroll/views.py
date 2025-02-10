@@ -736,6 +736,7 @@ def rate_card_create(request):
                 item = salary_element_master.objects.get(pk=item_id)
                 four_hour_amount = request.POST.get(f'four_hour_amount_{item_id}', 0)
                 nine_hour_amount = request.POST.get(f'nine_hour_amount_{item_id}', 0)
+                tax_param = request.POST.get(f'tax_parameter_{item_id}', 0)
                 
                 RateCardSalaryElement.objects.create(
                     rate_card=rate_card,
@@ -745,7 +746,7 @@ def rate_card_create(request):
                     classification=item.classification,
                     four_hour_amount=four_hour_amount,
                     nine_hour_amount=nine_hour_amount,
-                    tax_parameter=item.tax_parameter if item.tax_parameter is not None else None
+                    tax_parameter=get_object_or_404(tax_parameter, id = tax_param)
                 )
 
             messages.success(request, 'Rate Card created successfully!')
@@ -753,9 +754,10 @@ def rate_card_create(request):
         else:
             messages.error(request, 'Error creating Rate Card.')
     else:
+        tax_parameter = income_tax_parameter.objects.all()
         form = RateCardMasterForm()
     
-    return render(request, 'Payroll/RateCard/create.html', {'form': form})
+    return render(request, 'Payroll/RateCard/create.html', {'form': form,'tax_parameter':tax_parameter})
 
 
 
@@ -780,6 +782,8 @@ def rate_card_edit(request, card_id):
                 item = salary_element_master.objects.get(pk=item_id)
                 four_hour_amount = request.POST.get(f'four_hour_amount_{item_id}', 0)
                 nine_hour_amount = request.POST.get(f'nine_hour_amount_{item_id}', 0)
+                tax_param = request.POST.get(f'tax_parameter_{item_id}', 0)
+
 
                 RateCardSalaryElement.objects.create(
                     rate_card=rate_card,
@@ -789,7 +793,8 @@ def rate_card_edit(request, card_id):
                     classification=item.classification,
                     four_hour_amount=four_hour_amount,
                     nine_hour_amount=nine_hour_amount,
-                    tax_parameter=item.tax_parameter if item.tax_parameter is not None else None
+                    tax_parameter=get_object_or_404(tax_parameter, id = tax_param)
+
                 )
 
             messages.success(request, 'Rate Card updated successfully!')
@@ -797,6 +802,7 @@ def rate_card_edit(request, card_id):
         else:
             messages.error(request, 'Error updating Rate Card.')
     else:
+        tax_parameter = income_tax_parameter.objects.all()
         form = RateCardMasterForm(instance=rate_card)
 
     selected_item_ids = rate_card.item_ids.values_list('item_id', flat=True)
@@ -808,11 +814,13 @@ def rate_card_edit(request, card_id):
     for relation in existing_relations:
         prefilled_data[relation.salary_element_id] = {
             'four_hour_amount': relation.four_hour_amount,
-            'nine_hour_amount': relation.nine_hour_amount
+            'nine_hour_amount': relation.nine_hour_amount,
+            'tax_parameter':relation.tax_parameter
         }
 
     return render(request, 'Payroll/RateCard/edit.html', {
         'form': form,
+        'tax_parameter':tax_parameter,
         'rate_card': rate_card,
         'selected_item_ids': list(selected_item_ids),
         'prefilled_data': prefilled_data,  # Pass the prefilled amounts
@@ -2131,6 +2139,7 @@ def edit_attendance(request , encrypted_id):
 
             return render(request, 'Payroll/Attendance/edit_attendance.html', context)
         if request.method == "POST":
+
             id = decrypt_parameter(encrypted_id)
             # Step 2: Retrieve the corresponding slot attendance details using the id
             slot_attendance = get_object_or_404(slot_attendance_details, id=id)
