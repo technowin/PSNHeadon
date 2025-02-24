@@ -142,14 +142,14 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
-                        city=city_id_in,
                         act=act_id_in,
                         year=re_year_in,
                         month=re_month_in
                     ).first()
-                    if int(tax_record.year) == int(re_year_in) and int(tax_record.month) == int(re_month_in):
-                        tax_record.gross_salary += gross_salary_in  # Update the gross_salary field
-                        gross_salary_in = tax_record.gross_salary  # Assign the updated value to gross_salary (if needed)
+                    if tax_record is not None:
+                        if int(tax_record.year) == int(re_year_in) and int(tax_record.month) == int(re_month_in):
+                            tax_record.gross_salary += gross_salary_in  # Update the gross_salary field
+                            gross_salary_in = tax_record.gross_salary  # Assign the updated value to gross_salary (if needed)
 
                     else:
                         tax_record = TaxCalculation.objects.create(
@@ -179,7 +179,6 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
-                        city=city_id_in,
                         act=act_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
@@ -217,7 +216,6 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
-                        city=city_id_in,
                         act=act_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
@@ -255,7 +253,6 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
-                        city=city_id_in,
                         act=act_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
