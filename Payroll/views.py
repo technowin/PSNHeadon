@@ -4,6 +4,7 @@ from decimal import Decimal
 import json
 # from tkinter import font
 import math
+import re
 import os
 import traceback
 from colorama import Cursor
@@ -1040,6 +1041,13 @@ def attendance_index(request):
 #         'companies': company_master.objects.all(),
 #     })
 
+def format_time(time_str):
+    """Ensure time format is HH:MM:SS by appending :00 if necessary."""
+    time_str = str(time_str).strip()
+    if re.match(r'^\d{2}:\d{2}$', time_str):  # Matches HH:MM format
+        return time_str + ':00'
+    return time_str
+
 
 @login_required
 def upload_attendance(request):
@@ -1153,19 +1161,37 @@ def upload_attendance(request):
                         return error_count, row_error_found
 
                     # Validate Attendance In
+
                     if not row['Attendance In'] or str(row['Attendance In']).strip() == '':
                         error_message = f"Attendance In is missing for Employee ID {row['Employee Id']}"
                         cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
                         error_count += 1
                         row_error_found = True
                         continue
+                    else:
+                        row['Attendance In'] = format_time(row['Attendance In'])  # Format time before inserting
 
                     if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
-                        error_message = f"Attendance out is missing for Employee ID {row['Employee Id']}"
+                        error_message = f"Attendance Out is missing for Employee ID {row['Employee Id']}"
                         cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
                         error_count += 1
                         row_error_found = True
                         continue
+                    else:
+                        row['Attendance Out'] = format_time(row['Attendance Out'])
+                    # if not row['Attendance In'] or str(row['Attendance In']).strip() == '':
+                    #     error_message = f"Attendance In is missing for Employee ID {row['Employee Id']}"
+                    #     cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                    #     error_count += 1
+                    #     row_error_found = True
+                    #     continue
+
+                    # if not row['Attendance Out'] or str(row['Attendance Out']).strip() == '':
+                    #     error_message = f"Attendance out is missing for Employee ID {row['Employee Id']}"
+                    #     cursor.callproc('stp_insert_attendance_error_log', [upload_for, comp.company_id, file_name, error_message, site.site_id, checksum_id, row['Employee Id'], user])
+                    #     error_count += 1
+                    #     row_error_found = True
+                    #     continue
 
 
                     attendance = slot_attendance_details(
