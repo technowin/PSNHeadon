@@ -727,6 +727,86 @@ class DefaultRecords(APIView):
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+# class DefaultRecords(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def get(self, request):
+#         try:
+#             # Step 1: Extract employee_id from request parameters
+#             emp_id = request.data.get('employee_id')  # Changed to query_params
+
+#             if not emp_id:
+#                 return Response(
+#                     {"error": "employee_id is required in query parameters."},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+
+#             # Step 2: Validate if employee exists
+#             if not sc_employee_master.objects.filter(employee_id=emp_id).exists():
+#                 return Response(
+#                     {"error": "Invalid employee_id. No employee found."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 3: Get all slot_ids for the given employee_id from UserSlotDetails
+#             current_date = make_aware(datetime.now())
+#             user_slots = UserSlotDetails.objects.filter(
+#                 employee_id=emp_id,
+#                 slot_id__shift_date__lt=current_date  # Ensure only past records are considered
+#             ).select_related('slot_id')
+
+#             if not user_slots.exists():
+#                 return Response(
+#                     {"message": "No matching UserSlotDetails records found for the employee."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 4: Get slot_ids where attendance exists for this employee_id
+#             attended_slot_ids = set(
+#                 slot_attendance_details.objects.filter(
+#                     employee_id=emp_id
+#                 ).values_list('slot_id', flat=True)
+#             )
+
+#             # Step 5: Filter out records where slot_id exists in attendance (i.e., get defaulters)
+#             defaulted_slots = [
+#                 slot for slot in user_slots if slot.slot_id not in attended_slot_ids
+#             ]
+
+#             if not defaulted_slots:
+#                 return Response(
+#                     {"message": "No default records found. The employee has attended all shifts."},
+#                     status=status.HTTP_404_NOT_FOUND
+#                 )
+
+#             # Step 6: Serialize only the defaulted records
+#             serialized_data = UserSlotDetailsSerializer1(defaulted_slots, many=True)
+
+#             # Step 7: Structure response with only matching employee_id
+#             response_data = {
+#                 "employee_id": emp_id,
+#                 "defaulted_records": []
+#             }
+
+#             for slot, serialized_record in zip(defaulted_slots, serialized_data.data):
+#                 serialized_record['shift_date'] = slot.slot_id.shift_date
+#                 response_data["defaulted_records"].append(serialized_record)
+
+#             # Step 8: Return the response
+#             return Response(response_data, status=status.HTTP_200_OK)
+
+#         except Exception as e:
+#             return Response(
+#                 {"error": f"An error occurred: {str(e)}"},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
+
+
         
 class show_notification(APIView):
     
