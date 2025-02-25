@@ -1352,8 +1352,14 @@ def calculate_daily_salary(request,slot_id):
                        
                         
                         # Convert time_in and time_out to time objects using strptime
-                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M:%S').time()
-                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M:%S').time()
+                        def parse_time(time_str):
+                            try:
+                                return datetime.strptime(time_str, '%H:%M:%S').time()
+                            except ValueError:
+                                return datetime.strptime(time_str, '%H:%M').time()
+
+                        time_in = parse_time(attendance.attendance_in)
+                        time_out = parse_time(attendance.attendance_out)
 
                         # Calculate working hours
                         time_in_seconds = time_in.hour * 3600 + time_in.minute * 60
