@@ -745,8 +745,12 @@ def rate_card_create(request):
                 item = salary_element_master.objects.get(pk=item_id)
                 four_hour_amount = request.POST.get(f'four_hour_amount_{item_id}', 0)
                 nine_hour_amount = request.POST.get(f'nine_hour_amount_{item_id}', 0)
-                tax_param = request.POST.get(f'tax_parameter_{item_id}', 0)
+                tax_param = request.POST.get(f'tax_parameter_{item_id}', None)
                 
+                if not tax_param or tax_param == '0':
+                    tax_object = None
+                else:
+                    tax_object = get_object_or_404(income_tax_parameter, id=tax_param)
                 RateCardSalaryElement.objects.create(
                     rate_card=rate_card,
                     salary_element=item,
@@ -755,7 +759,7 @@ def rate_card_create(request):
                     classification=item.classification,
                     four_hour_amount=four_hour_amount,
                     nine_hour_amount=nine_hour_amount,
-                    tax_parameter=get_object_or_404(tax_parameter, id = tax_param)
+                    tax_parameter=tax_object
                 )
 
             messages.success(request, 'Rate Card created successfully!')
