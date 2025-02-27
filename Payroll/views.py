@@ -83,6 +83,7 @@ def get_employer_deduct(comp_id_in, act_id_in, user_id_in, emp_code_in,
         act_id=act_id_in,
         city=city_id_in,
         state_id=state_id_in,
+        status = 0,
         employee_id=emp_code_in
     ).first()
     
@@ -103,9 +104,13 @@ def get_employer_deduct(comp_id_in, act_id_in, user_id_in, emp_code_in,
         print(f"Error parsing challan_period: {e}")
     
     # Step 3: Get employer deduct from the record
-    employer_deduct = record.employer_deduct  # Retrieve the amount directly from the table
+    employer_deduct = record.employer_deduct  
+    
+    record.status = 1
+    record.save(update_fields=["status"])  # Update only the status field to optimize the query
     
     return employer_deduct
+
 
 
 # PT calculation logic
@@ -113,7 +118,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
     try:
         slab = SlabMaster.objects.filter(
                 state_id=state_id_in,
-                city_id=city_id_in,
+                city=city_id_in,
                 act_id=act_id_in
             ).first()
 
@@ -143,6 +148,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
+                        city=city_id_in,
                         act=act_id_in,
                         year=re_year_in,
                         month=re_month_in
@@ -180,6 +186,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                     tax_record = TaxCalculation.objects.filter(
                         employee_id=emp_code_in,
                         state_id=state_id_in,
+                        city=city_id_in,
                         act=act_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
@@ -218,6 +225,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         employee_id=emp_code_in,
                         state_id=state_id_in,
                         act=act_id_in,
+                        city=city_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
                         challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
@@ -255,6 +263,7 @@ def calculate_professional_tax(user_session, emp_code_in, act_id_in, re_year_in,
                         employee_id=emp_code_in,
                         state_id=state_id_in,
                         act=act_id_in,
+                        city=city_id_in,
                         year__gte=start_date.year,
                         year__lte=end_date.year,
                         challan_period=f"{start_date.month}-{start_date.year} to {end_date.month}-{end_date.year}"
@@ -502,9 +511,11 @@ def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month
         # Update tax record with returned values
         tax_record.gross_salary = gross_salary_out
         tax_record.employee_tax = setEmployee
+
         tax_record.employer_deduct = setEmployer  # Example, update based on logic
         tax_record.challan_period = challan_period
         tax_record.tax_deducted = setEmployer
+        tax_record.status = 0
         tax_record.save()
 
         return setEmployee

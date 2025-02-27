@@ -72,6 +72,7 @@ class TaxCalculation(models.Model):
     challan_year = models.CharField(max_length=50, null=True, blank=True)
     challan_period = models.CharField(max_length=500, null=True, blank=True)
     employer_deduct = models.FloatField(null=True, blank=True)
+    status = models.IntegerField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,blank=True, null=True, related_name='tax_created_by',db_column='created_by')
     updated_at = models.DateTimeField(auto_now=True)
