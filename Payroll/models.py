@@ -325,6 +325,7 @@ class IncomeTaxMaster(models.Model):
 class IncomeTaxCalculation(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.TextField(null=True,blank=True)
+    total_gross = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     period = models.TextField(null=True,blank=True)
     financial_year = models.TextField(null=True,blank=True)
     total_income = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -339,7 +340,7 @@ class IncomeTaxCalculation(models.Model):
     total_tax_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     tax_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     pending_tax_mount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    last_tax_paid = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    last_tax_paid = models.DateField(null=True, blank=True, auto_now_add=True)
     created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='income_tax_created_by', blank=True, null=True, db_column='created_by')
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)

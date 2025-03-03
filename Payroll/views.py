@@ -527,7 +527,7 @@ def calculate_lwf_tax(user_session, emp_code_in, act_id_in, re_year_in, re_month
 
 
 
-def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
+def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in,gross_earning):
     try:
         total_income = get_total_income(emp_code_in, re_year_in, re_month_in)
         total_80c = get_total_80C(emp_code_in, re_year_in, re_month_in)
@@ -540,7 +540,6 @@ def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
         financial_year = financial_year_obj.parameter_value  
         input_period = f"4-{re_year_in} to 3-{re_year_in + 1}"
 
-        # Fetch standard deduction, income tax standard, and edu cess
         standard_deduction = Decimal(parameter_master.objects.filter(parameter_name='Standard Deduction').first().parameter_value or '0')
         income_tax_standard = Decimal(parameter_master.objects.filter(parameter_name='Income Tax Standard').first().parameter_value or '0')
         edu_cess = Decimal(parameter_master.objects.filter(parameter_name='Edu Cess').first().parameter_value or '0')
@@ -552,6 +551,7 @@ def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
             period=input_period,
             defaults={
                 'financial_year': financial_year,
+                'total_gross':gross_earning,
                 'taxable_income': Decimal(total_income),
                 'total_80c': Decimal(total_80c),
                 'total_pt': Decimal(pt_value),
@@ -561,7 +561,10 @@ def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
         )
 
         if not created:
-            # Add new values to existing record before updating
+            old_total_gross = tax_record.total_gross or Decimal(0)
+    
+            tax_record.total_gross = old_total_gross + Decimal(gross_earning)
+
             tax_record.taxable_income += Decimal(total_income)
             tax_record.total_80c += Decimal(total_80c)
             tax_record.total_pt += Decimal(pt_value)
@@ -570,10 +573,10 @@ def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
             tax_record.save()
 
 
-        print(f"Taxable Income: {tax_record.taxable_income}")
+        print(f"Taxable Income: {tax_record.total_gross}")
 
 
-        taxable_income = tax_record.taxable_income - standard_deduction
+        taxable_income = tax_record.total_gross - standard_deduction
         tax_record.total_income = taxable_income
         tax_record.tax_paid = 0
         tax_record.save()
@@ -636,13 +639,14 @@ def calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in):
 
         edu_cess_amount = total_tax * edu_cess_percent
         tax = total_tax + edu_cess_amount
+        tax_record.last_tax_paid = date.today()
+
         tax_record.save()
 
         # Calculate the income tax
         tax_paid = tax_record.tax_paid
         income_tax = tax - tax_paid  # This gives the remaining tax after deducting tax paid
 
-        # Update the tax_paid with the calculated income_tax
         tax_record.tax_paid = income_tax
 
         # Update the tax_record with remaining taxable income
@@ -1587,12 +1591,22 @@ def calculate_daily_salary(request,slot_id):
                                             amount = employer_amount
                                     elif element.item_name == 'Income Tax':
 
+                                        gross_earning = daily_salary.objects.filter(
+                                            employee_id=employee_id,
+                                            slot_id=slot_id,
+                                            attendance_date=attendance.attendance_date,
+                                            element_name='Gross Earning',  # Add filter for element_name
+                                            pay_type='Total Earning'  # Retain pay_type filter if necessary
+                                        ).aggregate(
+                                            total_gross_earning=Sum('amount')  # Use Sum to aggregate the 'amount' column
+                                        )['total_gross_earning'] or 0
+
                                         re_year_in = shift_date.year
                                         re_month_in = shift_date.month
                                         emp_code_in = employee_id
 
                                         
-                                        income_tax = calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in)
+                                        income_tax = calculate_income_tax(user_session, emp_code_in, re_year_in, re_month_in,gross_earning)
 
                                         if working_hours < 9:
                                             amount = income_tax
