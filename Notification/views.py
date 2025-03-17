@@ -126,7 +126,6 @@ class check_and_notify_all_users(APIView):
                 user = CustomUser.objects.filter(phone=phone_number).first()
                 if not user:
                     continue
-
                 # Fetch slot IDs for the user's designation and site
                 relevant_slot_ids = SlotDetails.objects.filter(
                     designation_id__in=designation_ids, site_id__in=site_ids, shift_date__gte=current_time
@@ -615,26 +614,28 @@ def send_push_notification(user,shift_data,notification_log_id):
             return  f"error sending no device for user"
         serialized_shift_data = json.dumps(shift_data)
         # Construct the notification payload
+       # Extract shift date from shift_data
+        shift_dict = json.loads(serialized_shift_data)  # Convert JSON string back to dictionary
+        shift_date = shift_dict.get('shift_date', 'an upcoming date')  # Default fallback
+
+        # Construct the notification payload
         payload = {
-            "message":{
+            "message": {
                 'token': user_device_token,
                 'notification': {
                     'title': 'Upcoming Shift Reminder',
-                    'body': 'You have a shift scheduled for tomorrow.',
-                    # "click_action": "FLUTTER_NOTIFICATION_CLICK"
-                    # 'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                    # 'sound': 'default'
+                    'body': f'You have a shift scheduled for {shift_date}.',
                 },
                 'data': {
                     'title': 'Upcoming Shift Reminder',
-                    'body': 'You have a shift scheduled for tomorrow.',
+                    'body': f'You have a shift scheduled for {shift_date}.',
                     'type': 'shift_reminder',
-                    'shift_data':serialized_shift_data,
-                    'notification_log_id':str(notification_log_id),
+                    'shift_data': serialized_shift_data,
+                    'notification_log_id': str(notification_log_id),
                 }
-                
             }
         }
+
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/json'
