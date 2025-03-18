@@ -1370,8 +1370,8 @@ def calculate_daily_salary(request,slot_id):
                     try:
                        
 
-                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M').time()
-                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M').time()
+                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M:%S').time()
+                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M:%S').time()
 
 
                         # Calculate working hours
