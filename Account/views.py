@@ -35,42 +35,95 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth.backends import ModelBackend
+# class LoginView(APIView):
+#     authentication_classes = []
+#     def post(self, request):
+#         try:
+#             serializer = LoginSerializer(data=request.data)
+#             serializer.is_valid(raise_exception=True)
+
+#             # email = serializer.validated_data['email']
+#             phone = serializer.validated_data['phone']
+#             # password = serializer.validated_data['password']
+#             device_token = serializer.validated_data['device_token']
+
+#             # Manually check the provided username and password
+#             user = get_object_or_404(CustomUser, phone=phone)
+#             if(user):
+#                 try:
+#                     if user.role_id != 5:
+#                         return Response({'message': 'User Does Not Have Necessary Role To Login  '}, status=status.HTTP_400_BAD_REQUEST)  
+#                 except Exception as e:
+#                     print(str(e))
+#                     return Response({'message': 'User Not Found'}, status=status.HTTP_400_BAD_REQUEST)  
+                 
+#                 employee = get_object_or_404(sc_employee_master, mobile_no=phone)
+#                 if employee:
+#                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+#                     user.device_token = device_token
+#                     user.save()
+#                     serializer = UserSerializer(user).data
+#                     employee_id = employee.employee_id 
+#                     company_id = employee.company_id.company_id 
+#                     refresh = RefreshToken.for_user(user)
+
+#                 return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer,'employee_id':employee_id,'company_id':company_id}, status=status.HTTP_200_OK, safe=False)
+#         except Exception as e:
+#             print(str(e))
+#             return Response({'message': 'Invalid credentials  '}, status=status.HTTP_400_BAD_REQUEST)
+
 class LoginView(APIView):
     authentication_classes = []
+
     def post(self, request):
         try:
-            serializer = LoginSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            phone = request.data.get("phone")
+            device_token = request.data.get("device_token")
 
-            # email = serializer.validated_data['email']
-            phone = serializer.validated_data['phone']
-            # password = serializer.validated_data['password']
-            # device_token = serializer.validated_data['device_token']
-
-            # Manually check the provided username and password
+            # Check if user exists
             user = get_object_or_404(CustomUser, phone=phone)
-            if(user):
-                try:
-                    if user.role_id != 5:
-                        return Response({'message': 'User Does Not Have Necessary Role To Login  '}, status=status.HTTP_400_BAD_REQUEST)  
-                except Exception as e:
-                    print(str(e))
-                    return Response({'message': 'User Not Found'}, status=status.HTTP_400_BAD_REQUEST)  
-                 
-                employee = get_object_or_404(sc_employee_master, mobile_no=phone)
-                if employee:
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    # user.device_token = device_token
-                    user.save()
-                    serializer = UserSerializer(user).data
-                    employee_id = employee.employee_id 
-                    company_id = employee.company_id.company_id 
-                    refresh = RefreshToken.for_user(user)
 
-                return JsonResponse({'access_token': str(refresh.access_token),'refresh_token': str(refresh),'data': serializer,'employee_id':employee_id,'company_id':company_id}, status=status.HTTP_200_OK, safe=False)
+            # If the user's device token is None, treat it as a first-time login
+            if user.device_token is None:
+                # Use FirstLoginSerializer to update device_token
+                first_login_serializer = FirstLoginSerializer(user, data={"device_token": device_token}, partial=True)
+                if first_login_serializer.is_valid():
+                    first_login_serializer.save()
+                else:
+                    return Response(first_login_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Now validate both phone and device_token
+            if user.device_token != device_token:
+                return Response({'message': 'Invalid device token'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if user has the necessary role
+            if user.role_id != 5:
+                return Response({'message': 'User does not have necessary role to login'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fetch employee details
+            employee = get_object_or_404(sc_employee_master, mobile_no=phone)
+
+            # Perform login
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+            # Serialize user data
+            serializer = UserSerializer(user).data
+            employee_id = employee.employee_id
+            company_id = employee.company_id.company_id
+            refresh = RefreshToken.for_user(user)
+
+            return JsonResponse({
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'data': serializer,
+                'employee_id': employee_id,
+                'company_id': company_id
+            }, status=status.HTTP_200_OK, safe=False)
+
         except Exception as e:
             print(str(e))
-            return Response({'message': 'Invalid credentials  '}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @csrf_exempt
 def Login(request):
