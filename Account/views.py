@@ -39,15 +39,27 @@ class LoginView(APIView):
     authentication_classes = []
     def post(self, request):
         try:
-            serializer = LoginSerializer(data=request.data)
+            # serializer = LoginSerializer(data=request.data)
+            # serializer.is_valid(raise_exception=True)
+
+            # # email = serializer.validated_data['email']
+            # phone = serializer.validated_data['phone']
+            # # password = serializer.validated_data['password']
+            # device_token = serializer.validated_data['device_token']
+
+            # # Manually check the provided username and password
+            # user = get_object_or_404(CustomUser, phone=phone)
+            if request.data.get("device_token") is None:
+                serializer = FirstLoginSerializer(data=request.data)  # Use FirstLoginSerializer
+            else:
+                serializer = LoginSerializer(data=request.data)  # Use LoginSerializer
+
             serializer.is_valid(raise_exception=True)
 
-            # email = serializer.validated_data['email']
             phone = serializer.validated_data['phone']
-            # password = serializer.validated_data['password']
-            device_token = serializer.validated_data['device_token']
+            device_token = serializer.validated_data.get('device_token', None)
 
-            # Manually check the provided username and password
+            # Get user object
             user = get_object_or_404(CustomUser, phone=phone)
             if(user):
                 try:
