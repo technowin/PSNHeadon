@@ -18,8 +18,16 @@ class LoginSerializer(serializers.Serializer):
     device_token = serializers.CharField()
     phone = serializers.CharField()
 
-class FirstLoginSerializer(serializers.Serializer):
-    phone = serializers.CharField()
+class FirstLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['device_token']
+
+    def update(self, instance, validated_data):
+        instance.device_token = validated_data.get('device_token', instance.device_token)
+        instance.save()
+        return instance
+
 
 class RegistrationSerializer(serializers.Serializer):
     # id = serializers.CharField()
