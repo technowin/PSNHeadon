@@ -45,7 +45,7 @@ class LoginView(APIView):
             # email = serializer.validated_data['email']
             phone = serializer.validated_data['phone']
             # password = serializer.validated_data['password']
-            device_token = serializer.validated_data['device_token']
+            # device_token = serializer.validated_data['device_token']
 
             # Manually check the provided username and password
             user = get_object_or_404(CustomUser, phone=phone)
@@ -60,7 +60,7 @@ class LoginView(APIView):
                 employee = get_object_or_404(sc_employee_master, mobile_no=phone)
                 if employee:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    user.device_token = device_token
+                    # user.device_token = device_token
                     user.save()
                     serializer = UserSerializer(user).data
                     employee_id = employee.employee_id 
