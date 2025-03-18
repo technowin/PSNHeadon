@@ -1368,11 +1368,12 @@ def calculate_daily_salary(request,slot_id):
             if attendance.attendance_in and attendance.attendance_out:
                 if ':' in attendance.attendance_in and ':' in attendance.attendance_out:
                     try:
-                       
-
-                        time_in = datetime.strptime(attendance.attendance_in, '%H:%M:%S').time()
-                        time_out = datetime.strptime(attendance.attendance_out, '%H:%M:%S').time()
-
+                        # Determine the correct format
+                        time_format = "%H:%M:%S" if len(attendance.attendance_in.split(":")) == 3 else "%H:%M"
+                        
+                        # Convert to time objects
+                        time_in = datetime.strptime(attendance.attendance_in, time_format).time()
+                        time_out = datetime.strptime(attendance.attendance_out, time_format).time()
 
                         # Calculate working hours
                         time_in_seconds = time_in.hour * 3600 + time_in.minute * 60
@@ -1384,9 +1385,11 @@ def calculate_daily_salary(request,slot_id):
 
                         # Calculate the total working hours
                         working_hours = (time_out_seconds - time_in_seconds) / 3600
-                    except ValueError:
-                    # Handle cases where time conversion fails due to an invalid format
-                        working_hours = 0
+
+                        print(f"Total working hours: {working_hours}")
+
+                    except ValueError as e:
+                        print(f"Error parsing time: {e}")
                         # Step 5: Fetch the rate card from site_card_relation based on site and designation
                     if working_hours !=0:
                         site_card_relation_obj = site_card_relation.objects.filter(
