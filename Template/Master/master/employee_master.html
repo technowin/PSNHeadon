@@ -72,7 +72,7 @@
 
                              <select name="site_name" id="sitedropdown" class="sitedropdown" multiple required>
                                 <option value="" disabled>Select</option>
-                                <option value="select_all">Select All</option>  <!-- Added Select All option -->
+                                <option value="select_all">Select All</option> 
                                 {% for item in site_name %}
                                     <option value="{{ item.0 }}">{{ item.1 }}</option>
                                 {% endfor %}
@@ -323,35 +323,9 @@ $(document).ready(function() {
 </script>
 
 
-{% comment %} <script>
-
-    $(document).ready(function() {
-        // Initialize the selectize dropdown
-        var $select1 = $('#sitedropdown').selectize({
-            plugins: ['remove_button'],
-            delimiter: ',',
-            persist: false,
-            create: false,
-            selectOnTab: false,
-            maxItems: null,
-            onInitialize: function() {
-                var control = this;
-                control.clear();
-            }
-        });
-    
-        var sitedropdown_instance = $select1[0].selectize;
-        
-        var site_list = JSON.parse('{{ selected_site|escapejs }}');
-
-        sitedropdown_instance.setValue(site_list, true);
-    });
-    
-</script> {% endcomment %}
-
 <script>
+    {% if id != '0' %}
     $(document).ready(function() {
-        // Initialize Selectize
         var $select1 = $('#sitedropdown').selectize({
             plugins: ['remove_button'],
             delimiter: ',',
@@ -360,44 +334,84 @@ $(document).ready(function() {
             selectOnTab: false,
             maxItems: null
         });
+    
+       var sitedropdown_instance = $select1[0].selectize;
+    var site_list = JSON.parse('{{ selected_site|escapejs }}');
 
-        // Make the instance globally accessible for the second script
-        window.sitedropdown_instance = $select1[0].selectize;
-
-        var site_list = JSON.parse('{{ selected_site|escapejs }}');
-        sitedropdown_instance.setValue(site_list, true);
-
+      sitedropdown_instance.setValue(site_list, true);
+    
         // Handle "Select All" selection
         sitedropdown_instance.on('change', function(value) {
             if (value.includes("select_all")) {
                 let allValues = [];
-
+    
                 // Collect all available options except "Select All"
                 $.each(sitedropdown_instance.options, function(key, option) {
                     if (key !== "select_all") {
                         allValues.push(key);
                     }
                 });
-
-                // Select all values (preventing infinite loop by unbinding temporarily)
+    
+                // ✅ Prevent "Select All" from being selected
                 sitedropdown_instance.off('change');
                 sitedropdown_instance.setValue(allValues, true);
-                sitedropdown_instance.on('change', arguments.callee); // Rebind change event
+                sitedropdown_instance.on('change', arguments.callee);
             }
         });
     });
+    {% else %}
+
+    $(document).ready(function() {
+        var $select1 = $('#sitedropdown').selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false,
+            selectOnTab: false,
+            maxItems: null
+        });
+    
+       var sitedropdown_instance = $select1[0].selectize;
+    //  var site_list = JSON.parse('{{ selected_site|escapejs }}');
+
+     //  sitedropdown_instance.setValue(site_list, true);
+    
+        // Handle "Select All" selection
+        sitedropdown_instance.on('change', function(value) {
+            if (value.includes("select_all")) {
+                let allValues = [];
+    
+                // Collect all available options except "Select All"
+                $.each(sitedropdown_instance.options, function(key, option) {
+                    if (key !== "select_all") {
+                        allValues.push(key);
+                    }
+                });
+    
+                // ✅ Prevent "Select All" from being selected
+                sitedropdown_instance.off('change');
+                sitedropdown_instance.setValue(allValues, true);
+                sitedropdown_instance.on('change', arguments.callee);
+            }
+        });
+    });
+    {% endif %}
 </script>
 
-{% comment %} <script>
-    $(document).ready(function() {
+<script>
+
+  $(document).ready(function() {
         $('#company_name').change(function() {
             var selectedCompany = $(this).val();
-
+    
             if (selectedCompany) {
+                var $select1 = $('#sitedropdown').selectize();
+                var sitedropdown_instance = $select1[0].selectize;
+    
                 // Clear existing options
                 sitedropdown_instance.clear();
                 sitedropdown_instance.clearOptions();
-
+    
                 // Fetch new site options
                 $.ajax({
                     url: "{% url 'get_worksites' %}",
@@ -407,31 +421,53 @@ $(document).ready(function() {
                         'csrfmiddlewaretoken': '{{ csrf_token }}'
                     },
                     success: function(response) {
-                        // Add "Select All" option first
-                        sitedropdown_instance.addOption({ value: "select_all", text: "Select All" });
-
-                        // Add new site options
+                        let siteOptions = [];
+    
+                        // Collect new site options
                         $.each(response.companywise_site_names, function(index, value) {
-                            sitedropdown_instance.addOption({ value: value[0], text: value[1] });
+                            siteOptions.push({ value: value[0], text: value[1] });
                         });
-
+    
+                        // Add "Select All" first, then add site options
+                        sitedropdown_instance.addOption({ value: "select_all", text: "Select All" });
+                        siteOptions.forEach(option => sitedropdown_instance.addOption(option));
+    
                         // Refresh the dropdown
                         sitedropdown_instance.refreshOptions(false);
+    
+                        // Handle preselected sites (for edit mode)
+                        var selectedSiteData = '{{ selected_site|escapejs }}';
+                        if (selectedSiteData && selectedSiteData !== 'null' && selectedSiteData !== 'None') {
+                            var preselectedSites = JSON.parse(selectedSiteData);
+    
+                            // ✅ Ensure "Select All" is NOT preselected
+                            preselectedSites = preselectedSites.filter(site => site !== "select_all");
+    
+                            if (preselectedSites.length > 0) {
+                                sitedropdown_instance.setValue(preselectedSites, true);
+                            }
+                        }
                     },
                     error: function(error) {
                         console.log("Error fetching site names:", error);
                     }
                 });
             } else {
+                var $select1 = $('#sitedropdown').selectize();
+                var sitedropdown_instance = $select1[0].selectize;
+    
                 // Clear dropdown if no company is selected
                 sitedropdown_instance.clear();
                 sitedropdown_instance.clearOptions();
             }
         });
-    });
-</script> {% endcomment %}
+    }); 
+   
+    
+    
+</script>
 <script>
-$(document).ready(function() {
+{% comment %} $(document).ready(function() {
     $('#company_name').change(function() {
         var selectedCompany = $(this).val();
 
@@ -477,7 +513,7 @@ $(document).ready(function() {
             sitedropdown_instance.clearOptions();
         }
     });
-});
+}); {% endcomment %}
 </script>
 
 
@@ -610,82 +646,6 @@ $(document).ready(function() {
 </script>
 
 
-<script>
 
-    {% comment %} $('#company_name').change(function() {
-        debugger;
-        var selectedCompany = $(this).val();
-        if (selectedCompany) {
-            $.ajax({
-                url: "{% url 'get_worksites' %}",
-                type: "POST",
-                data: {
-                    'selectedCompany': selectedCompany,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    debugger;
-                    var selectize = $('#sitedropdown')[0].selectize;
-    
-                    // Clear existing options
-                    selectize.clearOptions();
-    
-                    // Add new options
-                    $.each(response.companywise_site_names, function(index, value) {
-                        selectize.addOption({ value: value[0], text: value[1] });
-                    });
-    
-                    // Refresh the dropdown
-                    selectize.refreshOptions(false);
-                },
-                error: function(error) {
-                    console.log("Error fetching site names:", error);
-                }
-            });
-        } else {
-            var selectize = $('#sitedropdown')[0].selectize;
-            selectize.clearOptions();
-        }
-    });
-     {% endcomment %}
-
-     $('#company_name').change(function() {
-        var selectedCompany = $(this).val();
-        var selectize = $('#sitedropdown')[0].selectize;
-    
-        if (selectedCompany) {
-            // Clear selected sites and options
-            selectize.clear(); // Clears selected values
-            selectize.clearOptions(); // Clears all options from the dropdown
-    
-            // Fetch new site options for the selected company
-            $.ajax({
-                url: "{% url 'get_worksites' %}",
-                type: "POST",
-                data: {
-                    'selectedCompany': selectedCompany,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    // Add new options from the response
-                    $.each(response.companywise_site_names, function(index, value) {
-                        selectize.addOption({ value: value[0], text: value[1] });
-                    });
-    
-                    // Refresh the dropdown UI
-                    selectize.refreshOptions(false);
-                },
-                error: function(error) {
-                    console.log("Error fetching site names:", error);
-                }
-            });
-        } else {
-            // Clear the dropdown if no company is selected
-            selectize.clear();
-            selectize.clearOptions();
-        }
-    });
-    
-</script>
 
  {% endblock %} 
