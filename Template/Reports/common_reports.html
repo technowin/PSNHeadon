@@ -122,6 +122,8 @@
                 <input type="hidden" id="SubFilterHiddenId" name="subFilterId" value="">
                 <input type="hidden" id="sft_id" name="sft" value="">
                 <input type="hidden" id="entity" name="entity" value="">
+                <input type="hidden" id="fromDate" name="fromDate" value="">
+                <input type="hidden" id="toDate" name="toDate" value="">
                 <div class="col-1" hover-tooltip="export pdf"  tooltip-position="top" style="height: 0px; padding-bottom: 2px; padding-top: 2px; padding-right: 0px;">
                     <button type="submit" value="pdf" class=" btn-danger button_r" id="btndownloadPdf"><i class="fa fa-file-pdf"></i></button>
                 </div>
@@ -135,6 +137,8 @@
                 <input type="hidden" id="SubFiltersHiddenId1" name="subFilterId" value="">
                 <input type="hidden" id="sft_id1" name="sft" value="">
                 <input type="hidden" id="entity1" name="entity" value="">
+                <input type="hidden" id="fromDate" name="fromDate" value="">
+                <input type="hidden" id="toDate" name="toDate" value="">
                 <div class="col-1" hover-tooltip="export excel"  tooltip-position="top" style="height: 0px; padding-bottom: 2px; padding-top: 2px; padding-right: 0px;">
                     <button type="submit" value="Excel" class=" btn-success button_r" id="btnDownloadExcel"><i class="fa fa-file-excel"></i></button>
                 </div>
@@ -600,8 +604,8 @@
         var fid = "";
         var sfid = "";
         var sft = "";
-        var fromDate = $('#fromDate').val();
-        var toDate = $('#toDate').val();
+        var fromDate1 = $('#fromDate').val();
+        var toDate1 = $('#toDate').val();
         var f = "";
         var fcount = $("#CountFilterId").val();
         for (var i = 1; i <= fcount; i++) {
@@ -636,6 +640,8 @@
         $("#FilterHiddenId").val(fid);
         $("#SubFilterHiddenId").val(sfid);
         $("#sft_id").val(sft);
+        $("#fromDate").val(fromDate1);
+        $("#toDate").val(toDate2);
         $("#formSamplePdf").submit();
     })
 
@@ -646,8 +652,8 @@
         cNames = $("#ddlColumnId").val().map(item => item.replace(/,/g, '|')).join();
         var fid = "";
         var sfid = "";
-        var fromDate = $('#fromDate').val();
-        var toDate = $('#toDate').val();
+        var fromDate2 = $('#fromDate').val();
+        var toDate2 = $('#toDate').val();
         var sft = "";
         var f = "";
         var fcount = $("#CountFilterId").val();
@@ -684,6 +690,8 @@
         $("#FiltersHiddenId1").val(fid);
         $("#SubFiltersHiddenId1").val(sfid);
         $("#sft_id1").val(sft);
+        $("#fromDate").val(fromDate2);
+        $("#toDate").val(toDate2);
         $("#formSampleExcel1").submit();
     })
 
