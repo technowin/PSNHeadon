@@ -702,44 +702,7 @@
   document.getElementById("month_year").min = new Date().toISOString().slice(0, 7);
 </script>
 <script>    
-     {% comment %} $(document).ready(function() {
-      
-      $('#worksite').selectize({plugins:['remove_button'],delimiter:',',persist:false,create:false,selectOnTab:false,maxItems:null,
-      onInitialize: function() {var control = this;control.clear();}});
-  
-      var company = $('#company_id').selectize({plugins:['remove_button'],delimiter:',',persist:false,create:false,selectOnTab:false,maxItems:null,
-      onInitialize: function() {var control = this;control.clear();}});
-  
-      company.on('change', async function (value) {
-          var worksite =  $('#worksite').selectize({plugins:['remove_button'],delimiter:',',persist:false,create:false,selectOnTab:false,maxItems:null,
-          onInitialize: function() {var control = this;control.clear();}});
-          worksite[0].selectize.setValue(['']);
-          debugger;
-          var company_id = $('#company_id').val();
-          var type = $('#type').val();
-          var ur = $('#ur').val();
-          $.ajax({
-            url: '/get_access_control',  
-            type: 'POST', 
-            datatype: "json",
-            traditional: true,
-            data: {'type1': 'worksites',type:type,ur:ur,'company_id':company_id,csrfmiddlewaretoken: '{{ csrf_token }}' },
-            success: function(res) {
-              debugger;
-              worksite[0].selectize.setValue(['']);
-              var ws = $('#worksite')[0].selectize;
-              ws.clearOptions();
-              res.worksite.forEach(function (item) {
-                debugger;
-                ws.addOption({value: item[0], text: item[0]});
-              });
-              //ws.refreshOptions();
-            }
-          });
-  
-      });
-  
-    });    {% endcomment %}
+   
 
     $(document).ready(function () {
       $('#worksite').selectize({plugins: ['remove_button'],delimiter: ',',persist: false,create: false,selectOnTab: false,maxItems: null,

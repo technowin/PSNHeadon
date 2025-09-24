@@ -600,6 +600,8 @@
         var fid = "";
         var sfid = "";
         var sft = "";
+        var fromDate = $('#fromDate').val();
+        var toDate = $('#toDate').val();
         var f = "";
         var fcount = $("#CountFilterId").val();
         for (var i = 1; i <= fcount; i++) {
@@ -639,11 +641,13 @@
 
 
    $("#btnDownloadExcel").click(function () {
-        
+        debugger;
         var cNames = "";
         cNames = $("#ddlColumnId").val().map(item => item.replace(/,/g, '|')).join();
         var fid = "";
         var sfid = "";
+        var fromDate = $('#fromDate').val();
+        var toDate = $('#toDate').val();
         var sft = "";
         var f = "";
         var fcount = $("#CountFilterId").val();

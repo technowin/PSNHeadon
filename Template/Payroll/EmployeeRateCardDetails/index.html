@@ -26,35 +26,37 @@
     <a href="{% url 'employee_rate_card_create' %}" class="btn btn-primary">Create New</a>
 
 </div>
-<table class="table table-striped" id="dataTable">
-    <thead>
-        <tr>
-            <th>Employee ID</th>
-            <th>Item Name</th>
-            <th>Pay Type</th>
-            <th>Classification</th>
-            <th>Four Hour Amount</th>
-            <th>Nine Hour Amount</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for rate_card in rate_cards %}
-        <tr>
-            <td>{{ rate_card.employee_id }}</td>
-            <td>{{ rate_card.item_name }}</td>
-            <td>{{ rate_card.pay_type }}</td>
-            <td>{{ rate_card.classification }}</td>
-            <td>{{ rate_card.four_hour_amount }}</td>
-            <td>{{ rate_card.nine_hour_amount }}</td>
-            <td>
-                <a href="{% url 'employee_rate_card_edit' rate_card.id %}">Edit</a> |
-                <a href="{% url 'employee_rate_card_view' rate_card.id %}">View</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive">
+            <table style="width: 100%;" class="table" id="dataTable">
+      <thead>
+          <tr>
+              <th>Employee ID</th>
+              <th>Item Name</th>
+              <th>Pay Type</th>
+              <th>Classification</th>
+              <th>Four Hour Amount</th>
+              <th>Nine Hour Amount</th>
+              <th>Actions</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for rate_card in rate_cards %}
+          <tr>
+              <td>{{ rate_card.employee_id }}</td>
+              <td>{{ rate_card.item_name }}</td>
+              <td>{{ rate_card.pay_type }}</td>
+              <td>{{ rate_card.classification }}</td>
+              <td>{{ rate_card.four_hour_amount }}</td>
+              <td>{{ rate_card.nine_hour_amount }}</td>
+              <td>
+                  <a href="{% url 'employee_rate_card_edit' rate_card.id %}">Edit</a> |
+                  <a href="{% url 'employee_rate_card_view' rate_card.id %}">View</a>
+              </td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+</div>
 
 {% load static %}
     

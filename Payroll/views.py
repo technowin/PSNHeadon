@@ -19,7 +19,7 @@ from Account.models import user_role_map
 from Masters.models import CityMaster, SlotDetails, StateMaster, UserSlotDetails, company_master, sc_employee_master, site_master
 from Masters.serializers import PaySlipSerializer, SalaryGeneratedSerializer
 from Payroll.models import payment_details as pay
-from PSNHeadon.encryption import decrypt_parameter, encrypt_parameter
+from PSNHeadon.encryption import encrypt_parameter, decrypt_parameter
 from Tax.models import ActMaster, SlabMaster, TaxCalculation
 from .models import *
 from .forms import *

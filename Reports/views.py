@@ -483,9 +483,12 @@ def report_pdf(request):
                 sft = str(request.POST.get('sft', ''))
                 entity = str(request.POST.get('entity', ''))
                 filterid1 = filterid.split(',')
+                fromDate = str(request.GET.get('fromDate',''))
+                toDate = str(request.GET.get('toDate',''))
                 SubFilterId1 = subFilterId.split(',')
                 sft1 = sft.split(',')
-                data = common_fun(columnName, filterid1, SubFilterId1, sft1, entity, user)
+                data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,fromDate,toDate)
+                # data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user)
 
                 headers = data['headers']
                 emptycheck = data['emptycheck']
@@ -538,8 +541,11 @@ def report_xlsx(request):
                 entity =str(request.POST.get('entity', ''))
                 filterid1 = filterid.split(',')
                 SubFilterId1 = subFilterId.split(',')
+                fromDate = str(request.GET.get('fromDate',''))
+                toDate = str(request.GET.get('toDate',''))
                 sft1 = sft.split(',')
-                data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user)
+                data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,fromDate,toDate)
+                # data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user)
 
                 headers = data['headers']
                 emptycheck = data['emptycheck']

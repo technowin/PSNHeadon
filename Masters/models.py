@@ -50,6 +50,7 @@ class parameter_master(models.Model):
     parameter_value =models.TextField(null=True,blank=True)
     is_active = models.BooleanField(default=True,null = True, blank= True)
     created_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
+    is_active = models.BooleanField(null=True,blank=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='parameter_created_by',blank=True, null=True,db_column='created_by')
     updated_at = models.DateTimeField(null=True,blank=True,auto_now_add=True)
     updated_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='parameter_updated_by',blank=True, null=True,db_column='updated_by')
