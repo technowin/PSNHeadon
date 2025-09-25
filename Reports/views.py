@@ -485,8 +485,8 @@ def report_pdf(request):
                 filterid1 = filterid.split(',')
                 SubFilterId1 = subFilterId.split(',')
                 sft1 = sft.split(',')
-                fromDate = str(request.GET.get('fromDate',''))
-                toDate = str(request.GET.get('toDate',''))
+                fromDate = str(request.POST.get('fromDate1',''))
+                toDate = str(request.POST.get('toDate1',''))
                 data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,fromDate,toDate)
 
                 headers = data['headers']
@@ -540,8 +540,8 @@ def report_xlsx(request):
                 entity =str(request.POST.get('entity', ''))
                 filterid1 = filterid.split(',')
                 SubFilterId1 = subFilterId.split(',')
-                fromDate = str(request.GET.get('fromDate',''))
-                toDate = str(request.GET.get('toDate',''))
+                fromDate = str(request.POST.get('fromDate2',''))
+                toDate = str(request.POST.get('toDate2',''))
                 sft1 = sft.split(',')
                 data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,fromDate,toDate)
                 # data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user)
